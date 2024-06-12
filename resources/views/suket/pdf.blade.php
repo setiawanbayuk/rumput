@@ -130,7 +130,7 @@
             <tr>
                 <td class="kiri">c. Tempat / Tanggal Lahir</td>
                 <td class="titik">:</td>
-                <td>{{ $penduduk['tempat_lhr'] }}, {{ $penduduk['tgl_lhr'] }} </td>
+                <td>{{ $penduduk['tempat_lhr'] }}, {{ strtoupper($penduduk['tgl_lhr']) }} </td>
             </tr>
             <tr>
                 <td class="kiri">d. Jenis Kelamin</td>
