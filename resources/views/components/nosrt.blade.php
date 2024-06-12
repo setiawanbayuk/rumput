@@ -6,7 +6,7 @@
         <div class="col-md-2">
             <input id="kd_jenis_surat" type="text"
                 class="form-control @error('kd_jenis_surat') is-invalid @enderror"
-                name="kd_jenis_surat" value="{{ old('kd_jenis_surat') }}"
+                name="kd_jenis_surat" value="{{ old('kd_jenis_surat', $kd_jenis_surat) }}"
                 autocomplete="kd_jenis_surat" autofocus>
 
             @error('kd_jenis_surat')
@@ -57,7 +57,7 @@
         <div class="col-md-8">
             <input id="tgl_surat" type="date"
                 class="form-control @error('tgl_surat') is-invalid @enderror"
-                name="tgl_surat" value="{{ old('tgl_surat') }}" autocomplete="tgl_surat"
+                name="tgl_surat" value="{{ old('tgl_surat', $tgl_surat) }}" autocomplete="tgl_surat"
                 autofocus>
 
             @error('tgl_surat')

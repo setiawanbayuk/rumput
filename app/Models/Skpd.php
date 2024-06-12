@@ -14,4 +14,9 @@ class Skpd extends Model
     {
         return $this->belongsTo(Regional::class, 'id_region', 'id');
     }
+
+    public function kecamatan(): BelongsTo
+    {
+        return $this->belongsTo(Regional::class, 'id_kec', 'id');
+    }
 }

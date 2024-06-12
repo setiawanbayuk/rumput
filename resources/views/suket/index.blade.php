@@ -13,10 +13,6 @@
         <br>
 
         <div class="d-flex gap-2">
-            {{-- <button class="btn btn-primary">
-                <i class="ri-add-fill me-2"></i>
-                <span>Tambah</span>
-            </button> --}}
             <a class="btn btn-primary" href="{{ route('suket.add') }}">
                 <i class="ri-add-fill me-2"></i>
                 <span>Tambah</span></a>
@@ -71,7 +67,10 @@
                         },
                         {
                             data: 'st',
-                            name: 'st'
+                            // name: 'st',
+                            render: function(data, type) {
+                                return `<span style="color:${data.color}">${data.name}</span>`;
+                            }
                         },
                         {
                             data: 'action',
@@ -89,6 +88,49 @@
 
             function reload() {
                 $('#tableSurat').DataTable().ajax.reload();
+            }
+        </script>
+        <script>
+            function handlePreview(e) {
+                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/preview/" + e, 'preview', 'width=600,height=1000');
+            }
+
+            function handleNaik(e) {
+                console.log(e);
+                let url = "{{ route('suket.naik', ':id') }}"
+                url = url.replace(':id', e);
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        Toastify({
+                            text: response.message,
+                            duration: 3000,
+                            close: true,
+                            gravity: "top", // `top` or `bottom`
+                            position: "center", // `left`, `center` or `right`
+                            stopOnFocus: true, // Prevents dismissing of toast on hover
+                            style: {
+                                background: "rgba(25, 135, 84, 1)",
+                            },
+                        }).showToast();
+                        $('#tableSurat').DataTable().ajax.reload();
+                    },
+                    error: function(xhr) {
+                        const response = JSON.parse(xhr.responseText);
+                        // console.log('hey error', response.message);
+                        Swal.fire({
+                            title: 'Ooopppsss...',
+                            text: response.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
             }
         </script>
     @endpush

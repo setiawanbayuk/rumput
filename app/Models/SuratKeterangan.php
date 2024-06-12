@@ -25,6 +25,17 @@ class SuratKeterangan extends Model
     protected $appends = ['st'];
 
     public function getStAttribute(){
-        return $this->status == 1 ? 'In Proses' : 'Disetujui';
+        if ($this->status == 1){
+            return ['name' => 'Proses', 'color' => 'blue'];
+        }
+        else if ($this->status == 2){
+            return ['name' => 'Dinaikan', 'color' => 'orange'];
+        }
+        else if ($this->status == 3){
+            return ['name' => 'Distujui', 'color' => 'green'];
+        }
+        else {
+            return ['name' => 'Ditolak', 'color' => 'red'];
+        }
     }
 }
