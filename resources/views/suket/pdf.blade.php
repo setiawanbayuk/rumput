@@ -205,7 +205,11 @@
             <tr>
                 <td></td>
                 <td>
-                    <img src="data:image/png;base64, {!! $url !!} " style="width: 100px">
+                    @if ($url != '')
+                        <img src="data:image/png;base64, {!! $url !!} " style="width: 100px">
+                    @else
+                        <img src="img/placeholder.png" alt="" style="width: 100px">
+                    @endif
                 </td>
             </tr>
             <tr>

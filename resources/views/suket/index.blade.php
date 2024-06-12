@@ -13,9 +13,11 @@
         <br>
 
         <div class="d-flex gap-2">
-            <a class="btn btn-primary" href="{{ route('suket.add') }}">
-                <i class="ri-add-fill me-2"></i>
-                <span>Tambah</span></a>
+            @if (auth()->user()->role_id == 1)
+                <a class="btn btn-primary" href="{{ route('suket.add') }}">
+                    <i class="ri-add-fill me-2"></i>
+                    <span>Tambah</span></a>
+            @endif
             <button class="btn btn-secondary" onclick="reload()">Reload</button>
         </div>
 
@@ -92,7 +94,8 @@
         </script>
         <script>
             function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/preview/" + e, 'preview', 'width=600,height=1000');
+                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/preview/" + e, 'preview',
+                    'width=600,height=1000');
             }
 
             function handleNaik(e) {
