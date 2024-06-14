@@ -46,6 +46,18 @@ function checkNIK() {
                     text: response.pekerjaan_nm
                 }
             });
+            $("#kelurahan").select2("trigger", "select", {
+                data: {
+                    id: response.kelurahan,
+                    text: response.kelurahan_nm
+                }
+            });
+            $("#kecamatan").select2("trigger", "select", {
+                data: {
+                    id: response.kecamatan,
+                    text: response.kecamatan_nm
+                }
+            });
 
             Toastify({
                 text: "Data ditemukan!",
@@ -185,6 +197,38 @@ $(document).ready(function() {
         minimumInputLenght: 2,
         ajax: {
             url: route('status_kwn.index'),
+            dataType: 'json',
+            processResults: function(response) {
+                return {
+                    results: response
+                };
+            },
+        }
+    });
+    $('#kecamatan').select2({
+        theme: "bootstrap-5",
+        width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
+            'style',
+        placeholder: $(this).data('placeholder'),
+        minimumInputLenght: 2,
+        ajax: {
+            url: route('regional.kecamatan'),
+            dataType: 'json',
+            processResults: function(response) {
+                return {
+                    results: response
+                };
+            },
+        }
+    });
+    $('#kelurahan').select2({
+        theme: "bootstrap-5",
+        width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
+            'style',
+        placeholder: $(this).data('placeholder'),
+        minimumInputLenght: 2,
+        ajax: {
+            url: route('regional.kelurahan'),
             dataType: 'json',
             processResults: function(response) {
                 return {

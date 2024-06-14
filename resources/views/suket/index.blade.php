@@ -28,7 +28,8 @@
                 <table id="tableSurat" class="table table-hovered">
                     <thead>
                         <tr>
-                            <th>No Urut</th>
+                            <th>No</th>
+                            <th>No Surat</th>
                             <th>NIK</th>
                             <th>Tanggal</th>
                             <th>Peruntukan</th>
@@ -40,6 +41,8 @@
             </div>
         </div>
     </div>
+
+    <x-esign></x-esign>
     @push('scripts')
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
@@ -56,12 +59,19 @@
                             name: 'no_urut_surat'
                         },
                         {
+                            data: 'no_surat',
+                            name: 'no_surat',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
                             data: 'nik',
                             name: 'nik'
                         },
                         {
                             data: 'tgl_surat',
-                            name: 'tgl_surat'
+                            name: 'tgl_surat',
+                            width: '10%',
                         },
                         {
                             data: 'peruntukan',
@@ -72,7 +82,9 @@
                             // name: 'st',
                             render: function(data, type) {
                                 return `<span style="color:${data.color}">${data.name}</span>`;
-                            }
+                            },
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'action',
@@ -96,6 +108,18 @@
             function handlePreview(e) {
                 window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/preview/" + e, 'preview',
                     'width=600,height=1000');
+            }
+
+            function handleCetak(e) {
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: 'https://esuket.dev/suket/cetak/' + e,
+                    success: function(response) {
+                        window.open(response.file, 'preview',
+                            'width=600,height=1000');
+                    }
+                });
             }
 
             function handleNaik(e) {
@@ -135,6 +159,22 @@
                     }
                 });
             }
+
+            $(function() {
+                $('#esignModal').on('show.bs.modal', function(e) {
+                    let btn = $(e.relatedTarget);
+                    let id = btn.data('id');
+                    let jenis = btn.data('jenis');
+                    let form = $(this).find('form#esignModal');
+                    $(this).find('[name="_id"]').val(id);
+                    $(this).find('[name="jenis"]').val(jenis);
+                    $(this).find('.modal-title').text("Tanda Tangan No Surat : " + btn.data('no_surat'));
+                });
+
+                $('#esignModal').on('hidden.bs.modal', function() {
+                    $(this).find('form#esignModal').trigger('reset');
+                })
+            });
         </script>
     @endpush
 @endsection

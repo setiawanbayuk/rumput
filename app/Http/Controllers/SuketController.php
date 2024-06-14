@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\Pejabat_resource;
+use App\Http\Resources\Skpd_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
@@ -10,7 +11,9 @@ use App\Models\Kewarganegaraan;
 use App\Models\Pejabat;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
+use App\Models\Regional;
 use App\Models\Resident;
+use App\Models\Skpd;
 use App\Models\Status_kwn;
 use App\Models\SuratKeterangan;
 use App\Models\User;
@@ -28,27 +31,39 @@ class SuketController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            // dd(SuratKeterangan::get());
             $data = SuratKeterangan::query();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-                    $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-                    $actionBtn = '
-                        <div class="d-flex gap-1">
-                        ' . ($currentUser->role_id == 1 ? '
-                            <a
-                                class="edit btn btn-warning btn-sm"
-                                href="' . route('suket.edit', ['id' => $row->id]) . '"
-                            >
-                                <i class="ri-pencil-line" data-bs-toggle="tooltip" data-bs-title="Edit" title="Edit"></i>
-                            </a>' : '
-                            <button class="naik btn btn-warning btn-sm" data-bs-toggle="tooltip" data-bs-title="Naikkan" title="Naikkan"
+                    $user = new User_resource(User::with('skpd')->find(Auth::id()));
+                    $tahunSrt = DateTime::createFromFormat('Y-m-d', $row->tgl_surat);
+                    $tglSurat = Carbon::parse($row->tgl_surat)->isoFormat('D MMMM Y');
+                    $nomorSurat = $row->kd_jenis_surat . '/' . $row->no_urut_surat . '/' . $user->skpd->instansi_kode . '/' . $tahunSrt->format('Y');
+
+                    $actionBtn = '<div class="d-flex gap-1">';
+                    if (auth()->user()->role_id == 1) {
+                        $actionBtn .= '<a class="edit btn btn-warning btn-sm"
+                                            href="' . route('suket.edit', ['id' => $row->id]) . '">
+                                            <i class="ri-pencil-line" data-bs-toggle="tooltip" data-bs-title="Edit" title="Edit"></i>
+                                        </a>';
+                    } elseif (auth()->user()->role_id == 3) {
+                        $actionBtn .= '<button class="btn btn-secondary btn-sm"
+                                data-id="' . $row->id . '"
+                                data-no_surat="' . $nomorSurat . '"
+                                data-jenis="suket"
+                                data-bs-toggle="modal"
+                                data-bs-target="#esignModal"
+                        ' . ($row->status != 2 ? ' disabled' : ' ') . '>
+                                <i class="ri-edit-line" data-bs-toggle="tooltip" data-bs-title="Esign" title="Esign"></i>
+                            </button>';
+                    } else {
+                        $actionBtn .= '<button class="naik btn btn-warning btn-sm" data-bs-toggle="tooltip" data-bs-title="Naikkan" title="Naikkan"
                             ' . ($row->status != 1 ? ' disabled' : ' ') . ' onclick="handleNaik(\'' . $row->id . '\')">
                                 <i class="ri-arrow-up-double-fill"></i>
-                            </button>') .
-                        '
-                            ' . ($row->status != 3 ? ' <button class="print btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-title="Cetak" title="Cetak" id="' . $row->id . '"
+                            </button>';
+                    }
+
+                    $actionBtn .= ($row->status != 3 ? ' <button class="print btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-title="Cetak" title="Cetak" id="' . $row->id . '"
                             onclick="handlePreview(\'' . $row->id . '\')">
                                 <i class="ri-eye-line"></i>
                             </button>' : ' <button class="print btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-title="Cetak" title="Cetak" id="' . $row->id . '"
@@ -61,7 +76,15 @@ class SuketController extends Controller
 
                     return $actionBtn;
                 })
-                ->rawColumns(['action'])
+                ->addColumn('no_surat', function($row) {
+                    $user = new User_resource(User::with('skpd')->find(Auth::id()));
+                    $tahunSrt = DateTime::createFromFormat('Y-m-d', $row->tgl_surat);
+                    $tglSurat = Carbon::parse($row->tgl_surat)->isoFormat('D MMMM Y');
+                    $nomorSurat = $row->kd_jenis_surat . '/' . $row->no_urut_surat . '/' . $user->skpd->instansi_kode . '/' . $tahunSrt->format('Y');
+
+                    return $nomorSurat;
+                })
+                ->rawColumns(['action', 'no_surat'])
                 ->make(true);
         };
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
@@ -97,6 +120,8 @@ class SuketController extends Controller
             'agama' => ['required'],
             'pendidikan' => ['required'],
             'pekerjaan' => ['required'],
+            'kecamatan' => ['required'],
+            'kelurahan' => ['required'],
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
@@ -109,6 +134,8 @@ class SuketController extends Controller
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
+        $kecamatan = Regional::find($request->kecamatan);
+        $kelurahan = Regional::find($request->kelurahan);
 
         $datapemohon = serialize([
             'kk' => $request->kk,
@@ -127,6 +154,10 @@ class SuketController extends Controller
             'pendidikan_nm' => $pendidikan->nama,
             'pekerjaan' => $request->pekerjaan,
             'pekerjaan_nm' => $pekerjaan->nama,
+            'kecamatan' => $request->kecamatan,
+            'kecamatan_nm' => $kecamatan->nama,
+            'kelurahan' => $request->kelurahan,
+            'kelurahan_nm' => $kelurahan->nama,
             'alamat' => $request->alamat
         ]);
 
@@ -197,6 +228,8 @@ class SuketController extends Controller
             'agama' => ['required'],
             'pendidikan' => ['required'],
             'pekerjaan' => ['required'],
+            'kecamatan' => ['required'],
+            'kelurahan' => ['required'],
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
@@ -209,6 +242,8 @@ class SuketController extends Controller
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
+        $kecamatan = Regional::find($request->kecamatan);
+        $kelurahan = Regional::find($request->kelurahan);
 
         $suratKeterangan = SuratKeterangan::find($id);
 
@@ -230,6 +265,10 @@ class SuketController extends Controller
                 'pendidikan_nm' => $pendidikan->nama,
                 'pekerjaan' => $request->pekerjaan,
                 'pekerjaan_nm' => $pekerjaan->nama,
+                'kecamatan' => $request->kecamatan,
+                'kecamatan_nm' => $kecamatan->nama,
+                'kelurahan' => $request->kelurahan,
+                'kelurahan_nm' => $kelurahan->nama,
                 'alamat' => $request->alamat
             ]);
 
@@ -318,5 +357,61 @@ class SuketController extends Controller
         // Storage::put($path . '/' . $fileName, $content);
         // $fileLocation = '/storage/pdf/'. date('Y') . '/suket/' . $fileName;
         // return url($fileLocation);
+    }
+
+    public function generate($id)
+    {
+        $surat = SuratKeterangan::find($id);
+        $resident = Resident::where('nik', $surat->nik)->first();
+        $penduduk = unserialize($resident->data);
+        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+
+        // $user = new User_resource(User::with('skpd')->find(Auth::id()));
+
+        $skpd = new Skpd_resource(Skpd::find($surat->id_kel));
+        $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $surat->id_instansi)->first());
+        $tahunSrt = DateTime::createFromFormat('Y-m-d', $surat->tgl_surat);
+        $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
+        $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $skpd->instansi_kode . '/' . $tahunSrt->format('Y');
+
+        $verify = env('APP_URL', 'https://esuket.dev') . '/verify/surat/' . $id;
+        $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
+
+        // $url = '';
+
+        $pdf = Pdf::loadView('suket.pdf', compact(
+            'surat',
+            'penduduk',
+            'user',
+            'nomorSurat',
+            'pejabat',
+            'tglSurat',
+            'url'
+        ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
+        return $pdf->stream();
+        // Storage::disk('local')->makeDirectory('/public/pdf/' . date('Y') . '/suket');
+        // $path = '/public/pdf/' . date('Y') . '/suket';
+        // $fileName = md5($nomorSurat . date("Y-m-d H:i:s")) . '.pdf';
+        // $content = $pdf->download()->getOriginalContent();
+        // Storage::put($path . '/' . $fileName, $content);
+        // $fileLocation = '/storage/pdf/' . date('Y') . '/suket/' . $fileName;
+
+        //SIGN HERE
+
+        // return url($fileLocation);
+    }
+
+    public function cetak($id){
+        $surat = SuratKeterangan::find($id);
+        return response()->json(['file' => asset($surat->file)]);
+    }
+
+    public function save(Request $request){
+        dd($request);
+    }
+
+    public function get(Request $request){
+        $surat = SuratKeterangan::where('nik', $request->nik)->get();
+        return response()->json($surat);
     }
 }

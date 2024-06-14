@@ -26,7 +26,7 @@ Route::get('/', function () {
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 // Route::get('/suket', [SuketController::class, 'index'])->name('suket');
 
-Route::middleware(['auth', 'role:1,4'])->prefix('suket')->group(function(){
+Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function(){
     Route::get('/', [SuketController::class, 'index'])->name('suket.index');
     Route::get('/add', [SuketController::class, 'add'])->name('suket.add');
     Route::post('/', [SuketController::class, 'store'])->name('suket.store');
@@ -34,6 +34,8 @@ Route::middleware(['auth', 'role:1,4'])->prefix('suket')->group(function(){
     Route::post('/update/{id}', [SuketController::class, 'update'])->name('suket.update');
     Route::post('/naik/{id}', [SuketController::class, 'naik'])->name('suket.naik');
     Route::get('/preview/{id}', [SuketController::class, 'preview'])->name('suket.preview');
+    Route::get('/generate/{id}', [SuketController::class, 'generate'])->name('suket.generate');
+    Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
 });
 
 Route::middleware(['auth', 'role:1'])->prefix('sktm')->group(function(){

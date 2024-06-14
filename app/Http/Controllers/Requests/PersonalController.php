@@ -37,6 +37,10 @@ class PersonalController extends Controller
                 'pendidikan_nm' => $dt['pendidikan_nm'],
                 'pekerjaan' => $dt['pekerjaan'],
                 'pekerjaan_nm' => $dt['pekerjaan_nm'],
+                'kecamatan' => $dt['kecamatan'],
+                'kecamatan_nm' => $dt['kecamatan_nm'],
+                'kelurahan' => $dt['kelurahan'],
+                'kelurahan_nm' => $dt['kelurahan_nm'],
                 'alamat' => $dt['alamat']
             ];
             return response()->json($data, 200);

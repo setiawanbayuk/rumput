@@ -20,6 +20,7 @@ class SuratKeterangan extends Model
         'kepada',
         'penandatangan',
         'status',
+        'file',
     ];
 
     protected $appends = ['st'];

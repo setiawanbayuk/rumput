@@ -163,12 +163,12 @@
                     </li> --}}
                 </ul>
                 <div class="sidebar-footer">
-                    <a class="sidebar-link" href="{{ route('logout') }}"
+                    <a class="sidebar-link" data-bs-toggle="tooltip" data-bs-title="Logout" href="{{ route('logout') }}"
                         onclick="event.preventDefault();
                                      document.getElementById('logout-form').submit();">
                         <i class="ri-logout-box-line"></i>
                         <span>
-                            {{ __('Logout') }}
+                            {{ auth()->user()->name }}
                         </span>
                     </a>
 
