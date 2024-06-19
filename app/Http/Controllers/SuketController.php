@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\Pejabat_resource;
+use App\Http\Resources\Regional_resource;
 use App\Http\Resources\Skpd_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Agama;
@@ -76,7 +77,7 @@ class SuketController extends Controller
 
                     return $actionBtn;
                 })
-                ->addColumn('no_surat', function($row) {
+                ->addColumn('no_surat', function ($row) {
                     $user = new User_resource(User::with('skpd')->find(Auth::id()));
                     $tahunSrt = DateTime::createFromFormat('Y-m-d', $row->tgl_surat);
                     $tglSurat = Carbon::parse($row->tgl_surat)->isoFormat('D MMMM Y');
@@ -181,7 +182,6 @@ class SuketController extends Controller
 
         SuratKeterangan::create([
             'id_kel'    => 1,
-            'kd_jenis_surat' => $request->kd_jenis_surat,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
             'kd_instansi' => $request->kd_instansi,
@@ -401,16 +401,54 @@ class SuketController extends Controller
         // return url($fileLocation);
     }
 
-    public function cetak($id){
+    public function cetak($id)
+    {
         $surat = SuratKeterangan::find($id);
         return response()->json(['file' => asset($surat->file)]);
     }
 
-    public function save(Request $request){
-        dd($request);
+    public function save(Request $request)
+    {
+
+        $request->validate([
+            'nik' => ['required', 'min:16'],
+            'keterangan' => ['required', 'max:450'],
+            'peruntukan' => ['required', 'max:100'],
+            'kepada' => ['required'],
+            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+        ]);
+
+        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/suket');
+        $path = '/public/pengantar/' . date('Y') . '/suket';
+        $fileName = $request->file('pengantar')->hashName();
+        $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
+        $request->file('pengantar')->storeAs($path, $fileName);
+
+        $resident = Resident::where('nik', $request->nik)->first();
+        $penduduk = unserialize($resident->data);
+        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+
+        $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
+
+        SuratKeterangan::create([
+            'id_kel'    => 1,
+            'kd_jenis_surat' => 0,
+            'no_urut_surat' => 0,
+            'kd_instansi' => $regional['skpd']->instansi_kode,
+            'tahun' => date('Y'),
+            'tgl_surat' => date('Y-m-d'),
+            'nik' => $request->nik,
+            'keterangan' => $request->keterangan,
+            'peruntukan' => $request->peruntukan,
+            'kepada' => $request->kepada,
+            'status' => 0,
+            'pengantar' => $fileLocation
+        ]);
+        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
     }
 
-    public function get(Request $request){
+    public function get(Request $request)
+    {
         $surat = SuratKeterangan::where('nik', $request->nik)->get();
         return response()->json($surat);
     }

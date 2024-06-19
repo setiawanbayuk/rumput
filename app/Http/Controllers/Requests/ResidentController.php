@@ -4,7 +4,14 @@ namespace App\Http\Controllers\Requests;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Resident_resource;
+use App\Models\Agama;
+use App\Models\Gender;
+use App\Models\Kewarganegaraan;
+use App\Models\Pekerjaan;
+use App\Models\Pendidikan;
+use App\Models\Regional;
 use App\Models\Resident;
+use App\Models\Status_kwn;
 use Illuminate\Http\Request;
 
 class ResidentController extends Controller
@@ -68,5 +75,70 @@ class ResidentController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function simpan(Request $request)
+    {
+        $gender = Gender::find($request->gender);
+        $status_kwn = Status_kwn::find($request->status_kwn);
+        $kewarganegaraan = Kewarganegaraan::find($request->kewarganegaraan);
+        $agama = Agama::find($request->agama);
+        $pendidikan = Pendidikan::find($request->pendidikan);
+        $pekerjaan = Pekerjaan::find($request->pekerjaan);
+        $kecamatan = Regional::find($request->kecamatan);
+        $kelurahan = Regional::find($request->kelurahan);
+
+        $datapemohon = serialize([
+            'kk' => $request->kk,
+            'name' => $request->name,
+            'gender' => $request->gender,
+            'gender_nm' => $gender->nama,
+            'status_kwn' => $request->status_kwn,
+            'status_kwn_nm' => $status_kwn->nama,
+            'kewarganegaraan' => $request->kewarganegaraan,
+            'kewarganegaraan_nm' => $kewarganegaraan->nama,
+            'tempat_lhr' => $request->tempat_lhr,
+            'tgl_lhr' =>  $request->tgl_lhr,
+            'agama' => $request->agama,
+            'agama_nm' => $agama->nama,
+            'pendidikan' => $request->pendidikan,
+            'pendidikan_nm' => $pendidikan->nama,
+            'pekerjaan' => $request->pekerjaan,
+            'pekerjaan_nm' => $pekerjaan->nama,
+            'kecamatan' => $request->kecamatan,
+            'kecamatan_nm' => $kecamatan->nama,
+            'kelurahan' => $request->kelurahan,
+            'kelurahan_nm' => $kelurahan->nama,
+            'alamat' => $request->alamat
+        ]);
+
+
+        $resident = Resident::where('nik', $request->nik)->first();
+
+        if (!$resident) {
+            Resident::create([
+                'nik' => $request->nik,
+                'kk' => $request->kk,
+                'data' => $datapemohon
+            ]);
+
+            return response()->json(['message' => 'Data updated successfully.'], 200);
+        } else {
+            if ($datapemohon != $resident->data) {
+                $resident->update([
+                    'nik' => $request->nik,
+                    'kk' => $request->kk,
+                    'data' => $datapemohon
+                ]);
+
+                return response()->json(['message' => 'Data updated successfully.'], 200);
+            } else {
+
+                return response()->json(['message' => 'Nothing changed.'], 200);
+            }
+        }
+
+
+        return response()->json(['message' => 'Data updated failed.'], 400);
     }
 }

@@ -21,6 +21,7 @@ class SuratKeterangan extends Model
         'penandatangan',
         'status',
         'file',
+        'pengantar'
     ];
 
     protected $appends = ['st'];
@@ -35,8 +36,11 @@ class SuratKeterangan extends Model
         else if ($this->status == 3){
             return ['name' => 'Distujui', 'color' => 'green'];
         }
-        else {
+        else if ($this->status == 4){
             return ['name' => 'Ditolak', 'color' => 'red'];
+        }
+        else {
+            return ['name' => 'Pengajuan', 'color' => 'black'];
         }
     }
 }

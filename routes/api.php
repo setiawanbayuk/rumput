@@ -33,6 +33,13 @@ Route::get('/esign/check/{nik}',[EsignController::class, 'check']);
 Route::post('/esign/sign',[EsignController::class, 'sign']);
 Route::get('/regional/kelurahan',[RegionalController::class, 'kelurahan'])->name('regional.kelurahan');
 Route::get('/regional/kecamatan',[RegionalController::class, 'kecamatan'])->name('regional.kecamatan');
+Route::middleware('auth:sanctum')->prefix('suket')->group(function(){
+    Route::get('/', [SuketController::class, 'get']);
+    Route::post('/', [SuketController::class, 'save']);
+});
+Route::middleware('auth:sanctum')->prefix('resident')->group(function(){
+    Route::post('/simpan', [ResidentController::class, 'simpan']);
+});
 
 Route::resource('agama', AgamaController::class);
 Route::resource('gender', GenderController::class);
@@ -44,6 +51,3 @@ Route::resource('personal', PersonalController::class);
 Route::resource('regional', RegionalController::class);
 Route::resource('resident', ResidentController::class)->middleware('auth:sanctum');
 Route::resource('esign', EsignController::class);
-Route::middleware('auth:sanctum')->prefix('suket')->group(function(){
-    Route::get('/', [SuketController::class, 'get']);
-});

@@ -20,7 +20,8 @@ class Regional_resource extends JsonResource
             'no_kab' => $this->no_kab,
             'no_kec' => $this->no_kec,
             'no_kel' => $this->no_kel,
-            'nama' => $this->nama
+            'nama' => $this->nama,
+            'skpd' => $this->skpd
         ];
     }
 }
