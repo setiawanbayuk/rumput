@@ -43,6 +43,12 @@ class SuketController extends Controller
 
                     $actionBtn = '<div class="d-flex gap-1">';
                     if (auth()->user()->role_id == 1) {
+                        if ($row->status == 0) {
+                            $actionBtn .= ' <button class="btn btn-danger btn-sm" data-bs-toggle="tooltip" data-bs-title="Tolak" title="Tolak" id="' . $row->id . '"
+                            onclick="handleTolak(\'' . $row->id . '\')">
+                                <i class="ri-delete-bin-6-line"></i>
+                            </button>';
+                        }
                         $actionBtn .= '<a class="edit btn btn-warning btn-sm"
                                             href="' . route('suket.edit', ['id' => $row->id]) . '">
                                             <i class="ri-pencil-line" data-bs-toggle="tooltip" data-bs-title="Edit" title="Edit"></i>
@@ -451,5 +457,18 @@ class SuketController extends Controller
     {
         $surat = SuratKeterangan::where('nik', $request->nik)->get();
         return response()->json($surat);
+    }
+
+
+    public function tolak($id)
+    {
+        $suratKeterangan = SuratKeterangan::find($id);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 4]);
+
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
+        }
     }
 }

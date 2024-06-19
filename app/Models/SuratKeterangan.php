@@ -26,20 +26,17 @@ class SuratKeterangan extends Model
 
     protected $appends = ['st'];
 
-    public function getStAttribute(){
-        if ($this->status == 1){
+    public function getStAttribute()
+    {
+        if ($this->status == 1) {
             return ['name' => 'Proses', 'color' => 'blue'];
-        }
-        else if ($this->status == 2){
+        } else if ($this->status == 2) {
             return ['name' => 'Dinaikan', 'color' => 'orange'];
-        }
-        else if ($this->status == 3){
+        } else if ($this->status == 3) {
             return ['name' => 'Distujui', 'color' => 'green'];
-        }
-        else if ($this->status == 4){
+        } else if ($this->status == 4) {
             return ['name' => 'Ditolak', 'color' => 'red'];
-        }
-        else {
+        } else {
             return ['name' => 'Pengajuan', 'color' => 'black'];
         }
     }

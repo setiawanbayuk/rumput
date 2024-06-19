@@ -94,7 +94,8 @@
                         },
                     ],
                     order: [
-                        [3, "desc"]
+                        [3, "desc"],
+                        [0, "desc"]
                     ],
                     pageLength: 10,
                 });
@@ -118,6 +119,64 @@
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
+                    }
+                });
+            }
+
+
+            function handleTolak(e) {
+                console.log(e);
+                let url = "{{ route('suket.tolak', ':id') }}"
+                url = url.replace(':id', e);
+
+                Swal.fire({
+                    title: 'Apakah Anda Yakin?',
+                    text: "Aapakah yakin akan menolak pengajuan dokumen ini?!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.value) {
+                        $.ajax({
+                            type: 'POST',
+                            url: url,
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(response) {
+                                // Toastify({
+                                //     text: response.message,
+                                //     duration: 3000,
+                                //     close: true,
+                                //     gravity: "top", // `top` or `bottom`
+                                //     position: "center", // `left`, `center` or `right`
+                                //     stopOnFocus: true, // Prevents dismissing of toast on hover
+                                //     style: {
+                                //         background: "rgba(25, 135, 84, 1)",
+                                //     },
+                                // }).showToast();
+                                Swal.fire({
+                                    title: 'Pengajuan berhasil ditolak!',
+                                    text: response.message,
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                                $('#tableSurat').DataTable().ajax.reload();
+                            },
+                            error: function(xhr) {
+                                const response = JSON.parse(xhr.responseText);
+                                // console.log('hey error', response.message);
+                                Swal.fire({
+                                    title: 'Ooopppsss...',
+                                    text: response.message,
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        });
                     }
                 });
             }

@@ -36,6 +36,7 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function(){
     Route::get('/preview/{id}', [SuketController::class, 'preview'])->name('suket.preview');
     Route::get('/generate/{id}', [SuketController::class, 'generate'])->name('suket.generate');
     Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
+    Route::post('/tolak/{id}', [SuketController::class, 'tolak'])->name('suket.tolak');
 });
 
 Route::middleware(['auth', 'role:1'])->prefix('sktm')->group(function(){
