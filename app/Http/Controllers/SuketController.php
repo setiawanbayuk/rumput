@@ -18,6 +18,7 @@ use App\Models\Skpd;
 use App\Models\Status_kwn;
 use App\Models\SuratKeterangan;
 use App\Models\User;
+use App\Traits\GetNoSurat;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use DateTime;
@@ -29,6 +30,7 @@ use Yajra\DataTables\DataTables;
 
 class SuketController extends Controller
 {
+    use GetNoSurat;
     public function index()
     {
         if (request()->ajax()) {
@@ -36,60 +38,19 @@ class SuketController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-                    $user = new User_resource(User::with('skpd')->find(Auth::id()));
-                    $tahunSrt = DateTime::createFromFormat('Y-m-d', $row->tgl_surat);
-                    $tglSurat = Carbon::parse($row->tgl_surat)->isoFormat('D MMMM Y');
-                    $nomorSurat = $row->kd_jenis_surat . '/' . $row->no_urut_surat . '/' . $user->skpd->instansi_kode . '/' . $tahunSrt->format('Y');
-
-                    $actionBtn = '<div class="d-flex gap-1">';
+                    $nomorSurat = $this->getNoSrt($row);$id = $row->id;
+                    $route = 'suket.edit';
+                    $status = $row->status;
                     if (auth()->user()->role_id == 1) {
-                        if ($row->status == 0) {
-                            $actionBtn .= ' <button class="btn btn-danger btn-sm" data-bs-toggle="tooltip" data-bs-title="Tolak" title="Tolak" id="' . $row->id . '"
-                            onclick="handleTolak(\'' . $row->id . '\')">
-                                <i class="ri-delete-bin-6-line"></i>
-                            </button>';
-                        }
-                        $actionBtn .= '<a class="edit btn btn-warning btn-sm"
-                                            href="' . route('suket.edit', ['id' => $row->id]) . '">
-                                            <i class="ri-pencil-line" data-bs-toggle="tooltip" data-bs-title="Edit" title="Edit"></i>
-                                        </a>';
-                    } elseif (auth()->user()->role_id == 3) {
-                        $actionBtn .= '<button class="btn btn-secondary btn-sm"
-                                data-id="' . $row->id . '"
-                                data-no_surat="' . $nomorSurat . '"
-                                data-jenis="suket"
-                                data-bs-toggle="modal"
-                                data-bs-target="#esignModal"
-                        ' . ($row->status != 2 ? ' disabled' : ' ') . '>
-                                <i class="ri-edit-line" data-bs-toggle="tooltip" data-bs-title="Esign" title="Esign"></i>
-                            </button>';
+                        return view('includes.button-admin', compact('id', 'route', 'status'));
+                    } else if (auth()->user()->role_id == 3) {
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat'));
                     } else {
-                        $actionBtn .= '<button class="naik btn btn-warning btn-sm" data-bs-toggle="tooltip" data-bs-title="Naikkan" title="Naikkan"
-                            ' . ($row->status != 1 ? ' disabled' : ' ') . ' onclick="handleNaik(\'' . $row->id . '\')">
-                                <i class="ri-arrow-up-double-fill"></i>
-                            </button>';
+                        return view('includes.button-verifikator', compact('id', 'status'));
                     }
-
-                    $actionBtn .= ($row->status != 3 ? ' <button class="print btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-title="Cetak" title="Cetak" id="' . $row->id . '"
-                            onclick="handlePreview(\'' . $row->id . '\')">
-                                <i class="ri-eye-line"></i>
-                            </button>' : ' <button class="print btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-title="Cetak" title="Cetak" id="' . $row->id . '"
-                            onclick="handleCetak(\'' . $row->id . '\')">
-                                <i class="ri-printer-line"></i>
-                            </button>') . '
-
-                        </div>
-                    ';
-
-                    return $actionBtn;
                 })
                 ->addColumn('no_surat', function ($row) {
-                    $user = new User_resource(User::with('skpd')->find(Auth::id()));
-                    $tahunSrt = DateTime::createFromFormat('Y-m-d', $row->tgl_surat);
-                    $tglSurat = Carbon::parse($row->tgl_surat)->isoFormat('D MMMM Y');
-                    $nomorSurat = $row->kd_jenis_surat . '/' . $row->no_urut_surat . '/' . $user->skpd->instansi_kode . '/' . $tahunSrt->format('Y');
-
-                    return $nomorSurat;
+                    return $this->getNoSrt($row);
                 })
                 ->rawColumns(['action', 'no_surat'])
                 ->make(true);
@@ -132,8 +93,18 @@ class SuketController extends Controller
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required']
+            'kepada' => ['required'],
+            'pengantar' => ['mimes:jpg,bmp,png']
         ]);
+
+        if ($request->file('pengantar')) {
+            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/suket');
+            $path = '/public/pengantar/' . date('Y') . '/suket';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
+
 
         $gender = Gender::find($request->gender);
         $status_kwn = Status_kwn::find($request->status_kwn);
@@ -197,7 +168,8 @@ class SuketController extends Controller
             'keterangan' => $request->keterangan,
             'peruntukan' => $request->peruntukan,
             'kepada' => $request->kepada,
-            'status' => 1
+            'status' => 1,
+            'pengantar' => $request->file('pengantar') ? $fileLocation : ''
         ]);
 
         return redirect()->route('suket.index');
@@ -210,12 +182,16 @@ class SuketController extends Controller
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
 
         $suratKeterangan = SuratKeterangan::find($id);
+        if ($suratKeterangan->no_urut_surat == 0) {
+            $no_urut_surat = SuratKeterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+            $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
+        }
+
         return view('suket.edit', compact('title', 'currentUser', 'suratKeterangan'));
     }
 
     public function update(Request $request, $id)
     {
-        // dd($id);
         $request->validate([
             'kd_jenis_surat' => ['required'],
             'kd_jenis_surat' => ['required'],
@@ -239,8 +215,17 @@ class SuketController extends Controller
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required']
+            'kepada' => ['required'],
+            'pengantar' => ['mimes:jpg,bmp,png']
         ]);
+
+        if ($request->file('pengantar')) {
+            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/suket');
+            $path = '/public/pengantar/' . date('Y') . '/suket';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
 
         $gender = Gender::find($request->gender);
         $status_kwn = Status_kwn::find($request->status_kwn);
@@ -306,7 +291,8 @@ class SuketController extends Controller
                 'keterangan' => $request->keterangan,
                 'peruntukan' => $request->peruntukan,
                 'kepada' => $request->kepada,
-                'status' => 1
+                'status' => 1,
+                'pengantar' => $request->file('pengantar') ? $fileLocation : ''
             ]);
 
             return redirect()->route('suket.index');
@@ -356,13 +342,6 @@ class SuketController extends Controller
             'url'
         ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
         return $pdf->stream();
-        // Storage::disk('local')->makeDirectory('/public/pdf/' . date('Y') . '/suket');
-        // $path = '/public/pdf/' . date('Y') . '/suket';
-        // $fileName = md5($nomorSurat . date("Y-m-d H:i:s")) . '.pdf';
-        // $content = $pdf->download()->getOriginalContent();
-        // Storage::put($path . '/' . $fileName, $content);
-        // $fileLocation = '/storage/pdf/'. date('Y') . '/suket/' . $fileName;
-        // return url($fileLocation);
     }
 
     public function generate($id)
@@ -371,9 +350,6 @@ class SuketController extends Controller
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-
-        // $user = new User_resource(User::with('skpd')->find(Auth::id()));
-
         $skpd = new Skpd_resource(Skpd::find($surat->id_kel));
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $surat->id_instansi)->first());
         $tahunSrt = DateTime::createFromFormat('Y-m-d', $surat->tgl_surat);
@@ -382,8 +358,6 @@ class SuketController extends Controller
 
         $verify = env('APP_URL', 'https://esuket.dev') . '/verify/surat/' . $id;
         $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
-
-        // $url = '';
 
         $pdf = Pdf::loadView('suket.pdf', compact(
             'surat',
@@ -395,16 +369,6 @@ class SuketController extends Controller
             'url'
         ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
         return $pdf->stream();
-        // Storage::disk('local')->makeDirectory('/public/pdf/' . date('Y') . '/suket');
-        // $path = '/public/pdf/' . date('Y') . '/suket';
-        // $fileName = md5($nomorSurat . date("Y-m-d H:i:s")) . '.pdf';
-        // $content = $pdf->download()->getOriginalContent();
-        // Storage::put($path . '/' . $fileName, $content);
-        // $fileLocation = '/storage/pdf/' . date('Y') . '/suket/' . $fileName;
-
-        //SIGN HERE
-
-        // return url($fileLocation);
     }
 
     public function cetak($id)

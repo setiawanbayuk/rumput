@@ -10,7 +10,7 @@
                     <div class="card-header bg-transparent py-3 text-center fw-bold">{{ $title }}</div>
 
                     <div class="card-body">
-                        <form method="POST" action="{{ route('suket.update', ['id' => $suratKeterangan->id]) }}">
+                        <form method="POST" enctype="multipart/form-data" action="{{ route('suket.update', ['id' => $suratKeterangan->id]) }}">
                             @csrf
 
                             <div class="row justify-content-center">
@@ -67,6 +67,21 @@
                                                     <strong>{{ $message }}</strong>
                                                 </span>
                                             @enderror
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <label for="kepada"
+                                            class="col-md-3 col-form-label text-md-end">{{ __('Surat Pengantar') }}</label>
+                                        <div class="col-md-8">
+                                            <input class="form-control" type="file" id="pengantar" name="pengantar"
+                                                accept="image/jpeg, image/jpg, image/png">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <label class="col-md-3 col-form-label text-md-end"></label>
+                                        <div class="col-md-8">
+                                            <img src="{{ asset($suratKeterangan->pengantar) }}" alt="" height="100%" style="max-height: 400px">
                                         </div>
                                     </div>
                                     <div class="row mb-0">

@@ -10,7 +10,7 @@
                     <div class="card-header bg-transparent py-3 text-center fw-bold">{{ $title }}</div>
 
                     <div class="card-body">
-                        <form method="POST" enctype="multipart/form-data" action="{{ route('suket.store') }}">
+                        <form method="POST" enctype="multipart/form-data" action="{{ route('skbn.store') }}">
                             @csrf
 
                             <div class="row justify-content-center">
@@ -24,7 +24,6 @@
                                     <x-pribadi></x-pribadi>
                                 </div>
                                 <div class="col-md-6 border-start">
-                                    <x-keterangan></x-keterangan>
                                     <x-kepada></x-kepada>
                                     <x-peruntukan></x-peruntukan>
                                     <x-pengantar></x-pengantar>

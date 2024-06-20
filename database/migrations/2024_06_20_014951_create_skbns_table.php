@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('surat_keterangans', function (Blueprint $table) {
+        Schema::create('skbns', function (Blueprint $table) {
             $table->id();
             $table->integer('id_kel');
             $table->string('kd_jenis_surat');
@@ -19,7 +19,6 @@ return new class extends Migration
             $table->date('tgl_surat');
             $table->string('nik');
             $table->text('peruntukan');
-            $table->text('keterangan');
             $table->string('kepada');
             $table->string('status');
             $table->string('file')->nullable();
@@ -33,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('surat_keterangans');
+        Schema::dropIfExists('skbns');
     }
 };

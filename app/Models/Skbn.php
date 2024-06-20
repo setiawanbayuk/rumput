@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class SuratKeterangan extends Model
+class Skbn extends Model
 {
     use HasFactory;
 
@@ -16,7 +16,6 @@ class SuratKeterangan extends Model
         'tgl_surat',
         'nik',
         'peruntukan',
-        'keterangan',
         'kepada',
         'penandatangan',
         'status',

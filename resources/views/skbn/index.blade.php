@@ -14,7 +14,7 @@
 
         <div class="d-flex gap-2">
             @if (auth()->user()->role_id == 1)
-                <a class="btn btn-primary" href="{{ route('suket.add') }}">
+                <a class="btn btn-primary" href="{{ route('skbn.add') }}">
                     <i class="ri-add-fill me-2"></i>
                     <span>Tambah</span></a>
             @endif
@@ -53,7 +53,7 @@
                     processing: true,
                     serverSide: true,
                     ordering: true,
-                    ajax: "{{ route('suket.index') }}",
+                    ajax: "{{ route('skbn.index') }}",
                     columns: [{
                             data: 'no_urut_surat',
                             name: 'no_urut_surat'
@@ -107,7 +107,7 @@
         </script>
         <script>
             function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/preview/" + e, 'preview',
+                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/skbn/preview/" + e, 'preview',
                     'width=600,height=1000');
             }
 
@@ -115,7 +115,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: 'https://esuket.dev/suket/cetak/' + e,
+                    url: 'https://esuket.dev/skbn/cetak/' + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
@@ -126,7 +126,7 @@
 
             function handleTolak(e) {
                 console.log(e);
-                let url = "{{ route('suket.tolak', ':id') }}"
+                let url = "{{ route('skbn.tolak', ':id') }}"
                 url = url.replace(':id', e);
 
                 Swal.fire({
@@ -171,7 +171,7 @@
 
             function handleNaik(e) {
                 console.log(e);
-                let url = "{{ route('suket.naik', ':id') }}"
+                let url = "{{ route('skbn.naik', ':id') }}"
                 url = url.replace(':id', e);
 
                 $.ajax({
