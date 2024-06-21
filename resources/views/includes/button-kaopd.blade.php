@@ -1,12 +1,12 @@
 <div class="d-flex gap-1">
-    <x-btn-sign>
+    <x-btnsign>
         <x-slot:id>{{ $id }}</x-slot:id>
         <x-slot:nomorSurat>{{ $nomorSurat }}</x-slot:nomorSurat>
         <x-slot:status>{{ $status }}</x-slot:status>
-    </x-btn-sign>
+    </x-btnsign>
     @if ($status != 3)
-        <x-btn-preview><x-slot:id>{{ $id }}</x-slot:id></x-btn-preview>
+        <x-btnpreview><x-slot:id>{{ $id }}</x-slot:id></x-btnpreview>
     @else
-        <x-btn-cetak><x-slot:id>{{ $id }}</x-slot:id></x-btn-cetak>
+        <x-btncetak><x-slot:id>{{ $id }}</x-slot:id></x-btncetak>
     @endif
 </div>

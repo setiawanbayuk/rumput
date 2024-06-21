@@ -12,6 +12,7 @@
         "laravel/tinker": "^2.9",
         "laravel/ui": "^4.5",
         "simplesoftwareio/simple-qrcode": "^4.2",
+        "spatie/laravel-activitylog": "^4.8",
         "tightenco/ziggy": "^2.2",
         "yajra/laravel-datatables-oracle": "^11.1"
     },

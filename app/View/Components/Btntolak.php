@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class Btn-tolak extends Component
+class Btntolak extends Component
 {
     /**
      * Create a new component instance.
@@ -21,6 +21,6 @@ class Btn-tolak extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.btn-tolak');
+        return view('components.btntolak');
     }
 }

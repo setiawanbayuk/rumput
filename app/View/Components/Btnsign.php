@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class Btn-naik extends Component
+class Btnsign extends Component
 {
     /**
      * Create a new component instance.
@@ -21,6 +21,6 @@ class Btn-naik extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.btn-naik');
+        return view('components.btnsign');
     }
 }

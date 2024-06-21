@@ -1,14 +1,14 @@
 <div class="d-flex gap-1">
     @if ($status == 0)
-        <x-btn-tolak><x-slot:id>{{ $id }}</x-slot:id></x-btn-tolak>
+        <x-btntolak><x-slot:id>{{ $id }}</x-slot:id></x-btntolak>
     @endif
     @if ($status != 3)
-        <x-btn-edit>
+        <x-btnedit>
             <x-slot:route>{{ $route }}</x-slot:route>
             <x-slot:id>{{ $id }}</x-slot:id>
-        </x-btn-edit>
-        <x-btn-preview><x-slot:id>{{ $id }}</x-slot:id></x-btn-preview>
+        </x-btnedit>
+        <x-btnpreview><x-slot:id>{{ $id }}</x-slot:id></x-btnpreview>
     @else
-        <x-btn-cetak><x-slot:id>{{ $id }}</x-slot:id></x-btn-cetak>
+        <x-btncetak><x-slot:id>{{ $id }}</x-slot:id></x-btncetak>
     @endif
 </div>
