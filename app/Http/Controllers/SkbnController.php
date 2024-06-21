@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Pejabat_resource;
+use App\Http\Resources\Regional_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
 use App\Models\Kewarganegaraan;
+use App\Models\Pejabat;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
 use App\Models\Regional;
@@ -14,6 +17,7 @@ use App\Models\Skbn;
 use App\Models\Status_kwn;
 use App\Models\User;
 use App\Traits\GetNoSurat;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
@@ -36,10 +40,11 @@ class SkbnController extends Controller
                     $id = $row->id;
                     $route = 'skbn.edit';
                     $status = $row->status;
+                    $jenis = 'skbn';
                     if (auth()->user()->role_id == 1) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
                     } else if (auth()->user()->role_id == 3) {
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat'));
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis'));
                     } else {
                         return view('includes.button-verifikator', compact('id', 'status'));
                     }
@@ -98,7 +103,6 @@ class SkbnController extends Controller
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skbn/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
         }
-
 
         $gender = Gender::find($request->gender);
         $status_kwn = Status_kwn::find($request->status_kwn);
@@ -170,10 +174,8 @@ class SkbnController extends Controller
 
     public function edit($id)
     {
-        // dd($id);
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-
         $suratKeterangan = Skbn::find($id);
         if ($suratKeterangan->no_urut_surat == 0) {
             $no_urut_surat = Skbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
@@ -289,6 +291,101 @@ class SkbnController extends Controller
             return redirect()->route('skbn.index');
         } else {
             return redirect()->route('skbn.index');
+        }
+    }
+
+    public function naik($id)
+    {
+        $suratKeterangan = Skbn::find($id);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 2]);
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
+        }
+    }
+
+    public function preview($id)
+    {
+        $surat = Skbn::find($id);
+        $resident = Resident::where('nik', $surat->nik)->first();
+        $penduduk = unserialize($resident->data);
+        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+        $user = new User_resource(User::with('skpd')->find(Auth::id()));
+        $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
+        $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
+        $nomorSurat = $this->getNoSrt($surat);
+        $url = '';
+        $pdf = Pdf::loadView('skbn.pdf', compact(
+            'surat',
+            'penduduk',
+            'user',
+            'nomorSurat',
+            'pejabat',
+            'tglSurat',
+            'url'
+        ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
+        return $pdf->stream();
+    }
+
+    public function cetak($id)
+    {
+        $surat = Skbn::find($id);
+        return response()->json(['file' => asset($surat->file)]);
+    }
+
+    public function save(Request $request)
+    {
+        $request->validate([
+            'nik' => ['required', 'min:16'],
+            'keterangan' => ['required', 'max:450'],
+            'peruntukan' => ['required', 'max:100'],
+            'kepada' => ['required'],
+            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+        ]);
+
+        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/suket');
+        $path = '/public/pengantar/' . date('Y') . '/suket';
+        $fileName = $request->file('pengantar')->hashName();
+        $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
+        $request->file('pengantar')->storeAs($path, $fileName);
+        $resident = Resident::where('nik', $request->nik)->first();
+        $penduduk = unserialize($resident->data);
+        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+        $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
+
+        Skbn::create([
+            'id_kel'    => 1,
+            'kd_jenis_surat' => 0,
+            'no_urut_surat' => 0,
+            'kd_instansi' => $regional['skpd']->instansi_kode,
+            'tahun' => date('Y'),
+            'tgl_surat' => date('Y-m-d'),
+            'nik' => $request->nik,
+            'keterangan' => $request->keterangan,
+            'peruntukan' => $request->peruntukan,
+            'kepada' => $request->kepada,
+            'status' => 0,
+            'pengantar' => $fileLocation
+        ]);
+        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+    }
+
+    public function get(Request $request)
+    {
+        $surat = Skbn::where('nik', $request->nik)->get();
+        return response()->json($surat);
+    }
+
+
+    public function tolak($id)
+    {
+        $suratKeterangan = Skbn::find($id);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 4]);
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
         }
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Resources\Skpd_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Pejabat;
 use App\Models\Resident;
+use App\Models\Skbn;
 use App\Models\Skpd;
 use App\Models\SuratKeterangan;
 use App\Models\User;
@@ -104,6 +105,8 @@ class EsignController extends Controller
         parse_str($request->getContent(), $output);
         if ($output['jenis'] == 'suket') {
             $surat = SuratKeterangan::find($output['_id']);
+        } else if ($output['jenis'] == 'skbn') {
+            $surat = Skbn::find($output['_id']);
         }
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
@@ -121,7 +124,7 @@ class EsignController extends Controller
         $fileName = md5($nomorSurat . date("Y-m-d H:i:s")) . '.pdf';
 
 
-        $pdf = Pdf::loadView('suket.pdf', compact(
+        $pdf = Pdf::loadView($output['jenis'] . '.pdf', compact(
             'surat',
             'penduduk',
             'nomorSurat',
@@ -130,11 +133,11 @@ class EsignController extends Controller
             'url'
         ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
         // return $pdf->stream();
-        Storage::disk('local')->makeDirectory('/public/pdf/' . date('Y') . '/suket');
-        $path = '/public/pdf/' . date('Y') . '/suket';
+        Storage::disk('local')->makeDirectory('/public/pdf/' . date('Y') . '/' . $output['jenis']);
+        $path = '/public/pdf/' . date('Y') . '/' . $output['jenis'];
         $content = $pdf->download()->getOriginalContent();
         Storage::put($path . '/' . $fileName, $content);
-        $fileLocation = '/storage/pdf/' . date('Y') . '/suket/' . $fileName;
+        $fileLocation = '/storage/pdf/' . date('Y') . '/' . $output['jenis'] . '/' . $fileName;
 
         $data = array(
             'nik' => $output['nik'],

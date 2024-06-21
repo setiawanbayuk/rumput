@@ -38,13 +38,15 @@ class SuketController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-                    $nomorSurat = $this->getNoSrt($row);$id = $row->id;
+                    $nomorSurat = $this->getNoSrt($row);
+                    $id = $row->id;
                     $route = 'suket.edit';
                     $status = $row->status;
+                    $jenis = 'suket';
                     if (auth()->user()->role_id == 1) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
                     } else if (auth()->user()->role_id == 3) {
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat'));
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis'));
                     } else {
                         return view('includes.button-verifikator', compact('id', 'status'));
                     }
@@ -303,7 +305,6 @@ class SuketController extends Controller
 
     public function naik($id)
     {
-
         $suratKeterangan = SuratKeterangan::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 2]);
@@ -323,41 +324,13 @@ class SuketController extends Controller
 
         $user = new User_resource(User::with('skpd')->find(Auth::id()));
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
-        $tahunSrt = DateTime::createFromFormat('Y-m-d', $surat->tgl_surat);
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
-        $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $user->skpd->instansi_kode . '/' . $tahunSrt->format('Y');
+        $nomorSurat = $this->getNoSrt($surat);
 
         // $verify = env('APP_URL', 'https://esuket.dev') . '/verify/surat/' . $id;
         // $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
 
         $url = '';
-
-        $pdf = Pdf::loadView('suket.pdf', compact(
-            'surat',
-            'penduduk',
-            'user',
-            'nomorSurat',
-            'pejabat',
-            'tglSurat',
-            'url'
-        ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
-        return $pdf->stream();
-    }
-
-    public function generate($id)
-    {
-        $surat = SuratKeterangan::find($id);
-        $resident = Resident::where('nik', $surat->nik)->first();
-        $penduduk = unserialize($resident->data);
-        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-        $skpd = new Skpd_resource(Skpd::find($surat->id_kel));
-        $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $surat->id_instansi)->first());
-        $tahunSrt = DateTime::createFromFormat('Y-m-d', $surat->tgl_surat);
-        $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
-        $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $skpd->instansi_kode . '/' . $tahunSrt->format('Y');
-
-        $verify = env('APP_URL', 'https://esuket.dev') . '/verify/surat/' . $id;
-        $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
 
         $pdf = Pdf::loadView('suket.pdf', compact(
             'surat',
@@ -379,7 +352,6 @@ class SuketController extends Controller
 
     public function save(Request $request)
     {
-
         $request->validate([
             'nik' => ['required', 'min:16'],
             'keterangan' => ['required', 'max:450'],

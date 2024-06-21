@@ -25,7 +25,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::get('/home', [HomeController::class, 'index'])->name('home');
-// Route::get('/suket', [SuketController::class, 'index'])->name('suket');
+Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
+Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');
 
 Route::middleware(['auth', 'role:1,3,4'])->prefix('skbn')->group(function(){
     Route::get('/', [SkbnController::class, 'index'])->name('skbn.index');
@@ -35,7 +36,6 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skbn')->group(function(){
     Route::post('/update/{id}', [SkbnController::class, 'update'])->name('skbn.update');
     Route::post('/naik/{id}', [SkbnController::class, 'naik'])->name('skbn.naik');
     Route::get('/preview/{id}', [SkbnController::class, 'preview'])->name('skbn.preview');
-    Route::get('/generate/{id}', [SkbnController::class, 'generate'])->name('skbn.generate');
     Route::get('/cetak/{id}', [SkbnController::class, 'cetak'])->name('skbn.cetak');
     Route::post('/tolak/{id}', [SkbnController::class, 'tolak'])->name('skbn.tolak');
 });
@@ -48,7 +48,6 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function(){
     Route::post('/update/{id}', [SuketController::class, 'update'])->name('suket.update');
     Route::post('/naik/{id}', [SuketController::class, 'naik'])->name('suket.naik');
     Route::get('/preview/{id}', [SuketController::class, 'preview'])->name('suket.preview');
-    Route::get('/generate/{id}', [SuketController::class, 'generate'])->name('suket.generate');
     Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
     Route::post('/tolak/{id}', [SuketController::class, 'tolak'])->name('suket.tolak');
 });
