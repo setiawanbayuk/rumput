@@ -165,7 +165,7 @@
             <tr>
                 <td class="kiri">j. Keterangan</td>
                 <td class="titik">:</td>
-                <td>{{ $surat->keterangan }}</td>
+                <td>Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.</td>
             </tr>
         </table>
     </div>
