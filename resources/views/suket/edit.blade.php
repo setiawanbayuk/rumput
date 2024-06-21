@@ -24,60 +24,11 @@
                                     <x-pribadi></x-pribadi>
                                 </div>
                                 <div class="col-md-6 border-start">
-                                    <div class="row mb-3">
-                                        <label for="keterangan"
-                                            class="col-md-3 col-form-label text-md-end">{{ __('Keterangan') }}</label>
 
-                                        <div class="col-md-8">
-                                            <textarea class="form-control @error('keterangan') is-invalid @enderror" id="keterangan" name="keterangan"
-                                                autocomplete="keterangan" autofocus>{{ old('keterangan', $suratKeterangan->keterangan) }}</textarea>
-                                            @error('keterangan')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label for="peruntukan"
-                                            class="col-md-3 col-form-label text-md-end">{{ __('Peruntukan') }}</label>
-
-                                        <div class="col-md-8">
-                                            <textarea class="form-control @error('peruntukan') is-invalid @enderror" id="peruntukan" name="peruntukan"
-                                                autocomplete="peruntukan" autofocus>{{ old('peruntukan', $suratKeterangan->peruntukan) }}</textarea>
-                                            @error('peruntukan')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label for="kepada"
-                                            class="col-md-3 col-form-label text-md-end">{{ __('Diberikan Kepada') }}</label>
-
-                                        <div class="col-md-8">
-                                            <input id="kepada" type="kepada"
-                                                class="form-control @error('kepada') is-invalid @enderror" name="kepada"
-                                                value="{{ old('kepada', $suratKeterangan->kepada) }}"
-                                                autocomplete="kepada">
-
-                                            @error('kepada')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label for="kepada"
-                                            class="col-md-3 col-form-label text-md-end">{{ __('Surat Pengantar') }}</label>
-                                        <div class="col-md-8">
-                                            <input class="form-control" type="file" id="pengantar" name="pengantar"
-                                                accept="image/jpeg, image/jpg, image/png">
-                                        </div>
-                                    </div>
-
+                                    <x-keterangan><x-slot:keterangan>{{ $suratKeterangan->keterangan }}</x-slot:keterangan></x-keterangan>
+                                    <x-kepada><x-slot:kepada>{{ $suratKeterangan->kepada }}</x-slot:kepada></x-kepada>
+                                    <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
+                                    <x-pengantar></x-pengantar>
                                     <div class="row mb-3">
                                         <label class="col-md-3 col-form-label text-md-end"></label>
                                         <div class="col-md-8">

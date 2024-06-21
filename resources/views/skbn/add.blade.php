@@ -24,8 +24,8 @@
                                     <x-pribadi></x-pribadi>
                                 </div>
                                 <div class="col-md-6 border-start">
-                                    <x-kepada></x-kepada>
-                                    <x-peruntukan></x-peruntukan>
+                                    <x-kepada><x-slot:kepada></x-slot:kepada></x-kepada>
+                                    <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
                                     <x-pengantar></x-pengantar>
                                     <div class="row mb-0">
                                         <div class="col-md-8 offset-md-3">

@@ -5,7 +5,7 @@
     <div class="col-md-8">
         <input id="kepada" type="kepada"
             class="form-control @error('kepada') is-invalid @enderror" name="kepada"
-            value="{{ old('kepada') }}" autocomplete="kepada">
+            value="{{ old('kepada', $kepada) }}" autocomplete="kepada">
 
         @error('kepada')
             <span class="invalid-feedback" role="alert">

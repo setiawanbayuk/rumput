@@ -4,7 +4,7 @@
 
     <div class="col-md-8">
         <textarea class="form-control @error('peruntukan') is-invalid @enderror" id="peruntukan" name="peruntukan"
-            autocomplete="peruntukan" autofocus>{{ old('peruntukan') }}</textarea>
+            autocomplete="peruntukan" autofocus>{{ old('peruntukan', $peruntukan) }}</textarea>
         @error('peruntukan')
             <span class="invalid-feedback" role="alert">
                 <strong>{{ $message }}</strong>
