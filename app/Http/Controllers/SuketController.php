@@ -9,6 +9,7 @@ use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
 use App\Models\Kewarganegaraan;
+use App\Models\Log_surat;
 use App\Models\Pejabat;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
@@ -159,7 +160,7 @@ class SuketController extends Controller
             }
         }
 
-        SuratKeterangan::create([
+        $suket = SuratKeterangan::create([
             'id_kel'    => 1,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
@@ -172,6 +173,14 @@ class SuketController extends Controller
             'kepada' => $request->kepada,
             'status' => 1,
             'pengantar' => $request->file('pengantar') ? $fileLocation : ''
+        ]);
+
+        Log_surat::create([
+            'nik' => $request->nik,
+            'tabel_surat' => 'surat_keterangans',
+            'nama_surat' => 'SURAT KETERANGAN',
+            'id_surat' => $suket->id,
+            'status_surat' => 1,
         ]);
 
         return redirect()->route('suket.index');
@@ -309,6 +318,14 @@ class SuketController extends Controller
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 2]);
 
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_keterangans',
+                'nama_surat' => 'SURAT KETERANGAN',
+                'id_surat' => $id,
+                'status_surat' => 2,
+            ]);
+
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
             return response()->json(['message' => 'Data updated failed.']);
@@ -372,7 +389,7 @@ class SuketController extends Controller
 
         $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
 
-        SuratKeterangan::create([
+        $suket = SuratKeterangan::create([
             'id_kel'    => 1,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
@@ -386,12 +403,24 @@ class SuketController extends Controller
             'status' => 0,
             'pengantar' => $fileLocation
         ]);
+
+        Log_surat::create([
+            'nik' => $request->nik,
+            'tabel_surat' => 'surat_keterangans',
+            'nama_surat' => 'SURAT KETERANGAN',
+            'id_surat' => $suket->id,
+            'status_surat' => 0,
+        ]);
+
+
         return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
     }
 
     public function get(Request $request)
     {
-        $surat = SuratKeterangan::where('nik', $request->nik)->get();
+        $surat = SuratKeterangan::with(['history' => function ($query) {
+            return $query->where('tabel_surat', 'surat_keterangans');
+        }])->where('nik', $request->nik)->get();
         return response()->json($surat);
     }
 
@@ -401,6 +430,14 @@ class SuketController extends Controller
         $suratKeterangan = SuratKeterangan::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 4]);
+
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_keterangans',
+                'nama_surat' => 'SURAT KETERANGAN',
+                'id_surat' => $id,
+                'status_surat' => 4,
+            ]);
 
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {

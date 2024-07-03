@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Pejabat_resource;
 use App\Http\Resources\Skpd_resource;
 use App\Http\Resources\User_resource;
+use App\Models\Log_surat;
 use App\Models\Pejabat;
 use App\Models\Resident;
 use App\Models\Skbn;
@@ -105,8 +106,12 @@ class EsignController extends Controller
         parse_str($request->getContent(), $output);
         if ($output['jenis'] == 'suket') {
             $surat = SuratKeterangan::find($output['_id']);
+            $tabel_surat = 'surat_keterangans';
+            $nama_surat = 'SURAT KETERANGAN';
         } else if ($output['jenis'] == 'skbn') {
             $surat = Skbn::find($output['_id']);
+            $tabel_surat = 'skbns';
+            $nama_surat = 'SURAT KETERANGAN BELUM MENIKAH';
         }
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
@@ -160,6 +165,14 @@ class EsignController extends Controller
         fclose($fp);
 
         $surat->update(['status' => 3, 'file' => $fileLocation]);
+
+        Log_surat::create([
+            'nik' => $surat->nik,
+            'tabel_surat' => $tabel_surat,
+            'nama_surat' => $nama_surat,
+            'id_surat' => $surat->id,
+            'status_surat' => 3,
+        ]);
 
         return response()->json(['message' => 'Esign done successfully.', 'status' => 'success'], 200);
     }

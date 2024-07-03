@@ -11,8 +11,10 @@ use App\Http\Controllers\Requests\PersonalController;
 use App\Http\Controllers\Requests\RegionalController;
 use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\Requests\StatusPerkawinanController;
+use App\Http\Controllers\SkbnController;
 use App\Http\Controllers\SuketController;
 use App\Models\Regional;
+use App\Models\Skbn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -33,10 +35,16 @@ Route::get('/esign/check/{nik}',[EsignController::class, 'check']);
 Route::post('/esign/sign',[EsignController::class, 'sign']);
 Route::get('/regional/kelurahan',[RegionalController::class, 'kelurahan'])->name('regional.kelurahan');
 Route::get('/regional/kecamatan',[RegionalController::class, 'kecamatan'])->name('regional.kecamatan');
+
 Route::middleware('auth:sanctum')->prefix('suket')->group(function(){
     Route::get('/', [SuketController::class, 'get']);
     Route::post('/', [SuketController::class, 'save']);
 });
+Route::middleware('auth:sanctum')->prefix('skbn')->group(function(){
+    Route::get('/', [SkbnController::class, 'get']);
+    Route::post('/', [SkbnController::class, 'save']);
+});
+
 Route::middleware('auth:sanctum')->prefix('resident')->group(function(){
     Route::post('/simpan', [ResidentController::class, 'simpan']);
 });

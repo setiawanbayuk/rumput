@@ -8,6 +8,7 @@ use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
 use App\Models\Kewarganegaraan;
+use App\Models\Log_surat;
 use App\Models\Pejabat;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
@@ -155,7 +156,7 @@ class SkbnController extends Controller
             }
         }
 
-        Skbn::create([
+        $suket = Skbn::create([
             'id_kel' => 1,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
@@ -167,6 +168,14 @@ class SkbnController extends Controller
             'kepada' => $request->kepada,
             'status' => 1,
             'pengantar' => $request->file('pengantar') ? $fileLocation : ''
+        ]);
+
+        Log_surat::create([
+            'nik' => $request->nik,
+            'tabel_surat' => 'skbns',
+            'nama_surat' => 'SURAT KETERANGAN BELUM MENIKAH',
+            'id_surat' => $suket->id,
+            'status_surat' => 1,
         ]);
 
         return redirect()->route('skbn.index');
@@ -299,6 +308,13 @@ class SkbnController extends Controller
         $suratKeterangan = Skbn::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 2]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'skbns',
+                'nama_surat' => 'SURAT KETERANGAN BELUM MENIKAH',
+                'id_surat' => $id,
+                'status_surat' => 2,
+            ]);
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
             return response()->json(['message' => 'Data updated failed.']);
@@ -354,7 +370,7 @@ class SkbnController extends Controller
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
 
-        Skbn::create([
+        $suket = Skbn::create([
             'id_kel'    => 1,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
@@ -368,12 +384,22 @@ class SkbnController extends Controller
             'status' => 0,
             'pengantar' => $fileLocation
         ]);
+
+        Log_surat::create([
+            'nik' => $suket->nik,
+            'tabel_surat' => 'skbns',
+            'nama_surat' => 'SURAT KETERANGAN BELUM MENIKAH',
+            'id_surat' => $suket->id,
+            'status_surat' => 0,
+        ]);
         return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
     }
 
     public function get(Request $request)
     {
-        $surat = Skbn::where('nik', $request->nik)->get();
+        $surat = Skbn::with(['history' => function ($query) {
+            return $query->where('tabel_surat', 'skbns');
+        }])->where('nik', $request->nik)->get();
         return response()->json($surat);
     }
 
@@ -383,6 +409,13 @@ class SkbnController extends Controller
         $suratKeterangan = Skbn::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 4]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'skbns',
+                'nama_surat' => 'SURAT KETERANGAN BELUM MENIKAH',
+                'id_surat' => $id,
+                'status_surat' => 4,
+            ]);
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
             return response()->json(['message' => 'Data updated failed.']);

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Awobaz\Compoships\Compoships;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class SuratKeterangan extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, Compoships;
 
     protected $fillable = [
         'id_kel',
@@ -25,6 +27,12 @@ class SuratKeterangan extends Model
         'file',
         'pengantar'
     ];
+
+
+    public function history(): HasMany
+    {
+        return $this->hasMany(Log_surat::class, ['nik', 'id_surat'], ['nik', 'id']);
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
