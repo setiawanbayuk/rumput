@@ -15,7 +15,11 @@ class AgamaController extends Controller
      */
     public function index(Request $request)
     {
-        $agama = Agama::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        if (isset($request->id)) {
+            $agama = Agama::where('id', $request->id)->paginate();
+        } else {
+            $agama = Agama::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        }
         $data = Agama_resource::collection($agama);
         return response()->json($data, 200);
     }
@@ -69,7 +73,8 @@ class AgamaController extends Controller
         //
     }
 
-    public function splp(){
+    public function splp()
+    {
         $response = Http::get('https://api-splp.layanan.go.id/kodefikasi-umum/1.0/Agama');
         $hasil = $response->json();
 

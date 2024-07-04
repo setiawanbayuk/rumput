@@ -46,18 +46,30 @@ function checkNIK() {
                     text: response.pekerjaan_nm
                 }
             });
-            $("#kelurahan").select2("trigger", "select", {
+            $("#provinsi").select2("trigger", "select", {
                 data: {
-                    id: response.kelurahan,
-                    text: response.kelurahan_nm
+                    id: response.provinsi,
+                    text: response.provinsi_nm
                 }
             });
-            $("#kecamatan").select2("trigger", "select", {
-                data: {
-                    id: response.kecamatan,
-                    text: response.kecamatan_nm
-                }
-            });
+            // $("#kabko").select2("trigger", "select", {
+            //     data: {
+            //         id: response.kabko,
+            //         text: response.kabko_nm
+            //     }
+            // });
+            // $("#kelurahan").select2("trigger", "select", {
+            //     data: {
+            //         id: response.kelurahan,
+            //         text: response.kelurahan_nm
+            //     }
+            // });
+            // $("#kecamatan").select2("trigger", "select", {
+            //     data: {
+            //         id: response.kecamatan,
+            //         text: response.kecamatan_nm
+            //     }
+            // });
 
             Toastify({
                 text: "Data ditemukan!",
@@ -85,6 +97,9 @@ function checkNIK() {
 
 }
 $(document).ready(function() {
+    let provinsi_id = '';
+    let kabko_id = '';
+    let kecamatan_id = '';
     $('#gender').select2({
         theme: "bootstrap-5",
         width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
@@ -205,14 +220,14 @@ $(document).ready(function() {
             },
         }
     });
-    $('#kecamatan').select2({
+    $('#provinsi').select2({
         theme: "bootstrap-5",
         width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
             'style',
         placeholder: $(this).data('placeholder'),
         minimumInputLenght: 2,
         ajax: {
-            url: route('regional.kecamatan'),
+            url: route('provinsi.index'),
             dataType: 'json',
             processResults: function(response) {
                 return {
@@ -221,20 +236,62 @@ $(document).ready(function() {
             },
         }
     });
-    $('#kelurahan').select2({
-        theme: "bootstrap-5",
-        width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
+    $('#provinsi').change(function() {
+        provinsi_id = $(this).val();
+        $('#kabko').select2({
+            theme: "bootstrap-5",
+            width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
             'style',
-        placeholder: $(this).data('placeholder'),
-        minimumInputLenght: 2,
-        ajax: {
-            url: route('regional.kelurahan'),
-            dataType: 'json',
-            processResults: function(response) {
-                return {
-                    results: response
-                };
-            },
-        }
+            placeholder: $(this).data('placeholder'),
+            minimumInputLenght: 2,
+            ajax: {
+                url: "https://esuket.dev/api/kabko?kode_provinsi=" + provinsi_id,
+                dataType: 'json',
+                processResults: function(response) {
+                    return {
+                        results: response
+                    };
+                },
+            }
+        });
+    });
+    $('#kabko').change(function() {
+        kabko_id = $(this).val();
+        $('#kecamatan').select2({
+            theme: "bootstrap-5",
+            width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
+                'style',
+            placeholder: $(this).data('placeholder'),
+            minimumInputLenght: 2,
+            ajax: {
+                url: "https://esuket.dev/api/kecamatan?kode_kabkota=" + kabko_id, //route('regional.kecamatan'),
+                dataType: 'json',
+                processResults: function(response) {
+                    return {
+                        results: response
+                    };
+                },
+            }
+        });
+    });
+
+    $('#kecamatan').change(function() {
+        kecamatan_id = $(this).val();
+        $('#kelurahan').select2({
+            theme: "bootstrap-5",
+            width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' :
+                'style',
+            placeholder: $(this).data('placeholder'),
+            minimumInputLenght: 2,
+            ajax: {
+                url: "https://esuket.dev/api/kelurahan?kode_kecamatan=" + kecamatan_id, //route('regional.kelurahan'),
+                dataType: 'json',
+                processResults: function(response) {
+                    return {
+                        results: response
+                    };
+                },
+            }
+        });
     });
 });

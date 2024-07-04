@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Requests;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Gender_resource;
-use App\Models\Gender;
+use App\Http\Resources\Kelurahan_resource;
+use App\Models\Kelurahan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
-class GenderController extends Controller
+class KelurahanController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -16,11 +16,11 @@ class GenderController extends Controller
     public function index(Request $request)
     {
         if (isset($request->id)) {
-            $gender = Gender::where('id', $request->id)->paginate();
+            $kelurahan = Kelurahan::where('id', $request->id)->paginate();
         } else {
-            $gender = Gender::where('nama', 'like', '%' . $request->q . '%')->paginate();
+            $kelurahan = Kelurahan::where('kode_kecamatan', $request->kode_kecamatan)->where('nama', 'like', '%' . $request->q . '%')->paginate();
         }
-        $data = Gender_resource::collection($gender);
+        $data = Kelurahan_resource::collection($kelurahan);
         return response()->json($data, 200);
     }
 
@@ -72,19 +72,20 @@ class GenderController extends Controller
         //
     }
 
-    public function splp(){
-        $response = Http::get('https://api-splp.layanan.go.id/kodefikasi-umum/1.0/JenisKelamin');
+    public function splp()
+    {
+        $response = Http::get('https://api-splp.layanan.go.id/master_data_desakelurahan/2.0/');
         $hasil = $response->json();
-
-        $agama = array();
-
-        foreach ($hasil['JenisKelamin']['records'] as $key => $value) {
-            $agama[] = [
-                'id' => $value[1],
-                'nama' => strtoupper($value[2])
-            ];
-        };
-        Gender::truncate();
-        Gender::insert($agama);
+        $provinsi = array();
+        foreach ($hasil['data'] as $key => $value) {
+            $provinsi[] = ['id' => $value['kode_desa_kelurahan'], 'kode_provinsi' => $value['kode_provinsi'], 'kode_kabkota' => $value['kode_kabkota'], 'kode_kecamatan' => $value['kode_kecamatan'], 'nama' => strtoupper($value['nama_desa_kelurahan'])];
+        }
+        $collection = collect($provinsi);
+        $chunks = $collection->chunk(100);
+        $chunks->toArray();
+        Kelurahan::truncate();
+        foreach ($chunks as $chunk) {
+            Kelurahan::insert($chunk->toArray());
+        }
     }
 }

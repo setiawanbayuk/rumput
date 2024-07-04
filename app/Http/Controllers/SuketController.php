@@ -8,11 +8,15 @@ use App\Http\Resources\Skpd_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
+use App\Models\Kabko;
+use App\Models\Kecamatan;
+use App\Models\Kelurahan;
 use App\Models\Kewarganegaraan;
 use App\Models\Log_surat;
 use App\Models\Pejabat;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
+use App\Models\Provinsi;
 use App\Models\Regional;
 use App\Models\Resident;
 use App\Models\Skpd;
@@ -115,8 +119,10 @@ class SuketController extends Controller
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
-        $kecamatan = Regional::find($request->kecamatan);
-        $kelurahan = Regional::find($request->kelurahan);
+        $provinsi = Provinsi::find($request->provinsi);
+        $kabko = Kabko::find($request->kabko);
+        $kecamatan = Kecamatan::find($request->kecamatan);
+        $kelurahan = Kelurahan::find($request->kelurahan);
 
         $datapemohon = serialize([
             'kk' => $request->kk,
@@ -135,6 +141,10 @@ class SuketController extends Controller
             'pendidikan_nm' => $pendidikan->nama,
             'pekerjaan' => $request->pekerjaan,
             'pekerjaan_nm' => $pekerjaan->nama,
+            'provinsi' => $request->provinsi,
+            'provinsi_nm' => $provinsi->nama,
+            'kabko' => $request->kabko,
+            'kabko_nm' => $kabko->nama,
             'kecamatan' => $request->kecamatan,
             'kecamatan_nm' => $kecamatan->nama,
             'kelurahan' => $request->kelurahan,

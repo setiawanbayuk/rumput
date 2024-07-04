@@ -14,7 +14,11 @@ class StatusPerkawinanController extends Controller
      */
     public function index(Request $request)
     {
-        $status_kwn = Status_kwn::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        if (isset($request->id)) {
+            $status_kwn = Status_kwn::where('id', $request->id)->paginate();
+        } else {
+            $status_kwn = Status_kwn::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        }
         $data = Status_perkawinan_resource::collection($status_kwn);
         return response()->json($data, 200);
     }

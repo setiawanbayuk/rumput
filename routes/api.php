@@ -4,10 +4,14 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Requests\AgamaController;
 use App\Http\Controllers\Requests\EsignController;
 use App\Http\Controllers\Requests\GenderController;
+use App\Http\Controllers\Requests\KabkoController;
+use App\Http\Controllers\Requests\KecamatanController;
+use App\Http\Controllers\Requests\KelurahanController;
 use App\Http\Controllers\Requests\KewarganegaraanController;
 use App\Http\Controllers\Requests\PekerjaanController;
 use App\Http\Controllers\Requests\PendidikanController;
 use App\Http\Controllers\Requests\PersonalController;
+use App\Http\Controllers\Requests\ProvinsiController;
 use App\Http\Controllers\Requests\RegionalController;
 use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\Requests\StatusPerkawinanController;
@@ -31,6 +35,10 @@ Route::prefix('auth')->group(function(){
 
 Route::get('/agama/splp',[AgamaController::class, 'splp']);
 Route::get('/gender/splp',[GenderController::class, 'splp']);
+Route::get('/provinsi/splp',[ProvinsiController::class, 'splp']);
+Route::get('/kabko/splp',[KabkoController::class, 'splp']);
+Route::get('/kecamatan/splp',[KecamatanController::class, 'splp']);
+Route::get('/kelurahan/splp',[KelurahanController::class, 'splp']);
 Route::get('/esign/check/{nik}',[EsignController::class, 'check']);
 Route::post('/esign/sign',[EsignController::class, 'sign']);
 Route::get('/regional/kelurahan',[RegionalController::class, 'kelurahan'])->name('regional.kelurahan');
@@ -59,3 +67,8 @@ Route::resource('personal', PersonalController::class);
 Route::resource('regional', RegionalController::class);
 Route::resource('resident', ResidentController::class)->middleware('auth:sanctum');
 Route::resource('esign', EsignController::class);
+Route::resource('provinsi', ProvinsiController::class);
+Route::resource('kabko', KabkoController::class);
+Route::resource('kecamatan', KecamatanController::class);
+Route::resource('kelurahan', KelurahanController::class);
+

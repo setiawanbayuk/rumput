@@ -14,7 +14,11 @@ class PendidikanController extends Controller
      */
     public function index(Request $request)
     {
-        $pendidikan = Pendidikan::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        if (isset($request->id)) {
+            $pendidikan = Pendidikan::where('id', $request->id)->paginate();
+        } else {
+            $pendidikan = Pendidikan::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        }
         $data = Pendidikan_resource::collection($pendidikan);
         return response()->json($data, 200);
     }

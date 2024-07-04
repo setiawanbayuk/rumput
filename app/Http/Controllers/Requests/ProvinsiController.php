@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Requests;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Kewarganegaraan_resource;
-use App\Models\Kewarganegaraan;
+use App\Http\Resources\Provinsi_resource;
+use App\Models\Provinsi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
-class KewarganegaraanController extends Controller
+class ProvinsiController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,11 +16,11 @@ class KewarganegaraanController extends Controller
     public function index(Request $request)
     {
         if (isset($request->id)) {
-            $kewarganegaraan = Kewarganegaraan::where('id', $request->id)->paginate();
+            $provinsi = Provinsi::where('id', $request->id)->paginate();
         } else {
-            $kewarganegaraan = Kewarganegaraan::where('nama', 'like', '%' . $request->q . '%')->paginate();
+            $provinsi = Provinsi::where('nama', 'like', '%' . $request->q . '%')->paginate();
         }
-        $data = Kewarganegaraan_resource::collection($kewarganegaraan);
+        $data = Provinsi_resource::collection($provinsi);
         return response()->json($data, 200);
     }
 
@@ -69,5 +70,18 @@ class KewarganegaraanController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function splp()
+    {
+        $response = Http::get('https://api-splp.layanan.go.id/master_data_wilayah_provinsi/2.0/');
+        $hasil = $response->json();
+        $provinsi = array();
+        foreach ($hasil['data'] as $key => $value) {
+            $provinsi[] = ['id' => $value['kode_provinsi'], 'nama' => $value['nama_provinsi']];
+        }
+
+        Provinsi::truncate();
+        Provinsi::insert($provinsi);
     }
 }

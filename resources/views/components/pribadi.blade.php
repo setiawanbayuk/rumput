@@ -152,6 +152,36 @@
             @enderror
         </div>
     </div>
+
+    <div class="row mb-3">
+        <label for="provinsi" class="col-md-3 col-form-label text-md-end">{{ __('Provinsi') }}</label>
+
+        <div class="col-md-8">
+            <select class="form-control @error('provinsi') is-invalid @enderror" id="provinsi" name="provinsi"
+                data-placeholder="Provinsi">
+            </select>
+            @error('provinsi')
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+            @enderror
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label for="kabko" class="col-md-3 col-form-label text-md-end">{{ __('Kabupaten/Kota') }}</label>
+
+        <div class="col-md-8">
+            <select class="form-control @error('kabko') is-invalid @enderror" id="kabko" name="kabko"
+                data-placeholder="Kabupaten/Kota">
+            </select>
+            @error('kabko')
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+            @enderror
+        </div>
+    </div>
     <div class="row mb-3">
         <label for="kecamatan" class="col-md-3 col-form-label text-md-end">{{ __('Kecamatan') }}</label>
 

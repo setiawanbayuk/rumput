@@ -14,7 +14,11 @@ class PekerjaanController extends Controller
      */
     public function index(Request $request)
     {
-        $pekerjaan = Pekerjaan::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        if (isset($request->id)) {
+            $pekerjaan = Pekerjaan::where('id', $request->id)->paginate();
+        } else {
+            $pekerjaan = Pekerjaan::where('nama', 'like', '%' . $request->q . '%')->paginate();
+        }
         $data = Pekerjaan_resource::collection($pekerjaan);
         return response()->json($data, 200);
     }
