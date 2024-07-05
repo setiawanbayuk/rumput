@@ -16,6 +16,7 @@ use App\Models\Provinsi;
 use App\Models\Regional;
 use App\Models\Resident;
 use App\Models\Status_kwn;
+use App\Models\StatusKwn;
 use Illuminate\Http\Request;
 
 class ResidentController extends Controller
@@ -84,7 +85,7 @@ class ResidentController extends Controller
     public function simpan(Request $request)
     {
         $gender = Gender::find($request->gender);
-        $status_kwn = Status_kwn::find($request->status_kwn);
+        $status_kwn = StatusKwn::find($request->status_kwn);
         $kewarganegaraan = Kewarganegaraan::find($request->kewarganegaraan);
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);

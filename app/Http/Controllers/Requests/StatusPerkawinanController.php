@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Requests;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Status_perkawinan_resource;
 use App\Models\Status_kwn;
+use App\Models\StatusKwn;
 use Illuminate\Http\Request;
 
 class StatusPerkawinanController extends Controller
@@ -15,9 +16,9 @@ class StatusPerkawinanController extends Controller
     public function index(Request $request)
     {
         if (isset($request->id)) {
-            $status_kwn = Status_kwn::where('id', $request->id)->paginate();
+            $status_kwn = StatusKwn::where('id', $request->id)->paginate();
         } else {
-            $status_kwn = Status_kwn::where('nama', 'like', '%' . $request->q . '%')->paginate();
+            $status_kwn = StatusKwn::where('nama', 'like', '%' . $request->q . '%')->paginate();
         }
         $data = Status_perkawinan_resource::collection($status_kwn);
         return response()->json($data, 200);

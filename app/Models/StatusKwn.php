@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Status_kwn extends Model
+class StatusKwn extends Model
 {
     use HasFactory;
 }
