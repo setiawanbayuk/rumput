@@ -7,15 +7,20 @@ use App\Http\Resources\Regional_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
+use App\Models\Kabko;
+use App\Models\Kecamatan;
+use App\Models\Kelurahan;
 use App\Models\Kewarganegaraan;
 use App\Models\Log_surat;
 use App\Models\Pejabat;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
+use App\Models\Provinsi;
 use App\Models\Regional;
 use App\Models\Resident;
 use App\Models\Skbn;
 use App\Models\Status_kwn;
+use App\Models\Surat_skbn;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -33,7 +38,7 @@ class SkbnController extends Controller
     {
 
         if (request()->ajax()) {
-            $data = Skbn::query();
+            $data = Surat_skbn::query();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
@@ -64,7 +69,7 @@ class SkbnController extends Controller
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        $no_urut_surat = Skbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+        $no_urut_surat = Surat_skbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
         return view('skbn.add', compact('title', 'currentUser', 'no_urut_surat'));
     }
@@ -111,8 +116,10 @@ class SkbnController extends Controller
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
-        $kecamatan = Regional::find($request->kecamatan);
-        $kelurahan = Regional::find($request->kelurahan);
+        $provinsi = Provinsi::find($request->provinsi);
+        $kabko = Kabko::find($request->kabko);
+        $kecamatan = Kecamatan::find($request->kecamatan);
+        $kelurahan = Kelurahan::find($request->kelurahan);
 
         $datapemohon = serialize([
             'kk' => $request->kk,
@@ -131,6 +138,10 @@ class SkbnController extends Controller
             'pendidikan_nm' => $pendidikan->nama,
             'pekerjaan' => $request->pekerjaan,
             'pekerjaan_nm' => $pekerjaan->nama,
+            'provinsi' => $request->provinsi,
+            'provinsi_nm' => $provinsi->nama,
+            'kabko' => $request->kabko,
+            'kabko_nm' => $kabko->nama,
             'kecamatan' => $request->kecamatan,
             'kecamatan_nm' => $kecamatan->nama,
             'kelurahan' => $request->kelurahan,
@@ -156,7 +167,7 @@ class SkbnController extends Controller
             }
         }
 
-        $suket = Skbn::create([
+        $suket = Surat_skbn::create([
             'id_kel' => 1,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
@@ -185,9 +196,9 @@ class SkbnController extends Controller
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        $suratKeterangan = Skbn::find($id);
+        $suratKeterangan = Surat_skbn::find($id);
         if ($suratKeterangan->no_urut_surat == 0) {
-            $no_urut_surat = Skbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+            $no_urut_surat = Surat_skbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
 
@@ -236,12 +247,15 @@ class SkbnController extends Controller
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
-        $kecamatan = Regional::find($request->kecamatan);
-        $kelurahan = Regional::find($request->kelurahan);
+        $provinsi = Provinsi::find($request->provinsi);
+        $kabko = Kabko::find($request->kabko);
+        $kecamatan = Kecamatan::find($request->kecamatan);
+        $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $suratKeterangan = Skbn::find($id);
+        $suratKeterangan = Surat_skbn::find($id);
 
         if ($suratKeterangan) {
+
             $datapemohon = serialize([
                 'kk' => $request->kk,
                 'name' => $request->name,
@@ -259,6 +273,10 @@ class SkbnController extends Controller
                 'pendidikan_nm' => $pendidikan->nama,
                 'pekerjaan' => $request->pekerjaan,
                 'pekerjaan_nm' => $pekerjaan->nama,
+                'provinsi' => $request->provinsi,
+                'provinsi_nm' => $provinsi->nama,
+                'kabko' => $request->kabko,
+                'kabko_nm' => $kabko->nama,
                 'kecamatan' => $request->kecamatan,
                 'kecamatan_nm' => $kecamatan->nama,
                 'kelurahan' => $request->kelurahan,
@@ -305,7 +323,7 @@ class SkbnController extends Controller
 
     public function naik($id)
     {
-        $suratKeterangan = Skbn::find($id);
+        $suratKeterangan = Surat_skbn::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 2]);
             Log_surat::create([
@@ -323,7 +341,7 @@ class SkbnController extends Controller
 
     public function preview($id)
     {
-        $surat = Skbn::find($id);
+        $surat = Surat_skbn::find($id);
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
@@ -346,7 +364,7 @@ class SkbnController extends Controller
 
     public function cetak($id)
     {
-        $surat = Skbn::find($id);
+        $surat = Surat_skbn::find($id);
         return response()->json(['file' => asset($surat->file)]);
     }
 
@@ -370,7 +388,7 @@ class SkbnController extends Controller
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
 
-        $suket = Skbn::create([
+        $suket = Surat_skbn::create([
             'id_kel'    => 1,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
@@ -397,7 +415,7 @@ class SkbnController extends Controller
 
     public function get(Request $request)
     {
-        $surat = Skbn::with(['history' => function ($query) {
+        $surat = Surat_skbn::with(['history' => function ($query) {
             return $query->where('tabel_surat', 'skbns');
         }])->where('nik', $request->nik)->get();
         return response()->json($surat);
@@ -406,7 +424,7 @@ class SkbnController extends Controller
 
     public function tolak($id)
     {
-        $suratKeterangan = Skbn::find($id);
+        $suratKeterangan = Surat_skbn::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 4]);
             Log_surat::create([

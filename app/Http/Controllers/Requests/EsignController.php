@@ -9,9 +9,9 @@ use App\Http\Resources\User_resource;
 use App\Models\Log_surat;
 use App\Models\Pejabat;
 use App\Models\Resident;
-use App\Models\Skbn;
 use App\Models\Skpd;
-use App\Models\SuratKeterangan;
+use App\Models\Surat_keterangan;
+use App\Models\Surat_skbn;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -105,11 +105,11 @@ class EsignController extends Controller
     {
         parse_str($request->getContent(), $output);
         if ($output['jenis'] == 'suket') {
-            $surat = SuratKeterangan::find($output['_id']);
+            $surat = Surat_keterangan::find($output['_id']);
             $tabel_surat = 'surat_keterangans';
             $nama_surat = 'SURAT KETERANGAN';
         } else if ($output['jenis'] == 'skbn') {
-            $surat = Skbn::find($output['_id']);
+            $surat = Surat_skbn::find($output['_id']);
             $tabel_surat = 'skbns';
             $nama_surat = 'SURAT KETERANGAN BELUM MENIKAH';
         }

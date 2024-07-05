@@ -21,7 +21,7 @@ use App\Models\Regional;
 use App\Models\Resident;
 use App\Models\Skpd;
 use App\Models\Status_kwn;
-use App\Models\SuratKeterangan;
+use App\Models\Surat_keterangan;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -39,7 +39,7 @@ class SuketController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            $data = SuratKeterangan::query();
+            $data = Surat_keterangan::query();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
@@ -70,7 +70,7 @@ class SuketController extends Controller
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        $no_urut_surat = SuratKeterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+        $no_urut_surat = Surat_keterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
         return view('suket.add', compact('title', 'currentUser', 'no_urut_surat'));
     }
@@ -170,7 +170,7 @@ class SuketController extends Controller
             }
         }
 
-        $suket = SuratKeterangan::create([
+        $suket = Surat_keterangan::create([
             'id_kel'    => 1,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
@@ -202,9 +202,9 @@ class SuketController extends Controller
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
 
-        $suratKeterangan = SuratKeterangan::find($id);
+        $suratKeterangan = Surat_keterangan::find($id);
         if ($suratKeterangan->no_urut_surat == 0) {
-            $no_urut_surat = SuratKeterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+            $no_urut_surat = Surat_keterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
 
@@ -248,42 +248,49 @@ class SuketController extends Controller
             $request->file('pengantar')->storeAs($path, $fileName);
         }
 
+
         $gender = Gender::find($request->gender);
         $status_kwn = Status_kwn::find($request->status_kwn);
         $kewarganegaraan = Kewarganegaraan::find($request->kewarganegaraan);
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
-        $kecamatan = Regional::find($request->kecamatan);
-        $kelurahan = Regional::find($request->kelurahan);
+        $provinsi = Provinsi::find($request->provinsi);
+        $kabko = Kabko::find($request->kabko);
+        $kecamatan = Kecamatan::find($request->kecamatan);
+        $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $suratKeterangan = SuratKeterangan::find($id);
+        $suratKeterangan = Surat_keterangan::find($id);
 
         if ($suratKeterangan) {
-            $datapemohon = serialize([
-                'kk' => $request->kk,
-                'name' => $request->name,
-                'gender' => $request->gender,
-                'gender_nm' => $gender->nama,
-                'status_kwn' => $request->status_kwn,
-                'status_kwn_nm' => $status_kwn->nama,
-                'kewarganegaraan' => $request->kewarganegaraan,
-                'kewarganegaraan_nm' => $kewarganegaraan->nama,
-                'tempat_lhr' => $request->tempat_lhr,
-                'tgl_lhr' =>  $request->tgl_lhr,
-                'agama' => $request->agama,
-                'agama_nm' => $agama->nama,
-                'pendidikan' => $request->pendidikan,
-                'pendidikan_nm' => $pendidikan->nama,
-                'pekerjaan' => $request->pekerjaan,
-                'pekerjaan_nm' => $pekerjaan->nama,
-                'kecamatan' => $request->kecamatan,
-                'kecamatan_nm' => $kecamatan->nama,
-                'kelurahan' => $request->kelurahan,
-                'kelurahan_nm' => $kelurahan->nama,
-                'alamat' => $request->alamat
-            ]);
 
+        $datapemohon = serialize([
+            'kk' => $request->kk,
+            'name' => $request->name,
+            'gender' => $request->gender,
+            'gender_nm' => $gender->nama,
+            'status_kwn' => $request->status_kwn,
+            'status_kwn_nm' => $status_kwn->nama,
+            'kewarganegaraan' => $request->kewarganegaraan,
+            'kewarganegaraan_nm' => $kewarganegaraan->nama,
+            'tempat_lhr' => $request->tempat_lhr,
+            'tgl_lhr' =>  $request->tgl_lhr,
+            'agama' => $request->agama,
+            'agama_nm' => $agama->nama,
+            'pendidikan' => $request->pendidikan,
+            'pendidikan_nm' => $pendidikan->nama,
+            'pekerjaan' => $request->pekerjaan,
+            'pekerjaan_nm' => $pekerjaan->nama,
+            'provinsi' => $request->provinsi,
+            'provinsi_nm' => $provinsi->nama,
+            'kabko' => $request->kabko,
+            'kabko_nm' => $kabko->nama,
+            'kecamatan' => $request->kecamatan,
+            'kecamatan_nm' => $kecamatan->nama,
+            'kelurahan' => $request->kelurahan,
+            'kelurahan_nm' => $kelurahan->nama,
+            'alamat' => $request->alamat
+        ]);
             $resident = Resident::where('nik', $request->nik)->first();
 
             if (!$resident) {
@@ -324,7 +331,7 @@ class SuketController extends Controller
 
     public function naik($id)
     {
-        $suratKeterangan = SuratKeterangan::find($id);
+        $suratKeterangan = Surat_keterangan::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 2]);
 
@@ -344,7 +351,7 @@ class SuketController extends Controller
 
     public function preview($id)
     {
-        $surat = SuratKeterangan::find($id);
+        $surat = Surat_keterangan::find($id);
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
@@ -373,7 +380,7 @@ class SuketController extends Controller
 
     public function cetak($id)
     {
-        $surat = SuratKeterangan::find($id);
+        $surat = Surat_keterangan::find($id);
         return response()->json(['file' => asset($surat->file)]);
     }
 
@@ -399,7 +406,7 @@ class SuketController extends Controller
 
         $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
 
-        $suket = SuratKeterangan::create([
+        $suket = Surat_keterangan::create([
             'id_kel'    => 1,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
@@ -428,7 +435,7 @@ class SuketController extends Controller
 
     public function get(Request $request)
     {
-        $surat = SuratKeterangan::with(['history' => function ($query) {
+        $surat = Surat_keterangan::with(['history' => function ($query) {
             return $query->where('tabel_surat', 'surat_keterangans');
         }])->where('nik', $request->nik)->get();
         return response()->json($surat);
@@ -437,7 +444,7 @@ class SuketController extends Controller
 
     public function tolak($id)
     {
-        $suratKeterangan = SuratKeterangan::find($id);
+        $suratKeterangan = Surat_keterangan::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 4]);
 
