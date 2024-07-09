@@ -27,6 +27,12 @@
                                     <x-kepada><x-slot:kepada>{{ $suratKeterangan->kepada }}</x-slot:kepada></x-kepada>
                                     <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
                                     <x-pengantar></x-pengantar>
+                                    <div class="row mb-3">
+                                        <label class="col-md-3 col-form-label text-md-end"></label>
+                                        <div class="col-md-8">
+                                            <img src="{{ asset($suratKeterangan->pengantar) }}" alt="" height="100%" style="max-height: 400px">
+                                        </div>
+                                    </div>
                                     <div class="row mb-0">
                                         <div class="col-md-8 offset-md-3">
                                             <button type="submit" class="btn btn-primary">

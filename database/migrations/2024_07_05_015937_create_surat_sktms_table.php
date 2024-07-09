@@ -21,7 +21,8 @@ return new class extends Migration
             $table->text('peruntukan');
             $table->string('kategori');
             $table->string('kepada')->nullable();
-            $table->string('kepada_ttl')->nullable();
+            $table->string('kepada_tempat_lhr')->nullable();
+            $table->string('kepada_tgl_lhr')->nullable();
             $table->string('kepada_gender')->nullable();
             $table->string('kepada_sekolah')->nullable();
             $table->string('kepada_kelas')->nullable();

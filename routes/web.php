@@ -7,6 +7,7 @@ use App\Http\Controllers\Requests\PekerjaanController;
 use App\Http\Controllers\Requests\PendidikanController;
 use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\SkbnController;
+use App\Http\Controllers\SkdomController;
 use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SuketController;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +25,7 @@ Route::get('/', function () {
     }
     return view('welcome');
 });
-Route::get('/home', [HomeController::class, 'index'])->name('home');
+Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->name('home');
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
 Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');
 
@@ -52,7 +53,28 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function(){
     Route::post('/tolak/{id}', [SuketController::class, 'tolak'])->name('suket.tolak');
 });
 
-Route::middleware(['auth', 'role:1'])->prefix('sktm')->group(function(){
+
+Route::middleware(['auth', 'role:1,3,4'])->prefix('sktm')->group(function(){
     Route::get('/', [SktmController::class, 'index'])->name('sktm.index');
+    Route::get('/add', [SktmController::class, 'add'])->name('sktm.add');
+    Route::post('/', [SktmController::class, 'store'])->name('sktm.store');
+    Route::get('/edit/{id}', [SktmController::class, 'edit'])->name('sktm.edit');
+    Route::post('/update/{id}', [SktmController::class, 'update'])->name('sktm.update');
+    Route::post('/naik/{id}', [SktmController::class, 'naik'])->name('sktm.naik');
+    Route::get('/preview/{id}', [SktmController::class, 'preview'])->name('sktm.preview');
+    Route::get('/cetak/{id}', [SktmController::class, 'cetak'])->name('sktm.cetak');
+    Route::post('/tolak/{id}', [SktmController::class, 'tolak'])->name('sktm.tolak');
+});
+
+Route::middleware(['auth', 'role:1,3,4'])->prefix('skdom')->group(function(){
+    Route::get('/', [SkdomController::class, 'index'])->name('skdom.index');
+    Route::get('/add', [SkdomController::class, 'add'])->name('skdom.add');
+    Route::post('/', [SkdomController::class, 'store'])->name('skdom.store');
+    Route::get('/edit/{id}', [SkdomController::class, 'edit'])->name('skdom.edit');
+    Route::post('/update/{id}', [SkdomController::class, 'update'])->name('skdom.update');
+    Route::post('/naik/{id}', [SkdomController::class, 'naik'])->name('skdom.naik');
+    Route::get('/preview/{id}', [SkdomController::class, 'preview'])->name('skdom.preview');
+    Route::get('/cetak/{id}', [SkdomController::class, 'cetak'])->name('skdom.cetak');
+    Route::post('/tolak/{id}', [SkdomController::class, 'tolak'])->name('skdom.tolak');
 });
 

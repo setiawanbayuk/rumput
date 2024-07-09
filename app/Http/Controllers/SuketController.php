@@ -80,29 +80,29 @@ class SuketController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'kd_jenis_surat' => ['required'],
-            'kd_jenis_surat' => ['required'],
-            'no_urut_surat' => ['required'],
-            'kd_instansi' => ['required'],
-            'tahun' => ['required'],
+            'kd_jenis_surat' => ['required', 'string'],
+            'kd_jenis_surat' => ['required', 'string'],
+            'no_urut_surat' => ['required', 'string'],
+            'kd_instansi' => ['required', 'string'],
+            'tahun' => ['required', 'string'],
             'tgl_surat' => ['required', 'date'],
             'nik' => ['required', 'min:16'],
             'kk' => ['required', 'min:16'],
-            'name' => ['required'],
-            'gender' => ['required'],
-            'status_kwn' => ['required'],
-            'kewarganegaraan' => ['required'],
-            'tempat_lhr' => ['required'],
+            'name' => ['required', 'string'],
+            'gender' => ['required', 'string'],
+            'status_kwn' => ['required', 'string'],
+            'kewarganegaraan' => ['required', 'string'],
+            'tempat_lhr' => ['required', 'string'],
             'tgl_lhr' =>  ['required', 'date'],
-            'agama' => ['required'],
-            'pendidikan' => ['required'],
-            'pekerjaan' => ['required'],
-            'kecamatan' => ['required'],
-            'kelurahan' => ['required'],
+            'agama' => ['required', 'string'],
+            'pendidikan' => ['required', 'string'],
+            'pekerjaan' => ['required', 'string'],
+            'kecamatan' => ['required', 'string'],
+            'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required'],
+            'kepada' => ['required', 'string'],
             'pengantar' => ['mimes:jpg,bmp,png']
         ]);
 
@@ -173,7 +173,7 @@ class SuketController extends Controller
         }
 
         $suket = SuratKeterangan::create([
-            'id_kel'    => 1,
+            'id_kel'    => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
             'kd_instansi' => $request->kd_instansi,
@@ -216,29 +216,29 @@ class SuketController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'kd_jenis_surat' => ['required'],
-            'kd_jenis_surat' => ['required'],
-            'no_urut_surat' => ['required'],
-            'kd_instansi' => ['required'],
-            'tahun' => ['required'],
+            'kd_jenis_surat' => ['required', 'string'],
+            'kd_jenis_surat' => ['required', 'string'],
+            'no_urut_surat' => ['required', 'string'],
+            'kd_instansi' => ['required', 'string'],
+            'tahun' => ['required', 'string'],
             'tgl_surat' => ['required', 'date'],
             'nik' => ['required', 'min:16'],
             'kk' => ['required', 'min:16'],
-            'name' => ['required'],
-            'gender' => ['required'],
-            'status_kwn' => ['required'],
-            'kewarganegaraan' => ['required'],
-            'tempat_lhr' => ['required'],
+            'name' => ['required', 'string'],
+            'gender' => ['required', 'string'],
+            'status_kwn' => ['required', 'string'],
+            'kewarganegaraan' => ['required', 'string'],
+            'tempat_lhr' => ['required', 'string'],
             'tgl_lhr' =>  ['required', 'date'],
-            'agama' => ['required'],
-            'pendidikan' => ['required'],
-            'pekerjaan' => ['required'],
-            'kecamatan' => ['required'],
-            'kelurahan' => ['required'],
+            'agama' => ['required', 'string'],
+            'pendidikan' => ['required', 'string'],
+            'pekerjaan' => ['required', 'string'],
+            'kecamatan' => ['required', 'string'],
+            'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required'],
+            'kepada' => ['required', 'string'],
             'pengantar' => ['mimes:jpg,bmp,png']
         ]);
 
@@ -322,7 +322,7 @@ class SuketController extends Controller
                 'peruntukan' => $request->peruntukan,
                 'kepada' => $request->kepada,
                 'status' => 1,
-                'pengantar' => $request->file('pengantar') ? $fileLocation : ''
+                'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
             ]);
 
             return redirect()->route('suket.index');
@@ -409,7 +409,7 @@ class SuketController extends Controller
         $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
 
         $suket = SuratKeterangan::create([
-            'id_kel'    => 1,
+            'id_kel'    => auth()->user()->id_instansi,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
             'kd_instansi' => $regional['skpd']->instansi_kode,

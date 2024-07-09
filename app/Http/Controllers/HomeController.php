@@ -24,15 +24,21 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('home');
+        if (auth()->user()->role_id == 2) {
+            return view('warga');
+        } else {
+            return view('home');
+        }
     }
 
-    public function activity(){
+    public function activity()
+    {
         return Activity::all();
     }
 
 
-    public function last_activity(){
+    public function last_activity()
+    {
         return Activity::all()->last();
     }
 }

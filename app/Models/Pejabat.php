@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Pejabat extends Model
 {
     use HasFactory;
-
     public function jabatan(): BelongsTo
     {
         return $this->belongsTo(Jabatan::class, 'id_jabatan', 'id');

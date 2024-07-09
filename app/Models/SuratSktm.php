@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class SuratSkbn extends Model
+class SuratSktm extends Model
 {
     use HasFactory, LogsActivity, Compoships;
 
@@ -20,7 +20,16 @@ class SuratSkbn extends Model
         'tgl_surat',
         'nik',
         'peruntukan',
+        'kategori',
         'kepada',
+        'kepada_tempat_lhr',
+        'kepada_tgl_lhr',
+        'kepada_gender',
+        'kepada_hubungan',
+        'kepada_sekolah',
+        'kepada_kelas',
+        'kepada_alamat_sekolah',
+        'jenis',
         'status',
         'file',
         'pengantar'
@@ -36,6 +45,7 @@ class SuratSkbn extends Model
         return LogOptions::defaults()
             ->logOnly(['*']);
     }
+
     protected $appends = ['st'];
 
     public function getStAttribute()

@@ -14,6 +14,7 @@ use App\Models\Surat_keterangan;
 use App\Models\Surat_skbn;
 use App\Models\SuratKeterangan;
 use App\Models\SuratSkbn;
+use App\Models\SuratSktm;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -112,8 +113,12 @@ class EsignController extends Controller
             $nama_surat = 'SURAT KETERANGAN';
         } else if ($output['jenis'] == 'skbn') {
             $surat = SuratSkbn::find($output['_id']);
-            $tabel_surat = 'skbns';
+            $tabel_surat = 'surat_skbns';
             $nama_surat = 'SURAT KETERANGAN BELUM MENIKAH';
+        } else if ($output['jenis'] == 'sktm') {
+            $surat = SuratSktm::find($output['_id']);
+            $tabel_surat = 'surat_sktms';
+            $nama_surat = 'SURAT KETERANGAN MISKIN';
         }
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);

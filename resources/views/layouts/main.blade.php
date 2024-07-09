@@ -110,6 +110,12 @@
                                 <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum Menikah</a>
                             </li>
                             <li class="sidebar-item">
+                                <a href="{{ route('skdom.index') }}" class="sidebar-link">Surat Keterangan Domisili</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan Miskin</a>
+                            </li>
+                            <li class="sidebar-item">
                                 <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
                             </li>
                         </ul>
