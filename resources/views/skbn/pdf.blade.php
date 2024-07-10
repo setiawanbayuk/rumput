@@ -163,6 +163,13 @@
                 <td>{{ $penduduk['alamat'] }}</td>
             </tr>
             <tr>
+                <td class="kiri"></td>
+                <td class="titik"></td>
+                <td>
+                    KEL. {{ $penduduk['kelurahan_nm'] }} KEC.
+                    {{ $penduduk['kecamatan_nm'] }} {{ $penduduk['kabko_nm'] }}</td>
+            </tr>
+            <tr>
                 <td class="kiri">j. Keterangan</td>
                 <td class="titik">:</td>
                 <td>Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.</td>

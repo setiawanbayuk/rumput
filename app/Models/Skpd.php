@@ -10,13 +10,13 @@ class Skpd extends Model
 {
     use HasFactory;
 
-    public function regional(): BelongsTo
+    public function kelurahan(): BelongsTo
     {
-        return $this->belongsTo(Regional::class, 'id_region', 'id');
+        return $this->belongsTo(Kelurahan::class, 'id_region', 'id');
     }
 
     public function kecamatan(): BelongsTo
     {
-        return $this->belongsTo(Regional::class, 'id_kec', 'id');
+        return $this->belongsTo(Kecamatan::class, 'id_kec', 'id');
     }
 }

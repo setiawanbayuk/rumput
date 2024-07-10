@@ -25,6 +25,7 @@ class SuratSktm extends Model
         'kepada_tempat_lhr',
         'kepada_tgl_lhr',
         'kepada_gender',
+        'kepada_gender_nm',
         'kepada_hubungan',
         'kepada_sekolah',
         'kepada_kelas',

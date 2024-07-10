@@ -272,7 +272,7 @@
                     placeholder: $(this).data("placeholder"),
                     minimumInputLenght: 2,
                 });
-                if ({{ $suratKeterangan->jenis == 'sekolah' }}) {
+                if ('{{ $suratKeterangan->jenis}}'  == 'sekolah' ) {
                     $("#flexRadioDefault2").attr('checked', true).trigger('click');
                     handleChangeRegisterAs('sekolah');
 

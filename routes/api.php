@@ -17,6 +17,7 @@ use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\Requests\SkpdController;
 use App\Http\Controllers\Requests\StatusPerkawinanController;
 use App\Http\Controllers\SkbnController;
+use App\Http\Controllers\SkdomController;
 use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SuketController;
 use Illuminate\Http\Request;
@@ -55,6 +56,10 @@ Route::middleware('auth:sanctum')->prefix('skbn')->group(function(){
 Route::middleware('auth:sanctum')->prefix('sktm')->group(function(){
     Route::get('/', [SktmController::class, 'get']);
     Route::post('/', [SktmController::class, 'save']);
+});
+Route::middleware('auth:sanctum')->prefix('skdom')->group(function(){
+    Route::get('/', [SkdomController::class, 'get']);
+    Route::post('/', [SkdomController::class, 'save']);
 });
 
 

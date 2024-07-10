@@ -12,6 +12,7 @@ use App\Models\Resident;
 use App\Models\Skpd;
 use App\Models\Surat_keterangan;
 use App\Models\Surat_skbn;
+use App\Models\SuratDomisili;
 use App\Models\SuratKeterangan;
 use App\Models\SuratSkbn;
 use App\Models\SuratSktm;
@@ -117,8 +118,16 @@ class EsignController extends Controller
             $nama_surat = 'SURAT KETERANGAN BELUM MENIKAH';
         } else if ($output['jenis'] == 'sktm') {
             $surat = SuratSktm::find($output['_id']);
+            // $kepada_tgl_lhr = $surat['kepada_tgl_lhr'];
+            $surat['kepada_tgl_lhr'] = Carbon::parse($surat['kepada_tgl_lhr'])->isoFormat('D MMMM Y');
             $tabel_surat = 'surat_sktms';
             $nama_surat = 'SURAT KETERANGAN MISKIN';
+        } else if ($output['jenis'] == 'skdom') {
+            $surat = SuratDomisili::find($output['_id']);
+            // $tgl_berlaku = $surat['tgl_berlaku'];
+            $surat['tgl_berlaku'] = Carbon::parse($surat['tgl_berlaku'])->isoFormat('D MMMM Y');
+            $tabel_surat = 'surat_domisilis';
+            $nama_surat = 'SURAT KETERANGAN DOMISILI';
         }
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
@@ -170,6 +179,14 @@ class EsignController extends Controller
         $fp = fopen(public_path($fileLocation), 'wb');
         fwrite($fp, $r);
         fclose($fp);
+
+        if ($output['jenis'] == 'sktm') {
+            // $surat['kepada_tgl_lhr'] = $kepada_tgl_lhr;
+            $surat = SuratSktm::find($output['_id']);
+        } else if ($output['jenis'] == 'skdom') {
+            // $surat['tgl_berlaku'] = $tgl_berlaku;
+            $surat = SuratDomisili::find($output['_id']);
+        }
 
         $surat->update(['status' => 3, 'file' => $fileLocation]);
 

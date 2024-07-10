@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Kelurahan_resource;
 use App\Http\Resources\Pejabat_resource;
 use App\Http\Resources\Regional_resource;
 use App\Http\Resources\User_resource;
@@ -78,7 +79,6 @@ class SkbnController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'kd_jenis_surat' => ['required', 'string'],
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
             'kd_instansi' => ['required', 'string'],
@@ -209,7 +209,6 @@ class SkbnController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'kd_jenis_surat' => ['required', 'string'],
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
             'kd_instansi' => ['required', 'string'],
@@ -373,7 +372,6 @@ class SkbnController extends Controller
     {
         $request->validate([
             'nik' => ['required', 'min:16'],
-            'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required'],
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
@@ -387,7 +385,7 @@ class SkbnController extends Controller
         $resident = Resident::where('nik', $request->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-        $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
+        $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
 
         $suket = SuratSkbn::create([
             'id_kel'    => auth()->user()->id_instansi,
@@ -397,7 +395,6 @@ class SkbnController extends Controller
             'tahun' => date('Y'),
             'tgl_surat' => date('Y-m-d'),
             'nik' => $request->nik,
-            'keterangan' => $request->keterangan,
             'peruntukan' => $request->peruntukan,
             'kepada' => $request->kepada,
             'status' => 0,

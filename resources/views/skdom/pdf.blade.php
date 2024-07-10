@@ -161,7 +161,6 @@
                 <td class="kiri">i. Alamat Tempat Tinggal</td>
                 <td class="titik">:</td>
                 <td>{{ $penduduk['alamat'] }}</td>
-            </tr>
             <tr>
                 <td class="kiri"></td>
                 <td class="titik"></td>
@@ -169,10 +168,21 @@
                     KEL. {{ $penduduk['kelurahan_nm'] }} KEC.
                     {{ $penduduk['kecamatan_nm'] }} {{ $penduduk['kabko_nm'] }}</td>
             </tr>
+            </tr>
             <tr>
                 <td class="kiri">j. Keterangan</td>
                 <td class="titik">:</td>
-                <td>{{ $surat->keterangan }}</td>
+                @if ($surat->jenis == 'perorangan')
+                    <td>Bahwa nama tersebut di atas benar - benar berdomisili di {{ $surat->alamat_domisili }}, KEL.
+                        {{ $penduduk['kelurahan_nm'] }} KEC.
+                        {{ $penduduk['kecamatan_nm'] }} {{ $penduduk['kabko_nm'] }}</td>
+                @else
+                    <td>Pendiri / pemilik usaha {{ $surat->nama_perusahaan }} yang bertempat di
+                        {{ $surat->alamat_domisili }}, KEL. {{ $penduduk['kelurahan_nm'] }} KEC.
+                        {{ $penduduk['kecamatan_nm'] }} {{ $penduduk['kabko_nm'] }} yang berstatus bangunan
+                        {{ $surat->status_bangunan }} dengan karyawan berjumlah {{ $surat->jumlah_karyawan }} orang.
+                    </td>
+                @endif
             </tr>
         </table>
     </div>
@@ -188,7 +198,11 @@
             <tr>
                 <td class="kiri">Untuk</td>
                 <td class="titik">:</td>
-                <td>{{ $surat->peruntukan }}</td>
+                @if ($surat->jenis == 'perorangan')
+                    <td>{{ $surat->peruntukan }}</td>
+                @else
+                    <td>Surat keterangan Domisili perusahaan yang berlaku sampai dengan {{ $surat->tgl_berlaku }}.</td>
+                @endif
             </tr>
         </table>
     </div>

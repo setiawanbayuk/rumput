@@ -33,6 +33,7 @@
                             <th>NIK</th>
                             <th>Tanggal</th>
                             <th>Peruntukan</th>
+                            <th>Jenis</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -76,6 +77,17 @@
                         {
                             data: 'peruntukan',
                             name: 'peruntukan'
+                        },
+                        {
+                            data: 'jenis',
+                            // name: 'jenis'
+                            render: function(data, type) {
+                                var str = data;
+                                str = str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
+                                    return letter.toUpperCase();
+                                });
+                                return `<span>${str}</span> `;
+                            },
                         },
                         {
                             data: 'st',

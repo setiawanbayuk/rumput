@@ -16,7 +16,9 @@ class Kelurahan_resource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'text' => $this->nama
+            'text' => $this->nama,
+            'nama' => $this->nama,
+            'skpd' => $this->skpd
         ];
     }
 }

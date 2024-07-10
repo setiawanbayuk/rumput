@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Kelurahan_resource;
 use App\Http\Resources\Pejabat_resource;
 use App\Http\Resources\Regional_resource;
 use App\Http\Resources\Skpd_resource;
@@ -80,7 +81,6 @@ class SuketController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'kd_jenis_surat' => ['required', 'string'],
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
             'kd_instansi' => ['required', 'string'],
@@ -216,7 +216,6 @@ class SuketController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'kd_jenis_surat' => ['required', 'string'],
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
             'kd_instansi' => ['required', 'string'],
@@ -363,9 +362,6 @@ class SuketController extends Controller
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
 
-        // $verify = env('APP_URL', 'https://esuket.dev') . '/verify/surat/' . $id;
-        // $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
-
         $url = '';
 
         $pdf = Pdf::loadView('suket.pdf', compact(
@@ -405,8 +401,7 @@ class SuketController extends Controller
         $resident = Resident::where('nik', $request->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-
-        $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
+        $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
 
         $suket = SuratKeterangan::create([
             'id_kel'    => auth()->user()->id_instansi,

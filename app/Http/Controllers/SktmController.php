@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Kelurahan_resource;
 use App\Http\Resources\Pejabat_resource;
 use App\Http\Resources\Regional_resource;
 use App\Http\Resources\User_resource;
@@ -76,7 +77,6 @@ class SktmController extends Controller
     {
 
         $request->validate([
-            'kd_jenis_surat' => ['required', 'string'],
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
             'kd_instansi' => ['required', 'string'],
@@ -181,7 +181,6 @@ class SktmController extends Controller
         $suket = SuratSktm::create([
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
-            'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
             'kd_instansi' => $request->kd_instansi,
             'tahun' => $request->tahun,
@@ -232,7 +231,6 @@ class SktmController extends Controller
     {
         // dd($request->all());
         $request->validate([
-            'kd_jenis_surat' => ['required', 'string'],
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
             'kd_instansi' => ['required', 'string'],
@@ -340,7 +338,6 @@ class SktmController extends Controller
 
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
-                'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
                 'kd_instansi' => $request->kd_instansi,
                 'tahun' => $request->tahun,
@@ -421,9 +418,17 @@ class SktmController extends Controller
     {
         $request->validate([
             'nik' => ['required', 'min:16'],
-            'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required'],
+            'register_as' => ['required', 'string'],
+            'kepada' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_tempat_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_tgl_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_gender' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_hubungan' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_kelas' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kategori' => ['required', 'string'],
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
         ]);
 
@@ -435,7 +440,10 @@ class SktmController extends Controller
         $resident = Resident::where('nik', $request->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-        $regional = new Regional_resource(Regional::find($penduduk['kelurahan']));
+        $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
+        $kepada_gender = Gender::find($request->kepada_gender);
+
+        // dd(isset($kepada_gender) ? $kepada_gender->nama : '');
 
         $suket = SuratSktm::create([
             'id_kel'    => auth()->user()->id_instansi,
@@ -445,9 +453,18 @@ class SktmController extends Controller
             'tahun' => date('Y'),
             'tgl_surat' => date('Y-m-d'),
             'nik' => $request->nik,
-            'keterangan' => $request->keterangan,
             'peruntukan' => $request->peruntukan,
+            'jenis' => $request->register_as,
             'kepada' => $request->kepada,
+            'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
+            'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
+            'kepada_gender' => $request->kepada_gender,
+            'kepada_gender_nm' => isset($kepada_gender) ? $kepada_gender->nama : '',
+            'kepada_hubungan' => $request->kepada_hubungan,
+            'kepada_sekolah' => $request->kepada_sekolah,
+            'kepada_kelas' => $request->kepada_kelas,
+            'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
+            'kategori' => $request->kategori,
             'status' => 0,
             'pengantar' => $fileLocation
         ]);
