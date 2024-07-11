@@ -8,6 +8,7 @@ use App\Http\Controllers\Requests\PendidikanController;
 use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\SkbnController;
 use App\Http\Controllers\SkdomController;
+use App\Http\Controllers\SkhslController;
 use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SuketController;
 use Illuminate\Support\Facades\Auth;
@@ -76,5 +77,17 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skdom')->group(function(){
     Route::get('/preview/{id}', [SkdomController::class, 'preview'])->name('skdom.preview');
     Route::get('/cetak/{id}', [SkdomController::class, 'cetak'])->name('skdom.cetak');
     Route::post('/tolak/{id}', [SkdomController::class, 'tolak'])->name('skdom.tolak');
+});
+
+Route::middleware(['auth', 'role:1,3,4'])->prefix('skhsl')->group(function(){
+    Route::get('/', [SkhslController::class, 'index'])->name('skhsl.index');
+    Route::get('/add', [SkhslController::class, 'add'])->name('skhsl.add');
+    Route::post('/', [SkhslController::class, 'store'])->name('skhsl.store');
+    Route::get('/edit/{id}', [SkhslController::class, 'edit'])->name('skhsl.edit');
+    Route::post('/update/{id}', [SkhslController::class, 'update'])->name('skhsl.update');
+    Route::post('/naik/{id}', [SkhslController::class, 'naik'])->name('skhsl.naik');
+    Route::get('/preview/{id}', [SkhslController::class, 'preview'])->name('skhsl.preview');
+    Route::get('/cetak/{id}', [SkhslController::class, 'cetak'])->name('skhsl.cetak');
+    Route::post('/tolak/{id}', [SkhslController::class, 'tolak'])->name('skhsl.tolak');
 });
 

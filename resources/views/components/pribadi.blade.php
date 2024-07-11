@@ -3,7 +3,7 @@
         <label for="nik" class="col-md-3 col-form-label text-md-end">{{ __('NIK') }}</label>
         <div class="col-md-8">
             <div class="input-group">
-                <input type="text" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik"
+                <input type="number" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik"
                     placeholder="Masukkan 16 digit NIK" aria-label="NIK" aria-describedby="basic-addon2">
                 <button type="button" class="input-group-text btn btn-subtle-primary"
                     onclick="checkNIK()">CARI</button>
@@ -20,7 +20,7 @@
         <label for="kk" class="col-md-3 col-form-label text-md-end">{{ __('No. KK') }}</label>
 
         <div class="col-md-8">
-            <input id="kk" type="text" class="form-control @error('kk') is-invalid @enderror" name="kk"
+            <input id="kk" type="number" class="form-control @error('kk') is-invalid @enderror" name="kk"
                 value="{{ old('kk') }}" autocomplete="kk" autofocus>
 
             @error('kk')

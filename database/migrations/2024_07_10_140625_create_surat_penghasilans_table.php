@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('surat_sktms', function (Blueprint $table) {
+        Schema::create('surat_penghasilans', function (Blueprint $table) {
             $table->id();
             $table->integer('id_kel');
             $table->string('kd_jenis_surat');
@@ -19,16 +19,17 @@ return new class extends Migration
             $table->date('tgl_surat');
             $table->string('nik');
             $table->text('peruntukan');
-            $table->string('kategori');
-            $table->string('kepada')->nullable();
-            $table->string('kepada_tempat_lhr')->nullable();
-            $table->string('kepada_tgl_lhr')->nullable();
-            $table->string('kepada_gender')->nullable();
-            $table->string('kepada_sekolah')->nullable();
-            $table->string('kepada_alamat_sekolah')->nullable();
-            $table->string('kepada_kelas')->nullable();
-            $table->string('kepada_hubungan')->nullable();
-            $table->string('jenis');
+            $table->string('penghasilan');
+            $table->string('terbilang');
+            $table->string('kepada');
+            $table->string('kepada_tempat_lhr');
+            $table->string('kepada_tgl_lhr');
+            $table->string('kepada_gender');
+            $table->string('kepada_gender_nm');
+            $table->string('kepada_sekolah');
+            $table->string('kepada_alamat_sekolah');
+            $table->string('kepada_kelas');
+            $table->string('kepada_hubungan');
             $table->string('status');
             $table->string('file')->nullable();
             $table->string('pengantar')->nullable();
@@ -41,6 +42,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('surat_sktms');
+        Schema::dropIfExists('surat_penghasilans');
     }
 };

@@ -56,7 +56,7 @@
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Nama Perusahaan') }}</label>
 
                                             <div class="col-md-8">
-                                                <input id="nama_perusahaan" type="nama_perusahaan"
+                                                <input id="nama_perusahaan" type="text"
                                                     class="form-control @error('nama_perusahaan') is-invalid @enderror"
                                                     name="nama_perusahaan" value="{{ old('nama_perusahaan') }}"
                                                     autocomplete="nama_perusahaan">
@@ -73,7 +73,7 @@
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Status Bangunan') }}</label>
 
                                             <div class="col-md-8">
-                                                <input id="status_bangunan" type="status_bangunan"
+                                                <input id="status_bangunan" type="text"
                                                     class="form-control @error('status_bangunan') is-invalid @enderror"
                                                     name="status_bangunan" value="{{ old('status_bangunan') }}"
                                                     autocomplete="status_bangunan">
@@ -90,7 +90,7 @@
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Jumlah Karyawan') }}</label>
 
                                             <div class="col-md-8">
-                                                <input id="jumlah_karyawan" type="jumlah_karyawan"
+                                                <input id="jumlah_karyawan" type="number"
                                                     class="form-control @error('jumlah_karyawan') is-invalid @enderror"
                                                     name="jumlah_karyawan" value="{{ old('jumlah_karyawan') }}"
                                                     autocomplete="jumlah_karyawan">
@@ -142,7 +142,7 @@
                                             class="col-md-3 col-form-label text-md-end">{{ __('Diberikan Kepada') }}</label>
 
                                         <div class="col-md-8">
-                                            <input id="kepada" type="kepada"
+                                            <input id="kepada" type="text"
                                                 class="form-control @error('kepada') is-invalid @enderror" name="kepada"
                                                 value="{{ old('kepada') }}" autocomplete="kepada">
 

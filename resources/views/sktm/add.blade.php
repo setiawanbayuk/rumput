@@ -55,7 +55,7 @@
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Nama Anak') }}</label>
 
                                             <div class="col-md-8">
-                                                <input id="kepada" type="kepada"
+                                                <input id="kepada" type="text"
                                                     class="form-control @error('kepada') is-invalid @enderror"
                                                     name="kepada" value="{{ old('kepada') }}"
                                                     autocomplete="kepada">
@@ -139,7 +139,7 @@
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Nama Sekolah') }}</label>
 
                                             <div class="col-md-8">
-                                                <input id="kepada_sekolah" type="kepada_sekolah"
+                                                <input id="kepada_sekolah" type="text"
                                                     class="form-control @error('kepada_sekolah') is-invalid @enderror"
                                                     name="kepada_sekolah" value="{{ old('kepada_sekolah') }}"
                                                     autocomplete="kepada_sekolah">
@@ -157,7 +157,7 @@
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Kelas/Semester') }}</label>
 
                                             <div class="col-md-8">
-                                                <input id="kepada_kelas" type="kepada_kelas"
+                                                <input id="kepada_kelas" type="text"
                                                     class="form-control @error('kepada_kelas') is-invalid @enderror"
                                                     name="kepada_kelas" value="{{ old('kepada_kelas') }}"
                                                     autocomplete="kepada_kelas">

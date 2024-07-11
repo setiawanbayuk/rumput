@@ -116,6 +116,9 @@
                                 <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan Miskin</a>
                             </li>
                             <li class="sidebar-item">
+                                <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan Penghasilan</a>
+                            </li>
+                            <li class="sidebar-item">
                                 <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
                             </li>
                         </ul>
