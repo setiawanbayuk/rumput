@@ -17,7 +17,7 @@ use App\Models\Pendidikan;
 use App\Models\Provinsi;
 use App\Models\Resident;
 use App\Models\StatusKwn;
-use App\Models\SuratPenghasilan;
+use App\Models\SuratUsaha;
 use App\Models\User;
 use App\Models\Pejabat;
 use App\Traits\GetNoSurat;
@@ -28,22 +28,22 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\DataTables;
 
-class SkhslController extends Controller
+class SkusahaController extends Controller
 {
     use GetNoSurat;
 
     public function index()
     {
         if (request()->ajax()) {
-            $data = SuratPenghasilan::query();
+            $data = SuratUsaha::query();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
                     $nomorSurat = $this->getNoSrt($row);
                     $id = $row->id;
-                    $route = 'skhsl.edit';
+                    $route = 'skusaha.edit';
                     $status = $row->status;
-                    $jenis = 'skhsl';
+                    $jenis = 'skusaha';
                     if (auth()->user()->role_id == 1) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
                     } else if (auth()->user()->role_id == 3) {
@@ -58,17 +58,17 @@ class SkhslController extends Controller
                 ->rawColumns(['action', 'no_surat'])
                 ->make(true);
         };
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN PENGHASILAN";
-        return view('skhsl.index', compact('title'));
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
+        return view('skusaha.index', compact('title'));
     }
 
     public function add()
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN PENGHASILAN";
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        $no_urut_surat = SuratPenghasilan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+        $no_urut_surat = SuratUsaha::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
-        return view('skhsl.add', compact('title', 'currentUser', 'no_urut_surat'));
+        return view('skusaha.add', compact('title', 'currentUser', 'no_urut_surat'));
     }
 
     public function store(Request $request)
@@ -93,25 +93,18 @@ class SkhslController extends Controller
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
+            'nama_usaha' => ['required', 'string'],
+            'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
-            'kepada_tempat_lhr' => ['required', 'string'],
-            'kepada_tgl_lhr' => ['required', 'string'],
-            'kepada_gender' => ['required', 'string'],
-            'kepada_hubungan' => ['required', 'string'],
-            'kepada_sekolah' => ['required', 'string'],
-            'kepada_kelas' => ['required', 'string'],
-            'kepada_alamat_sekolah' => ['required', 'string'],
-            'penghasilan' => ['required', 'string'],
-            'terbilang' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
             'pengantar' => ['mimes:jpg,bmp,png'],
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skhsl');
-            $path = '/public/pengantar/' . date('Y') . '/skhsl';
+            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skusaha');
+            $path = '/public/pengantar/' . date('Y') . '/skusaha';
             $fileName = $request->file('pengantar')->hashName();
-            $fileLocation = '/storage/pengantar/' . date('Y') . '/skhsl/' . $fileName;
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skusaha/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
         }
 
@@ -172,10 +165,7 @@ class SkhslController extends Controller
             }
         }
 
-
-        $kepada_gender = Gender::find($request->kepada_gender);
-
-        $suket = SuratPenghasilan::create([
+        $suket = SuratUsaha::create([
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
@@ -183,17 +173,9 @@ class SkhslController extends Controller
             'tahun' => $request->tahun,
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
+            'nama_usaha' => $request->nama_usaha,
+            'alamat_usaha' => $request->alamat_usaha,
             'kepada' => $request->kepada,
-            'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-            'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-            'kepada_gender' => $request->kepada_gender,
-            'kepada_gender_nm' => $kepada_gender->nama,
-            'kepada_hubungan' => $request->kepada_hubungan,
-            'kepada_sekolah' => $request->kepada_sekolah,
-            'kepada_kelas' => $request->kepada_kelas,
-            'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
-            'penghasilan' => $request->penghasilan,
-            'terbilang' => $request->terbilang,
             'peruntukan' => $request->peruntukan,
             'pengantar' => $request->pengantar,
             'status' => 1,
@@ -202,26 +184,26 @@ class SkhslController extends Controller
 
         Log_surat::create([
             'nik' => $request->nik,
-            'tabel_surat' => 'surat_penghasilans',
-            'nama_surat' => 'SURAT KETERANGAN PENGHASILAN',
+            'tabel_surat' => 'surat_usahas',
+            'nama_surat' => 'SURAT KETERANGAN USAHA',
             'id_surat' => $suket->id,
             'status_surat' => 1,
         ]);
 
-        return redirect()->route('skhsl.index');
+        return redirect()->route('skusaha.index');
     }
 
 
     public function edit($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN PENGHASILAN";
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        $suratKeterangan = SuratPenghasilan::find($id);
+        $suratKeterangan = SuratUsaha::find($id);
         if ($suratKeterangan->no_urut_surat == 0) {
-            $no_urut_surat = SuratPenghasilan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+            $no_urut_surat = SuratUsaha::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
-        return view('skhsl.edit', compact('title', 'currentUser', 'suratKeterangan'));
+        return view('skusaha.edit', compact('title', 'currentUser', 'suratKeterangan'));
     }
 
     public function update(Request $request, $id)
@@ -248,25 +230,18 @@ class SkhslController extends Controller
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
+            'nama_usaha' => ['required', 'string'],
+            'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
-            'kepada_tempat_lhr' => ['required', 'string'],
-            'kepada_tgl_lhr' => ['required', 'string'],
-            'kepada_gender' => ['required', 'string'],
-            'kepada_hubungan' => ['required', 'string'],
-            'kepada_sekolah' => ['required', 'string'],
-            'kepada_kelas' => ['required', 'string'],
-            'kepada_alamat_sekolah' => ['required', 'string'],
-            'penghasilan' => ['required', 'string'],
-            'terbilang' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
             'pengantar' => ['mimes:jpg,bmp,png'],
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skhsl');
-            $path = '/public/pengantar/' . date('Y') . '/skhsl';
+            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skusaha');
+            $path = '/public/pengantar/' . date('Y') . '/skusaha';
             $fileName = $request->file('pengantar')->hashName();
-            $fileLocation = '/storage/pengantar/' . date('Y') . '/skhsl/' . $fileName;
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skusaha/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
         }
 
@@ -281,7 +256,7 @@ class SkhslController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $suratKeterangan = SuratPenghasilan::find($id);
+        $suratKeterangan = SuratUsaha::find($id);
 
         if ($suratKeterangan) {
 
@@ -331,8 +306,6 @@ class SkhslController extends Controller
                 }
             }
 
-            $kepada_gender = Gender::find($request->kepada_gender);
-
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
@@ -340,38 +313,30 @@ class SkhslController extends Controller
                 'tahun' => $request->tahun,
                 'tgl_surat' => $request->tgl_surat,
                 'nik' => $request->nik,
+                'nama_usaha' => $request->nama_usaha,
+                'alamat_usaha' => $request->alamat_usaha,
                 'kepada' => $request->kepada,
-                'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-                'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-                'kepada_gender' => $request->kepada_gender,
-                'kepada_gender_nm' => $kepada_gender->nama,
-                'kepada_hubungan' => $request->kepada_hubungan,
-                'kepada_sekolah' => $request->kepada_sekolah,
-                'kepada_kelas' => $request->kepada_kelas,
-                'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
-                'penghasilan' => $request->penghasilan,
-                'terbilang' => $request->terbilang,
                 'peruntukan' => $request->peruntukan,
                 'pengantar' => $request->pengantar,
                 'status' => 1,
                 'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
             ]);
 
-            return redirect()->route('skhsl.index');
+            return redirect()->route('skusaha.index');
         } else {
-            return redirect()->route('skhsl.index');
+            return redirect()->route('skusaha.index');
         }
     }
 
     public function naik($id)
     {
-        $suratKeterangan = SuratPenghasilan::find($id);
+        $suratKeterangan = SuratUsaha::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 2]);
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
-                'tabel_surat' => 'surat_penghasilans',
-                'nama_surat' => 'SURAT KETERANGAN PENGHASILAN',
+                'tabel_surat' => 'surat_usahas',
+                'nama_surat' => 'SURAT KETERANGAN USAHA',
                 'id_surat' => $id,
                 'status_surat' => 2,
             ]);
@@ -383,7 +348,7 @@ class SkhslController extends Controller
 
     public function preview($id)
     {
-        $surat = SuratPenghasilan::find($id);
+        $surat = SuratUsaha::find($id);
         $surat['kepada_tgl_lhr'] = Carbon::parse($surat['kepada_tgl_lhr'])->isoFormat('D MMMM Y');
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
@@ -393,7 +358,7 @@ class SkhslController extends Controller
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
         $url = '';
-        $pdf = Pdf::loadView('skhsl.pdf', compact(
+        $pdf = Pdf::loadView('skusaha.pdf', compact(
             'surat',
             'penduduk',
             'user',
@@ -407,7 +372,7 @@ class SkhslController extends Controller
 
     public function cetak($id)
     {
-        $surat = SuratPenghasilan::find($id);
+        $surat = SuratUsaha::find($id);
         return response()->json(['file' => asset($surat->file)]);
     }
 
@@ -415,34 +380,24 @@ class SkhslController extends Controller
     {
         $request->validate([
             'nik' => ['required', 'min:16'],
-            'peruntukan' => ['required', 'max:100'],
+            'nama_usaha' => ['required', 'string'],
+            'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
-            'kepada_tempat_lhr' => ['required', 'string'],
-            'kepada_tgl_lhr' => ['required', 'string'],
-            'kepada_gender' => ['required', 'string'],
-            'kepada_hubungan' => ['required', 'string'],
-            'kepada_sekolah' => ['required', 'string'],
-            'kepada_kelas' => ['required', 'string'],
-            'kepada_alamat_sekolah' => ['required', 'string'],
-            'penghasilan' => ['required', 'string'],
-            'terbilang' => ['required', 'string'],
+            'peruntukan' => ['required', 'max:100'],
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
         ]);
 
-        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skhsl');
-        $path = '/public/pengantar/' . date('Y') . '/skhsl';
+        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skusaha');
+        $path = '/public/pengantar/' . date('Y') . '/skusaha';
         $fileName = $request->file('pengantar')->hashName();
-        $fileLocation = '/storage/pengantar/' . date('Y') . '/skhsl/' . $fileName;
+        $fileLocation = '/storage/pengantar/' . date('Y') . '/skusaha/' . $fileName;
         $request->file('pengantar')->storeAs($path, $fileName);
         $resident = Resident::where('nik', $request->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
-        $kepada_gender = Gender::find($request->kepada_gender);
 
-        // dd(isset($kepada_gender) ? $kepada_gender->nama : '');
-
-        $suket = SuratPenghasilan::create([
+        $suket = SuratUsaha::create([
             'id_kel'    => auth()->user()->id_instansi,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
@@ -452,25 +407,16 @@ class SkhslController extends Controller
             'nik' => $request->nik,
             'peruntukan' => $request->peruntukan,
             'kepada' => $request->kepada,
-            'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-            'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-            'kepada_gender' => $request->kepada_gender,
-            'kepada_gender_nm' => isset($kepada_gender) ? $kepada_gender->nama : '',
-            'kepada_hubungan' => $request->kepada_hubungan,
-            'kepada_sekolah' => $request->kepada_sekolah,
-            'kepada_kelas' => $request->kepada_kelas,
-            'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
-            'penghasilan' => $request->penghasilan,
-            'terbilang' => $request->terbilang,
-            'peruntukan' => $request->peruntukan,
+            'nama_usaha' => $request->nama_usaha,
+            'alamat_usaha' => $request->alamat_usaha,
             'status' => 0,
             'pengantar' => $fileLocation
         ]);
 
         Log_surat::create([
             'nik' => $suket->nik,
-            'tabel_surat' => 'surat_penghasilans',
-            'nama_surat' => 'SURAT KETERANGAN PENGHASILAN',
+            'tabel_surat' => 'surat_usahas',
+            'nama_surat' => 'SURAT KETERANGAN USAHA',
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
@@ -479,8 +425,8 @@ class SkhslController extends Controller
 
     public function get(Request $request)
     {
-        $surat = SuratPenghasilan::with(['history' => function ($query) {
-            return $query->where('tabel_surat', 'surat_penghasilans');
+        $surat = SuratUsaha::with(['history' => function ($query) {
+            return $query->where('tabel_surat', 'surat_usahas');
         }])->where('nik', $request->nik)->get();
         return response()->json($surat);
     }
@@ -488,13 +434,13 @@ class SkhslController extends Controller
 
     public function tolak($id)
     {
-        $suratKeterangan = SuratPenghasilan::find($id);
+        $suratKeterangan = SuratUsaha::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 4]);
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
-                'tabel_surat' => 'surat_penghasilans',
-                'nama_surat' => 'SURAT KETERANGAN PENGHASILAN',
+                'tabel_surat' => 'surat_usahas',
+                'nama_surat' => 'SURAT KETERANGAN USAHA',
                 'id_surat' => $id,
                 'status_surat' => 4,
             ]);

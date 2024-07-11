@@ -86,7 +86,7 @@ class EsignController extends Controller
 
     public function check(string $nik)
     {
-        $r = Http::withBasicAuth('esign', 'qwerty')->get('http://103.78.106.34/api/user/status/' . $nik);
+        $r = Http::withBasicAuth(env('ESIGN_USER'), env('ESIGN_PASS'))->get('http://103.78.106.34/api/user/status/' . $nik);
         $response = $r->json();
 
         if (!$response) {
@@ -171,7 +171,7 @@ class EsignController extends Controller
 
 
         $query = http_build_query($data);
-        $r = Http::withBasicAuth('esign', 'qwerty')
+        $r = Http::withBasicAuth(env('ESIGN_USER'), env('ESIGN_PASS'))
             ->asMultipart()
             ->attach('file', file_get_contents(asset($fileLocation)), $fileName)
             ->post('http://103.78.106.34/api/sign/pdf?' . $query);

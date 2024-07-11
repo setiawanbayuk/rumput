@@ -3,7 +3,7 @@
         class="col-md-3 col-form-label text-md-end">{{ __('Diberikan Kepada') }}</label>
 
     <div class="col-md-8">
-        <input id="kepada" type="kepada"
+        <input id="kepada" type="text"
             class="form-control @error('kepada') is-invalid @enderror" name="kepada"
             value="{{ old('kepada', $kepada) }}" autocomplete="kepada">
 

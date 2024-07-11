@@ -10,6 +10,7 @@ use App\Http\Controllers\SkbnController;
 use App\Http\Controllers\SkdomController;
 use App\Http\Controllers\SkhslController;
 use App\Http\Controllers\SktmController;
+use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SuketController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -91,3 +92,15 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skhsl')->group(function(){
     Route::post('/tolak/{id}', [SkhslController::class, 'tolak'])->name('skhsl.tolak');
 });
 
+
+Route::middleware(['auth', 'role:1,3,4'])->prefix('skusaha')->group(function(){
+    Route::get('/', [SkusahaController::class, 'index'])->name('skusaha.index');
+    Route::get('/add', [SkusahaController::class, 'add'])->name('skusaha.add');
+    Route::post('/', [SkusahaController::class, 'store'])->name('skusaha.store');
+    Route::get('/edit/{id}', [SkusahaController::class, 'edit'])->name('skusaha.edit');
+    Route::post('/update/{id}', [SkusahaController::class, 'update'])->name('skusaha.update');
+    Route::post('/naik/{id}', [SkusahaController::class, 'naik'])->name('skusaha.naik');
+    Route::get('/preview/{id}', [SkusahaController::class, 'preview'])->name('skusaha.preview');
+    Route::get('/cetak/{id}', [SkusahaController::class, 'cetak'])->name('skusaha.cetak');
+    Route::post('/tolak/{id}', [SkusahaController::class, 'tolak'])->name('skusaha.tolak');
+});

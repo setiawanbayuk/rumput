@@ -24,8 +24,6 @@
                                     <x-pribadi></x-pribadi>
                                 </div>
                                 <div class="col-md-6 border-start">
-
-
                                     <div class="row mb-3">
                                         <label for="penghasilan"
                                             class="col-md-3 col-form-label text-md-end">{{ __('Penghasilan (Rp.)') }}</label>
@@ -219,16 +217,6 @@
         <script type="text/javascript" src="{{ asset('assets/js/personal.js') }}"></script>
         <script>
             $(document).ready(function() {
-
-                $("#kategori").select2({
-                    theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
-                    placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
-                });
-
                 $("#kepada_gender").select2({
                     theme: "bootstrap-5",
                     width: $(this).data("width") ?
@@ -247,7 +235,6 @@
                     },
                 });
 
-
                 $("#kepada_hubungan").select2({
                     theme: "bootstrap-5",
                     width: $(this).data("width") ?
@@ -257,14 +244,6 @@
                     minimumInputLenght: 2,
                 });
             });
-            const handleChangeRegisterAs = (value) => {
-                if (value == 'sekolah') {
-                    $('#input-sekolah').removeClass('d-none');
-                } else {
-                    $('#input-sekolah').addClass('d-none');
-                }
-            }
-
             $('#penghasilan').keyup(function() {
                 var txtsrc = $(this);
                 var txtout = $("#terbilang");

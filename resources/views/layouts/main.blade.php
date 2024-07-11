@@ -101,11 +101,11 @@
                 <ul class="sidebar-nav">
                     <li class="sidebar-item">
                         <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
-                            data-bs-target="#auth" aria-expanded="false" aria-controls="auth">
+                            data-bs-target="#pelayanan" aria-expanded="false" aria-controls="pelayanan">
                             <i class="ri-article-line"></i>
                             <span>Pelayanan Warga</span>
                         </a>
-                        <ul id="auth" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                        <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
                                 <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum Menikah</a>
                             </li>
@@ -116,10 +116,30 @@
                                 <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan Miskin</a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan Penghasilan</a>
+                                <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan
+                                    Penghasilan</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="{{ route('skusaha.index') }}" class="sidebar-link">Surat Keterangan Usaha</a>
                             </li>
                             <li class="sidebar-item">
                                 <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
+                            data-bs-target="#tools" aria-expanded="false" aria-controls="tools">
+                            <i class="ri-tools-fill"></i>
+                            <span>Tools</span>
+                        </a>
+                        <ul id="tools" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                            <li class="sidebar-item">
+                                <a href="{{ url('/') }}" class="sidebar-link">Rekap</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="{{ url('/') }}" class="sidebar-link">Profil Instansi</a>
                             </li>
                         </ul>
                     </li>
@@ -160,7 +180,8 @@
                     </li> --}}
                 </ul>
                 <div class="sidebar-footer">
-                    <a class="sidebar-link" data-bs-toggle="tooltip" data-bs-title="Logout" href="{{ route('logout') }}"
+                    <a class="sidebar-link" data-bs-toggle="tooltip" data-bs-title="Logout"
+                        href="{{ route('logout') }}"
                         onclick="event.preventDefault();
                                      document.getElementById('logout-form').submit();">
                         <i class="ri-logout-box-line"></i>
