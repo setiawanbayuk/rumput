@@ -90,14 +90,17 @@ class SkusahaController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
+            'register_as' => ['required', 'string'],
             'nama_usaha' => ['required', 'string'],
             'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -173,6 +176,7 @@ class SkusahaController extends Controller
             'tahun' => $request->tahun,
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
+            'jenis' => $request->register_as,
             'nama_usaha' => $request->nama_usaha,
             'alamat_usaha' => $request->alamat_usaha,
             'kepada' => $request->kepada,
@@ -208,8 +212,6 @@ class SkusahaController extends Controller
 
     public function update(Request $request, $id)
     {
-        // dd($request->all());
-
         $request->validate([
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
@@ -227,14 +229,17 @@ class SkusahaController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
+            'register_as' => ['required', 'string'],
             'nama_usaha' => ['required', 'string'],
             'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -313,6 +318,7 @@ class SkusahaController extends Controller
                 'tahun' => $request->tahun,
                 'tgl_surat' => $request->tgl_surat,
                 'nik' => $request->nik,
+                'jenis' => $request->register_as,
                 'nama_usaha' => $request->nama_usaha,
                 'alamat_usaha' => $request->alamat_usaha,
                 'kepada' => $request->kepada,
@@ -380,6 +386,7 @@ class SkusahaController extends Controller
     {
         $request->validate([
             'nik' => ['required', 'min:16'],
+            'register_as' => ['required', 'string'],
             'nama_usaha' => ['required', 'string'],
             'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
@@ -405,6 +412,7 @@ class SkusahaController extends Controller
             'tahun' => date('Y'),
             'tgl_surat' => date('Y-m-d'),
             'nik' => $request->nik,
+            'jenis' => $request->register_as,
             'peruntukan' => $request->peruntukan,
             'kepada' => $request->kepada,
             'nama_usaha' => $request->nama_usaha,
@@ -425,9 +433,16 @@ class SkusahaController extends Controller
 
     public function get(Request $request)
     {
-        $surat = SuratUsaha::with(['history' => function ($query) {
-            return $query->where('tabel_surat', 'surat_usahas');
-        }])->where('nik', $request->nik)->get();
+        if(isset($request->nik)){
+            $surat = SuratUsaha::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_usahas');
+            }])->where('nik', $request->nik)->get();
+        }
+        else if(isset($request->id)){
+            $surat = SuratUsaha::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_usahas');
+            }])->findOrFail($request->id);
+        }
         return response()->json($surat);
     }
 

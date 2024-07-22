@@ -24,14 +24,34 @@
                                     <x-pribadi></x-pribadi>
                                 </div>
                                 <div class="col-md-6 border-start">
+                                    <div class="row mb-3 align-items-md-center">
+                                        <label for="nip" class="col-md-3 col-form-label text-md-end">Jenis Surat
+                                            Usaha</label>
+                                        <div class="col-md-8">
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="register_as"
+                                                    id="flexRadioDefault1" value="kelurahan"
+                                                    onchange="handleChangeRegisterAs('kelurahan')"
+                                                    @checked(old('register_as', 'kelurahan') == 'kelurahan')>
+                                                <label class="form-check-label" for="flexRadioDefault1">Kelurahan</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="register_as"
+                                                    id="flexRadioDefault2" value="luar"
+                                                    onchange="handleChangeRegisterAs('luar')"
+                                                    @checked(old('register_as') == 'luar')>
+                                                <label class="form-check-label" for="flexRadioDefault2">Luar Kelurahan</label>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="row mb-3">
                                         <label for="nama_usaha"
                                             class="col-md-3 col-form-label text-md-end">{{ __('Nama Usaha') }}</label>
 
                                         <div class="col-md-8">
                                             <input id="nama_usaha" type="text"
-                                                class="form-control @error('nama_usaha') is-invalid @enderror" name="nama_usaha"
-                                                value="{{ old('nama_usaha') }}" autocomplete="nama_usaha">
+                                                class="form-control @error('nama_usaha') is-invalid @enderror"
+                                                name="nama_usaha" value="{{ old('nama_usaha') }}" autocomplete="nama_usaha">
 
                                             @error('nama_usaha')
                                                 <span class="invalid-feedback" role="alert">

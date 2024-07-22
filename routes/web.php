@@ -7,8 +7,11 @@ use App\Http\Controllers\Requests\PekerjaanController;
 use App\Http\Controllers\Requests\PendidikanController;
 use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\SkbnController;
+use App\Http\Controllers\SkboroController;
 use App\Http\Controllers\SkdomController;
 use App\Http\Controllers\SkhslController;
+use App\Http\Controllers\SkkelahiranController;
+use App\Http\Controllers\SkkematianController;
 use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SuketController;
@@ -103,4 +106,41 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skusaha')->group(function(){
     Route::get('/preview/{id}', [SkusahaController::class, 'preview'])->name('skusaha.preview');
     Route::get('/cetak/{id}', [SkusahaController::class, 'cetak'])->name('skusaha.cetak');
     Route::post('/tolak/{id}', [SkusahaController::class, 'tolak'])->name('skusaha.tolak');
+});
+
+
+Route::middleware(['auth', 'role:1,3,4'])->prefix('skboro')->group(function(){
+    Route::get('/', [SkboroController::class, 'index'])->name('skboro.index');
+    Route::get('/add', [SkboroController::class, 'add'])->name('skboro.add');
+    Route::post('/', [SkboroController::class, 'store'])->name('skboro.store');
+    Route::get('/edit/{id}', [SkboroController::class, 'edit'])->name('skboro.edit');
+    Route::post('/update/{id}', [SkboroController::class, 'update'])->name('skboro.update');
+    Route::post('/naik/{id}', [SkboroController::class, 'naik'])->name('skboro.naik');
+    Route::get('/preview/{id}', [SkboroController::class, 'preview'])->name('skboro.preview');
+    Route::get('/cetak/{id}', [SkboroController::class, 'cetak'])->name('skboro.cetak');
+    Route::post('/tolak/{id}', [SkboroController::class, 'tolak'])->name('skboro.tolak');
+});
+
+Route::middleware(['auth', 'role:1,3,4'])->prefix('skkelahiran')->group(function(){
+    Route::get('/', [SkkelahiranController::class, 'index'])->name('skkelahiran.index');
+    Route::get('/add', [SkkelahiranController::class, 'add'])->name('skkelahiran.add');
+    Route::post('/', [SkkelahiranController::class, 'store'])->name('skkelahiran.store');
+    Route::get('/edit/{id}', [SkkelahiranController::class, 'edit'])->name('skkelahiran.edit');
+    Route::post('/update/{id}', [SkkelahiranController::class, 'update'])->name('skkelahiran.update');
+    Route::post('/naik/{id}', [SkkelahiranController::class, 'naik'])->name('skkelahiran.naik');
+    Route::get('/preview/{id}', [SkkelahiranController::class, 'preview'])->name('skkelahiran.preview');
+    Route::get('/cetak/{id}', [SkkelahiranController::class, 'cetak'])->name('skkelahiran.cetak');
+    Route::post('/tolak/{id}', [SkkelahiranController::class, 'tolak'])->name('skkelahiran.tolak');
+});
+
+Route::middleware(['auth', 'role:1,3,4'])->prefix('skkematian')->group(function(){
+    Route::get('/', [SkkematianController::class, 'index'])->name('skkematian.index');
+    Route::get('/add', [SkkematianController::class, 'add'])->name('skkematian.add');
+    Route::post('/', [SkkematianController::class, 'store'])->name('skkematian.store');
+    Route::get('/edit/{id}', [SkkematianController::class, 'edit'])->name('skkematian.edit');
+    Route::post('/update/{id}', [SkkematianController::class, 'update'])->name('skkematian.update');
+    Route::post('/naik/{id}', [SkkematianController::class, 'naik'])->name('skkematian.naik');
+    Route::get('/preview/{id}', [SkkematianController::class, 'preview'])->name('skkematian.preview');
+    Route::get('/cetak/{id}', [SkkematianController::class, 'cetak'])->name('skkematian.cetak');
+    Route::post('/tolak/{id}', [SkkematianController::class, 'tolak'])->name('skkematian.tolak');
 });

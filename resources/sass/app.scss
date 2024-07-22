@@ -9,3 +9,14 @@
 // Bootstrap
 @import "bootstrap/scss/bootstrap";
 @import "button";
+
+// Customize
+@import './welcome';
+@import './docs';
+
+
+.garis {
+    height: 1px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.175);
+    margin-bottom: 1rem;
+}

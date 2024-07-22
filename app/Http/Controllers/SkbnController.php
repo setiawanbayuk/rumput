@@ -95,12 +95,14 @@ class SkbnController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
         ]);
 
         if ($request->file('pengantar')) {
@@ -225,12 +227,14 @@ class SkbnController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
         ]);
 
         if ($request->file('pengantar')) {
@@ -413,9 +417,16 @@ class SkbnController extends Controller
 
     public function get(Request $request)
     {
-        $surat = SuratSkbn::with(['history' => function ($query) {
-            return $query->where('tabel_surat', 'surat_skbns');
-        }])->where('nik', $request->nik)->get();
+        if(isset($request->nik)){
+            $surat = SuratSkbn::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_skbns');
+            }])->where('nik', $request->nik)->get();
+        }
+        else if(isset($request->id)){
+            $surat = SuratSkbn::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_skbns');
+            }])->findOrFail($request->id);
+        }
         return response()->json($surat);
     }
 

@@ -110,7 +110,16 @@
                                 <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum Menikah</a>
                             </li>
                             <li class="sidebar-item">
+                                <a href="{{ route('skboro.index') }}" class="sidebar-link">Surat Keterangan Boro</a>
+                            </li>
+                            <li class="sidebar-item">
                                 <a href="{{ route('skdom.index') }}" class="sidebar-link">Surat Keterangan Domisili</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="{{ route('skkelahiran.index') }}" class="sidebar-link">Surat Keterangan Kelahiran</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="{{ route('skkematian.index') }}" class="sidebar-link">Surat Keterangan Kematian</a>
                             </li>
                             <li class="sidebar-item">
                                 <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan Miskin</a>

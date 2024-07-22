@@ -97,13 +97,15 @@ class SuketController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
         ]);
 
         if ($request->file('pengantar')) {
@@ -232,13 +234,15 @@ class SuketController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
         ]);
 
         if ($request->file('pengantar')) {
@@ -432,9 +436,16 @@ class SuketController extends Controller
 
     public function get(Request $request)
     {
-        $surat = SuratKeterangan::with(['history' => function ($query) {
-            return $query->where('tabel_surat', 'surat_keterangans');
-        }])->where('nik', $request->nik)->get();
+        if(isset($request->nik)){
+            $surat = SuratKeterangan::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_keterangans');
+            }])->where('nik', $request->nik)->get();
+        }
+        else if(isset($request->id)){
+            $surat = SuratKeterangan::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_keterangans');
+            }])->findOrFail($request->id);
+        }
         return response()->json($surat);
     }
 

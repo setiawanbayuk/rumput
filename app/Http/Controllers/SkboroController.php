@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\Kelurahan_resource;
 use App\Http\Resources\Pejabat_resource;
-use App\Http\Resources\Regional_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
@@ -17,10 +16,9 @@ use App\Models\Pejabat;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
 use App\Models\Provinsi;
-use App\Models\Regional;
 use App\Models\Resident;
 use App\Models\StatusKwn;
-use App\Models\SuratSktm;
+use App\Models\SuratBoro;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -30,22 +28,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\DataTables;
 
-class SktmController extends Controller
+class SkboroController extends Controller
 {
     use GetNoSurat;
-
     public function index()
     {
         if (request()->ajax()) {
-            $data = SuratSktm::query();
+            $data = SuratBoro::query();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
                     $nomorSurat = $this->getNoSrt($row);
                     $id = $row->id;
-                    $route = 'sktm.edit';
+                    $route = 'skboro.edit';
                     $status = $row->status;
-                    $jenis = 'sktm';
+                    $jenis = 'skboro';
                     if (auth()->user()->role_id == 1) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
                     } else if (auth()->user()->role_id == 3) {
@@ -60,22 +57,21 @@ class SktmController extends Controller
                 ->rawColumns(['action', 'no_surat'])
                 ->make(true);
         };
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
-        return view('sktm.index', compact('title'));
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
+        return view('skboro.index', compact('title'));
     }
 
     public function add()
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        $no_urut_surat = SuratSktm::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+        $no_urut_surat = SuratBoro::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
-        return view('sktm.add', compact('title', 'currentUser', 'no_urut_surat'));
+        return view('skboro.add', compact('title', 'currentUser', 'no_urut_surat'));
     }
 
     public function store(Request $request)
     {
-
         $request->validate([
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
@@ -98,25 +94,16 @@ class SktmController extends Controller
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
-            'register_as' => ['required', 'string'],
-            'kepada' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_tempat_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_tgl_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_gender' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_hubungan' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_kelas' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'kategori' => ['required', 'string'],
             'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/sktm');
-            $path = '/public/pengantar/' . date('Y') . '/sktm';
+            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skboro');
+            $path = '/public/pengantar/' . date('Y') . '/skboro';
             $fileName = $request->file('pengantar')->hashName();
-            $fileLocation = '/storage/pengantar/' . date('Y') . '/sktm/' . $fileName;
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skboro/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
         }
 
@@ -177,10 +164,7 @@ class SktmController extends Controller
             }
         }
 
-
-        $kepada_gender = Gender::find($request->kepada_gender);
-
-        $suket = SuratSktm::create([
+        $suket = SuratBoro::create([
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
@@ -188,18 +172,8 @@ class SktmController extends Controller
             'tahun' => $request->tahun,
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
-            'jenis' => $request->register_as,
             'kepada' => $request->kepada,
-            'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-            'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-            'kepada_gender' => $request->kepada_gender,
-            'kepada_gender_nm' => $kepada_gender->nama,
-            'kepada_hubungan' => $request->kepada_hubungan,
-            'kepada_sekolah' => $request->kepada_sekolah,
-            'kepada_kelas' => $request->kepada_kelas,
-            'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
             'peruntukan' => $request->peruntukan,
-            'kategori' => $request->kategori,
             'pengantar' => $request->pengantar,
             'status' => 1,
             'pengantar' => $request->file('pengantar') ? $fileLocation : ''
@@ -207,31 +181,29 @@ class SktmController extends Controller
 
         Log_surat::create([
             'nik' => $request->nik,
-            'tabel_surat' => 'surat_sktms',
-            'nama_surat' => 'SURAT KETERANGAN MISKIN',
+            'tabel_surat' => 'surat_boros',
+            'nama_surat' => 'SURAT KETERANGAN BORO',
             'id_surat' => $suket->id,
             'status_surat' => 1,
         ]);
 
-        return redirect()->route('sktm.index');
+        return redirect()->route('skboro.index');
     }
-
 
     public function edit($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        $suratKeterangan = SuratSktm::find($id);
+        $suratKeterangan = SuratBoro::find($id);
         if ($suratKeterangan->no_urut_surat == 0) {
-            $no_urut_surat = SuratSktm::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+            $no_urut_surat = SuratBoro::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
-        return view('sktm.edit', compact('title', 'currentUser', 'suratKeterangan'));
+        return view('skboro.edit', compact('title', 'currentUser', 'suratKeterangan'));
     }
 
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $request->validate([
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
@@ -254,26 +226,17 @@ class SktmController extends Controller
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
-            'register_as' => ['required', 'string'],
-            'kepada' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_tempat_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_tgl_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_gender' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_hubungan' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_kelas' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'kategori' => ['required', 'string'],
             'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/sktm');
-            $path = '/public/pengantar/' . date('Y') . '/sktm';
+            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skboro');
+            $path = '/public/pengantar/' . date('Y') . '/skboro';
             $fileName = $request->file('pengantar')->hashName();
-            $fileLocation = '/storage/pengantar/' . date('Y') . '/sktm/' . $fileName;
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skboro/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
         }
 
@@ -288,7 +251,7 @@ class SktmController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $suratKeterangan = SuratSktm::find($id);
+        $suratKeterangan = SuratBoro::find($id);
 
         if ($suratKeterangan) {
 
@@ -338,8 +301,6 @@ class SktmController extends Controller
                 }
             }
 
-            $kepada_gender = Gender::find($request->kepada_gender);
-
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
@@ -347,38 +308,28 @@ class SktmController extends Controller
                 'tahun' => $request->tahun,
                 'tgl_surat' => $request->tgl_surat,
                 'nik' => $request->nik,
-                'jenis' => $request->register_as,
                 'kepada' => $request->kepada,
-                'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-                'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-                'kepada_gender' => $request->kepada_gender,
-                'kepada_gender_nm' => $kepada_gender->nama,
-                'kepada_hubungan' => $request->kepada_hubungan,
-                'kepada_sekolah' => $request->kepada_sekolah,
-                'kepada_kelas' => $request->kepada_kelas,
-                'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
                 'peruntukan' => $request->peruntukan,
-                'kategori' => $request->kategori,
                 'pengantar' => $request->pengantar,
                 'status' => 1,
                 'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
             ]);
 
-            return redirect()->route('sktm.index');
+            return redirect()->route('skboro.index');
         } else {
-            return redirect()->route('sktm.index');
+            return redirect()->route('skboro.index');
         }
     }
 
     public function naik($id)
     {
-        $suratKeterangan = SuratSktm::find($id);
+        $suratKeterangan = SuratBoro::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 2]);
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
-                'tabel_surat' => 'surat_sktms',
-                'nama_surat' => 'SURAT KETERANGAN MISKIN',
+                'tabel_surat' => 'surat_boros',
+                'nama_surat' => 'SURAT KETERANGAN BORO',
                 'id_surat' => $id,
                 'status_surat' => 2,
             ]);
@@ -390,8 +341,8 @@ class SktmController extends Controller
 
     public function preview($id)
     {
-        $surat = SuratSktm::find($id);
-        $surat['kepada_tgl_lhr'] = Carbon::parse($surat['kepada_tgl_lhr'])->isoFormat('D MMMM Y');
+        $surat = SuratBoro::find($id);
+        $surat['tgl_berlaku'] = Carbon::parse($surat['tgl_berlaku'])->isoFormat('D MMMM Y');
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
@@ -400,7 +351,7 @@ class SktmController extends Controller
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
         $url = '';
-        $pdf = Pdf::loadView('sktm.pdf', compact(
+        $pdf = Pdf::loadView('skboro.pdf', compact(
             'surat',
             'penduduk',
             'user',
@@ -414,7 +365,7 @@ class SktmController extends Controller
 
     public function cetak($id)
     {
-        $surat = SuratSktm::find($id);
+        $surat = SuratBoro::find($id);
         return response()->json(['file' => asset($surat->file)]);
     }
 
@@ -423,33 +374,21 @@ class SktmController extends Controller
         $request->validate([
             'nik' => ['required', 'min:16'],
             'peruntukan' => ['required', 'max:100'],
-            'register_as' => ['required', 'string'],
-            'kepada' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_tempat_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_tgl_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_gender' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_hubungan' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_kelas' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
-            'kategori' => ['required', 'string'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+            'kepada' => ['required'],
+            'pengantar' => ['required', 'mimes:jpg,bmp,png'],
         ]);
 
-        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/sktm');
-        $path = '/public/pengantar/' . date('Y') . '/sktm';
+        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skboro');
+        $path = '/public/pengantar/' . date('Y') . '/skboro';
         $fileName = $request->file('pengantar')->hashName();
-        $fileLocation = '/storage/pengantar/' . date('Y') . '/sktm/' . $fileName;
+        $fileLocation = '/storage/pengantar/' . date('Y') . '/skboro/' . $fileName;
         $request->file('pengantar')->storeAs($path, $fileName);
         $resident = Resident::where('nik', $request->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
-        $kepada_gender = Gender::find($request->kepada_gender);
 
-        // dd(isset($kepada_gender) ? $kepada_gender->nama : '');
-
-        $suket = SuratSktm::create([
+        $suket = SuratBoro::create([
             'id_kel'    => auth()->user()->id_instansi,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
@@ -457,26 +396,18 @@ class SktmController extends Controller
             'tahun' => date('Y'),
             'tgl_surat' => date('Y-m-d'),
             'nik' => $request->nik,
-            'peruntukan' => $request->peruntukan,
-            'jenis' => $request->register_as,
             'kepada' => $request->kepada,
-            'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-            'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-            'kepada_gender' => $request->kepada_gender,
-            'kepada_gender_nm' => isset($kepada_gender) ? $kepada_gender->nama : '',
-            'kepada_hubungan' => $request->kepada_hubungan,
-            'kepada_sekolah' => $request->kepada_sekolah,
-            'kepada_kelas' => $request->kepada_kelas,
-            'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
-            'kategori' => $request->kategori,
+            'peruntukan' => $request->peruntukan,
+            'pengantar' => $request->pengantar,
+            'kepada' => $request->kepada,
             'status' => 0,
             'pengantar' => $fileLocation
         ]);
 
         Log_surat::create([
             'nik' => $suket->nik,
-            'tabel_surat' => 'surat_sktms',
-            'nama_surat' => 'SURAT KETERANGAN MISKIN',
+            'tabel_surat' => 'surat_boros',
+            'nama_surat' => 'SURAT KETERANGAN BORO',
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
@@ -486,29 +417,27 @@ class SktmController extends Controller
     public function get(Request $request)
     {
         if(isset($request->nik)){
-            $surat = SuratSktm::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_sktms');
+            $surat = SuratBoro::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_boros');
             }])->where('nik', $request->nik)->get();
         }
         else if(isset($request->id)){
-            $surat = SuratSktm::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_sktms');
+            $surat = SuratBoro::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_boros');
             }])->findOrFail($request->id);
         }
-
         return response()->json($surat);
     }
 
-
     public function tolak($id)
     {
-        $suratKeterangan = SuratSktm::find($id);
+        $suratKeterangan = SuratBoro::find($id);
         if ($suratKeterangan) {
             $suratKeterangan->update(['status' => 4]);
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
-                'tabel_surat' => 'surat_sktms',
-                'nama_surat' => 'SURAT KETERANGAN MISKIN',
+                'tabel_surat' => 'surat_boros',
+                'nama_surat' => 'SURAT KETERANGAN BORO',
                 'id_surat' => $id,
                 'status_surat' => 4,
             ]);

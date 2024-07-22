@@ -92,6 +92,8 @@ class SkdomController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
@@ -103,7 +105,7 @@ class SkdomController extends Controller
             'jumlah_karyawan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
             'alamat_domisili' => ['required', 'string'],
             'tgl_berlaku' => ['nullable', 'required_if:register_as,perusahaan', 'date'],
-            'pengantar' => ['mimes:jpg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -234,6 +236,8 @@ class SkdomController extends Controller
             'agama' => ['required', 'string'],
             'pendidikan' => ['required', 'string'],
             'pekerjaan' => ['required', 'string'],
+            'provinsi' => ['required', 'string'],
+            'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
@@ -245,7 +249,7 @@ class SkdomController extends Controller
             'jumlah_karyawan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
             'alamat_domisili' => ['required', 'string'],
             'tgl_berlaku' => ['nullable', 'required_if:register_as,perusahaan', 'date'],
-            'pengantar' => ['mimes:jpg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
 
@@ -352,7 +356,7 @@ class SkdomController extends Controller
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
                 'tabel_surat' => 'surat_domisilis',
-                'nama_surat' => 'SURAT KETERANGAN MISKIN',
+                'nama_surat' => 'SURAT KETERANGAN DOMISILI',
                 'id_surat' => $id,
                 'status_surat' => 2,
             ]);
@@ -441,7 +445,7 @@ class SkdomController extends Controller
         Log_surat::create([
             'nik' => $suket->nik,
             'tabel_surat' => 'surat_domisilis',
-            'nama_surat' => 'SURAT KETERANGAN MISKIN',
+            'nama_surat' => 'SURAT KETERANGAN DOMISILI',
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
@@ -450,9 +454,16 @@ class SkdomController extends Controller
 
     public function get(Request $request)
     {
-        $surat = SuratDomisili::with(['history' => function ($query) {
-            return $query->where('tabel_surat', 'surat_domisilis');
-        }])->where('nik', $request->nik)->get();
+        if(isset($request->nik)){
+            $surat = SuratDomisili::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_domisilis');
+            }])->where('nik', $request->nik)->get();
+        }
+        else if(isset($request->id)){
+            $surat = SuratDomisili::with(['history' => function ($query) {
+                return $query->where('tabel_surat', 'surat_domisilis');
+            }])->findOrFail($request->id);
+        }
         return response()->json($surat);
     }
 
@@ -464,7 +475,7 @@ class SkdomController extends Controller
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
                 'tabel_surat' => 'surat_domisilis',
-                'nama_surat' => 'SURAT KETERANGAN MISKIN',
+                'nama_surat' => 'SURAT KETERANGAN DOMISILI',
                 'id_surat' => $id,
                 'status_surat' => 4,
             ]);

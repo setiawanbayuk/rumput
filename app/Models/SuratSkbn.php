@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\GetNoSurat;
 use Awobaz\Compoships\Compoships;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class SuratSkbn extends Model
 {
-    use HasFactory, LogsActivity, Compoships;
+    use HasFactory, LogsActivity, Compoships, GetNoSurat;
 
     protected $fillable = [
         'id_kel',
@@ -36,7 +37,12 @@ class SuratSkbn extends Model
         return LogOptions::defaults()
             ->logOnly(['*']);
     }
-    protected $appends = ['st'];
+    protected $appends = ['st', 'nomor_surat'];
+
+    public function getNomorSuratAttribute(){
+        return $this->getNoSrt($this);
+    }
+
 
     public function getStAttribute()
     {
