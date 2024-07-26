@@ -5,19 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Resources\Kelurahan_resource;
 use App\Http\Resources\Pejabat_resource;
 use App\Http\Resources\User_resource;
-use App\Models\Agama;
 use App\Models\Gender;
-use App\Models\Kabko;
-use App\Models\Kecamatan;
 use App\Models\Kelurahan;
 use App\Models\Kewarganegaraan;
 use App\Models\Log_surat;
 use App\Models\Pejabat;
-use App\Models\Pekerjaan;
-use App\Models\Pendidikan;
-use App\Models\Provinsi;
 use App\Models\Resident;
-use App\Models\StatusKwn;
 use App\Models\SuratKelahiran;
 use App\Models\User;
 use App\Traits\GetNoSurat;
@@ -107,7 +100,7 @@ class SkkelahiranController extends Controller
             'tempat_kelahiran_anak' => ['required', 'string'],
             'hari_lhr_anak' => ['required', 'string'],
             'tgl_lhr_anak' =>  ['required', 'date'],
-            'jam_lhr_anak' =>  ['required', 'date_format:H:i'],
+            'jam_lhr_anak' =>  ['required'],
             'jenis_klhr_anak' => ['required', 'string'],
             'klhr_ke_anak' => ['required', 'string'],
             'penolong_klhr_anak' => ['required', 'string'],
@@ -138,8 +131,7 @@ class SkkelahiranController extends Controller
             'id_kel'    => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
-            'kd_instansi' => $request->kd_instansi,
-            'tahun' => $request->tahun,
+
             'tgl_surat' => $request->tgl_surat,
             'nama_pelapor' => $request->name_pelapor,
             'nik_pelapor' => $request->nik_pelapor,
@@ -284,8 +276,6 @@ class SkkelahiranController extends Controller
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
-                'kd_instansi' => $request->kd_instansi,
-                'tahun' => $request->tahun,
                 'tgl_surat' => $request->tgl_surat,
                 'nama_pelapor' => $request->name_pelapor,
                 'nik_pelapor' => $request->nik_pelapor,
@@ -347,7 +337,7 @@ class SkkelahiranController extends Controller
             $suratKeterangan->update(['status' => 2]);
 
             Log_surat::create([
-                'nik' => $suratKeterangan->nik,
+                'nik' => $suratKeterangan->nik_pelapor,
                 'tabel_surat' => 'surat_kelahirans',
                 'nama_surat' => 'SURAT KETERANGAN KELAHIRAN',
                 'id_surat' => $id,
@@ -363,10 +353,6 @@ class SkkelahiranController extends Controller
     public function preview($id)
     {
         $surat = SuratKelahiran::find($id);
-        $resident = Resident::where('nik', $surat->nik)->first();
-        $penduduk = unserialize($resident->data);
-        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-
         $user = new User_resource(User::with('skpd')->find(Auth::id()));
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
@@ -374,15 +360,54 @@ class SkkelahiranController extends Controller
 
         $url = '';
 
+        $tgl_lhr_ayah = explode('-', $surat->tgl_lhr_ayah);
+
+        $y_lhr_ayah = $tgl_lhr_ayah[0];
+        $m_lhr_ayah = $tgl_lhr_ayah[1];
+        $d_lhr_ayah = $tgl_lhr_ayah[2];
+
+        $tgl_lhr_ibu = explode('-', $surat->tgl_lhr_ibu);
+
+        $y_lhr_ibu = $tgl_lhr_ibu[0];
+        $m_lhr_ibu = $tgl_lhr_ibu[1];
+        $d_lhr_ibu = $tgl_lhr_ibu[2];
+
+
+        $tgl_lhr_anak = explode('-', $surat->tgl_lhr_anak);
+
+        $y_lhr_anak = $tgl_lhr_anak[0];
+        $m_lhr_anak = $tgl_lhr_anak[1];
+        $d_lhr_anak = $tgl_lhr_anak[2];
+
+
+        $jam_lhr_anak = explode(':', $surat->jam_lhr_anak);
+
+        $hh_lhr_anak = $jam_lhr_anak[0];
+        $mm_lhr_anak = $jam_lhr_anak[1];
+
+
+        $num = $surat->klhr_ke_anak;
+        $num_padded = sprintf("%02d", $num);
+
         $pdf = Pdf::loadView('skkelahiran.pdf', compact(
             'surat',
-            'penduduk',
-            'user',
             'nomorSurat',
             'pejabat',
             'tglSurat',
-            'url'
-        ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
+            'url',
+            'y_lhr_ayah',
+            'm_lhr_ayah',
+            'd_lhr_ayah',
+            'y_lhr_ibu',
+            'm_lhr_ibu',
+            'd_lhr_ibu',
+            'y_lhr_anak',
+            'm_lhr_anak',
+            'd_lhr_anak',
+            'hh_lhr_anak',
+            'mm_lhr_anak',
+            'num_padded'
+        ))->setPaper('legal', 'portrait');
         return $pdf->stream();
     }
 

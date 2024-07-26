@@ -10,7 +10,7 @@
                     <div class="card-header bg-transparent py-3 text-center fw-bold">{{ $title }}</div>
 
                     <div class="card-body">
-                        <form method="POST" enctype="multipart/form-data" action="{{ route('skkelahiran.update', ['id' => $suratKeterangan->id]) }}">
+                        <form method="POST" enctype="multipart/form-data" action="{{ route('skkematian.update', ['id' => $suratKeterangan->id]) }}">
                             @csrf
 
                             <div class="row justify-content-center">
@@ -286,168 +286,24 @@
                                 </div>
                                 <div class="col-md-6 border-start">
 
-                                    <div id="data-anak" name="data-anak">
-                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Anak</div>
 
-                                        <div class="row mb-3">
-                                            <label for="name_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Nama') }}</label>
-
-                                            <div class="col-md-8">
-                                                <input id="name_anak" type="text"
-                                                    class="form-control @error('name_anak') is-invalid @enderror"
-                                                    name="name_anak"
-                                                    value="{{ old('name_anak', $suratKeterangan->nama_anak) }}"
-                                                    autocomplete="name_anak" autofocus>
-
-                                                @error('name_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
+                                    <div id="data-jenazah" name="data-jenazah">
+                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Jenazah</div>
 
 
                                         <div class="row mb-3">
-                                            <label for="gender_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Jenis Kelamin') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('gender_anak') is-invalid @enderror"
-                                                    id="gender_anak" name="gender_anak" data-placeholder="Jenis Kelamin">
-                                                </select>
-                                                @error('gender_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="tempat_dilahirkan_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Tempat Dilahirkan') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select
-                                                    class="form-control @error('tempat_dilahirkan_anak') is-invalid @enderror"
-                                                    id="tempat_dilahirkan_anak" name="tempat_dilahirkan_anak"
-                                                    data-placeholder="Tempat Dilahirkan">
-                                                    <option value=""></option>
-                                                    <option value="RS/RB">RS/RB</option>
-                                                    <option value="Puskesmas">Puskesmas</option>
-                                                    <option value="Polindes">Polindes</option>
-                                                    <option value="Rumah">Rumah</option>
-                                                    <option value="Lainnya">Lainnya</option>
-                                                </select>
-                                                @error('tempat_dilahirkan_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="tempat_kelahiran_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Tempat Kelahiran') }}</label>
-
-                                            <div class="col-md-8">
-                                                <input id="tempat_kelahiran_anak" type="text"
-                                                    class="form-control @error('tempat_kelahiran_anak') is-invalid @enderror"
-                                                    name="tempat_kelahiran_anak"
-                                                    value="{{ old('tempat_kelahiran_anak', $suratKeterangan->tempat_kelahiran_anak) }}"
-                                                    autocomplete="tempat_kelahiran_anak" autofocus>
-
-                                                @error('tempat_kelahiran_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="hari_tgl_lhr_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Hari dan Tgl. Lahir Anak') }}</label>
-
-                                            <div class="col-md-4">
-                                                <input id="hari_lhr_anak" type="text"
-                                                    class="form-control @error('hari_lhr_anak') is-invalid @enderror"
-                                                    name="hari_lhr_anak"
-                                                    value="{{ old('hari_lhr_anak', $suratKeterangan->hari_lhr_anak) }}"
-                                                    autocomplete="hari_lhr_anak" autofocus>
-
-                                                @error('hari_lhr_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input id="tgl_lhr_anak" type="date"
-                                                    class="form-control @error('tgl_lhr_anak') is-invalid @enderror"
-                                                    name="tgl_lhr_anak"
-                                                    value="{{ old('tgl_lhr_anak', $suratKeterangan->tgl_lhr_anak) }}"
-                                                    autocomplete="tgl_lhr_anak" autofocus>
-
-                                                @error('tgl_lhr_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                            <div class="col-md-2">
-                                                <input id="jam_lhr_anak" type="time"
-                                                    class="form-control @error('jam_lhr_anak') is-invalid @enderror"
-                                                    name="jam_lhr_anak"
-                                                    value="{{ old('jam_lhr_anak', $suratKeterangan->jam_lhr_anak) }}"
-                                                    autocomplete="jam_lhr_anak" autofocus>
-
-                                                @error('jam_lhr_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="jenis_klhr_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Jenis Kelahiran') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select
-                                                    class="form-control @error('jenis_klhr_anak') is-invalid @enderror"
-                                                    id="jenis_klhr_anak" name="jenis_klhr_anak"
-                                                    data-placeholder="Jenis Kelahiran">
-                                                    <option value=""></option>
-                                                    <option value="Tunggal">Tunggal</option>
-                                                    <option value="Kembar 2">Kembar 2</option>
-                                                    <option value="Kembar 3">Kembar 3</option>
-                                                    <option value="Kembar 4">Kembar 4</option>
-                                                    <option value="Lainnya">Lainnya</option>
-                                                </select>
-                                                @error('jenis_klhr_anak')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="klhr_ke_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Kelahiran ke') }}</label>
+                                            <label for="nik"
+                                                class="col-md-3 col-form-label text-md-end">{{ __('NIK Jenazah') }}</label>
                                             <div class="col-md-8">
                                                 <div class="input-group">
                                                     <input type="number"
-                                                        class="form-control @error('klhr_ke_anak') is-invalid @enderror"
-                                                        id="klhr_ke_anak" name="klhr_ke_anak"
-                                                        value="{{ old('klhr_ke_anak', $suratKeterangan->klhr_ke_anak) }}">
+                                                        class="form-control @error('nik') is-invalid @enderror"
+                                                        id="nik" name="nik"
+                                                        placeholder="Masukkan 16 digit NIK" aria-label="NIK"
+                                                        value="{{ old('nik', $suratKeterangan->nik) }}"
+                                                        aria-describedby="basic-addon2">
 
-                                                    @error('klhr_ke_anak')
+                                                    @error('nik')
                                                         <span class="invalid-feedback" role="alert">
                                                             <strong>{{ $message }}</strong>
                                                         </span>
@@ -457,21 +313,16 @@
                                         </div>
 
                                         <div class="row mb-3">
-                                            <label for="penolong_klhr_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Penolong Kelahiran') }}</label>
+                                            <label for="name"
+                                                class="col-md-3 col-form-label text-md-end">{{ __('Nama') }}</label>
 
                                             <div class="col-md-8">
-                                                <select
-                                                    class="form-control @error('penolong_klhr_anak') is-invalid @enderror"
-                                                    id="penolong_klhr_anak" name="penolong_klhr_anak"
-                                                    data-placeholder="Penolong Kelahiran">
-                                                    <option value=""></option>
-                                                    <option value="Dokter">Dokter</option>
-                                                    <option value="Bidan">Bidan</option>
-                                                    <option value="Dukun">Dukun</option>
-                                                    <option value="Lainnya">Lainnya</option>
-                                                </select>
-                                                @error('penolong_klhr_anak')
+                                                <input id="name" type="text"
+                                                    class="form-control @error('name') is-invalid @enderror"
+                                                    name="name" value="{{ old('name', $suratKeterangan->nik) }}"
+                                                    autocomplete="name" autofocus>
+
+                                                @error('name')
                                                     <span class="invalid-feedback" role="alert">
                                                         <strong>{{ $message }}</strong>
                                                     </span>
@@ -480,44 +331,101 @@
                                         </div>
 
                                         <div class="row mb-3">
-                                            <label for="bb_anak"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Berat') }}</label>
-                                            <div class="col-md-2">
-                                                <div class="input-group">
-                                                    <input type="text"
-                                                        class="form-control @error('bb_anak') is-invalid @enderror"
-                                                        id="bb_anak" name="bb_anak"
-                                                        value="{{ old('bb_anak', $suratKeterangan->bb_anak) }}">
+                                            <label for="tgl_kematian"
+                                                class="col-md-3 col-form-label text-md-end">{{ __('Tgl. Kematian') }}</label>
 
-                                                    @error('bb_anak')
-                                                        <span class="invalid-feedback" role="alert">
-                                                            <strong>{{ $message }}</strong>
-                                                        </span>
-                                                    @enderror
-                                                </div>
-                                            </div>
-                                            <label for="tb_anak"
-                                                class="col-md-1 col-form-label text-md-start">{{ __('kg') }}</label>
-                                            <label for="tb_anak"
-                                                class="col-md-2 col-form-label text-md-end">{{ __('Panjang') }}</label>
                                             <div class="col-md-2">
-                                                <div class="input-group">
-                                                    <input type="text"
-                                                        class="form-control @error('tb_anak') is-invalid @enderror"
-                                                        id="tb_anak" name="tb_anak"
-                                                        value="{{ old('tb_anak', $suratKeterangan->tb_anak) }}">
+                                                <input id="tgl_kematian" type="date"
+                                                    class="form-control @error('tgl_kematian') is-invalid @enderror"
+                                                    name="tgl_kematian" value="{{ old('tgl_kematian', $suratKeterangan->tgl_kematian) }}"
+                                                    autocomplete="tgl_kematian" autofocus>
 
-                                                    @error('tb_anak')
-                                                        <span class="invalid-feedback" role="alert">
-                                                            <strong>{{ $message }}</strong>
-                                                        </span>
-                                                    @enderror
-                                                </div>
+                                                @error('tgl_kematian')
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $message }}</strong>
+                                                    </span>
+                                                @enderror
                                             </div>
-                                            <label for="tb_anak"
-                                                class="col-md-1 col-form-label text-md-start">{{ __('cm') }}</label>
+                                            <div class="col-md-2">
+                                                <input id="jam_kematian" type="time"
+                                                    class="form-control @error('jam_kematian') is-invalid @enderror"
+                                                    name="jam_kematian" value="{{ old('jam_kematian', $suratKeterangan->jam_kematian) }}"
+                                                    autocomplete="jam_kematian" autofocus>
+
+                                                @error('jam_kematian')
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $message }}</strong>
+                                                    </span>
+                                                @enderror
+                                            </div>
                                         </div>
 
+                                        <div class="row mb-3">
+                                            <label for="sebab_kematian"
+                                                class="col-md-3 col-form-label text-md-end">{{ __('Sebab Kematian') }}</label>
+
+                                            <div class="col-md-8">
+                                                <select
+                                                    class="form-control @error('sebab_kematian') is-invalid @enderror"
+                                                    id="sebab_kematian" name="sebab_kematian"
+                                                    data-placeholder="Sebab Kematian">
+                                                    <option value=""></option>
+                                                    <option value="Sakit Biasa/Tua">Sakit Biasa/Tua</option>
+                                                    <option value="Wabah Penyakit">Wabah Penyakit</option>
+                                                    <option value="Kecelakaan">Kecelakaan</option>
+                                                    <option value="Kriminalitas">Kriminalitas</option>
+                                                    <option value="Bunuh Diri">Bunuh Diri</option>
+                                                    <option value="Lainnya">Lainnya</option>
+                                                </select>
+                                                @error('sebab_kematian')
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $message }}</strong>
+                                                    </span>
+                                                @enderror
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-3">
+                                            <label for="tempat_kematian"
+                                                class="col-md-3 col-form-label text-md-end">{{ __('Tempat Kematian') }}</label>
+
+                                            <div class="col-md-8">
+                                                <input id="tempat_kematian" type="text"
+                                                    class="form-control @error('tempat_kematian') is-invalid @enderror"
+                                                    name="tempat_kematian"
+                                                    value="{{ old('tempat_kematian', $suratKeterangan->tempat_kematian) }}"
+                                                    autocomplete="tempat_kematian" autofocus>
+
+                                                @error('tempat_kematian')
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $message }}</strong>
+                                                    </span>
+                                                @enderror
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-3">
+                                            <label for="yang_menerangkan"
+                                                class="col-md-3 col-form-label text-md-end">{{ __('Yang Menerangkan') }}</label>
+
+                                            <div class="col-md-8">
+                                                <select
+                                                    class="form-control @error('yang_menerangkan') is-invalid @enderror"
+                                                    id="yang_menerangkan" name="yang_menerangkan"
+                                                    data-placeholder="Yang Menerangkan">
+                                                    <option value=""></option>
+                                                    <option value="Dokter">Dokter</option>
+                                                    <option value="Tenaga Kesehatan">Tenaga Kesehatan</option>
+                                                    <option value="Kepolisian">Kepolisian</option>
+                                                    <option value="Lainnya">Lainnya</option>
+                                                </select>
+                                                @error('yang_menerangkan')
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $message }}</strong>
+                                                    </span>
+                                                @enderror
+                                            </div>
+                                        </div>
                                     </div>
                                     <div id="data-ortu" name="data-ortu">
                                         <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Ayah
@@ -540,24 +448,6 @@
                                                         </span>
                                                     @enderror
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="kk_ayah"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('No. KK Ayah') }}</label>
-
-                                            <div class="col-md-8">
-                                                <input id="kk_ayah" type="number"
-                                                    class="form-control @error('kk_ayah') is-invalid @enderror"
-                                                    name="kk_ayah"
-                                                    value="{{ old('kk_ayah', $suratKeterangan->kk_ayah) }}"
-                                                    autocomplete="kk_ayah" autofocus>
-
-                                                @error('kk_ayah')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
                                             </div>
                                         </div>
                                         <div class="row mb-3">
@@ -650,23 +540,6 @@
                                             </div>
                                         </div>
                                         <div class="row mb-3">
-                                            <label for="kk_ibu"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('No. KK Ibu') }}</label>
-
-                                            <div class="col-md-8">
-                                                <input id="kk_ibu" type="number"
-                                                    class="form-control @error('kk_ibu') is-invalid @enderror"
-                                                    name="kk_ibu" value="{{ old('kk_ibu', $suratKeterangan->kk_ibu) }}"
-                                                    autocomplete="kk_ibu" autofocus>
-
-                                                @error('kk_ibu')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
                                             <label for="name_ibu"
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Nama Ibu') }}</label>
 
@@ -735,7 +608,6 @@
                                             </div>
                                         </div>
                                     </div>
-
 
                                     <div class="row mb-0">
                                         <div class="d-flex col-md-8 offset-md-3 justify-content-md-end">
@@ -1085,26 +957,7 @@
                 });
 
 
-                $("#gender_anak").select2({
-                    theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
-                    placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
-                    ajax: {
-                        url: route("gender.index"),
-                        dataType: "json",
-                        processResults: function(response) {
-                            return {
-                                results: response,
-                            };
-                        },
-                    },
-                });
-
-
-                $("#tempat_dilahirkan_anak").select2({
+                $("#sebab_kematian").select2({
                     theme: "bootstrap-5",
                     width: $(this).data("width") ?
                         $(this).data("width") : $(this).hasClass("w-100") ?
@@ -1113,16 +966,7 @@
                     minimumInputLenght: 2,
                 });
 
-                $("#jenis_klhr_anak").select2({
-                    theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
-                    placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
-                });
-
-                $("#penolong_klhr_anak").select2({
+                $("#yang_menerangkan").select2({
                     theme: "bootstrap-5",
                     width: $(this).data("width") ?
                         $(this).data("width") : $(this).hasClass("w-100") ?
@@ -1161,28 +1005,14 @@
                         text: '{{ $suratKeterangan->kewarganegaraan_ibu_nm }}',
                     },
                 });
-                $("#gender_anak").select2("trigger", "select", {
+                $("#sebab_kematian").select2("trigger", "select", {
                     data: {
-                        id: '{{ $suratKeterangan->gender_anak }}',
-                        text: '{{ $suratKeterangan->gender_anak_nm }}',
+                        id: '{{ $suratKeterangan->sebab_kematian }}',
                     },
                 });
-                $("#tempat_dilahirkan_anak").select2("trigger", "select", {
+                $("#yang_menerangkan").select2("trigger", "select", {
                     data: {
-                        id: '{{ $suratKeterangan->tempat_dilahirkan_anak }}',
-                        text: '{{ $suratKeterangan->tempat_dilahirkan_anak_nm }}',
-                    },
-                });
-                $("#jenis_klhr_anak").select2("trigger", "select", {
-                    data: {
-                        id: '{{ $suratKeterangan->jenis_klhr_anak }}',
-                        text: '{{ $suratKeterangan->jenis_klhr_anak_nm }}',
-                    },
-                });
-                $("#penolong_klhr_anak").select2("trigger", "select", {
-                    data: {
-                        id: '{{ $suratKeterangan->penolong_klhr_anak }}',
-                        text: '{{ $suratKeterangan->penolong_klhr_anak_nm }}',
+                        id: '{{ $suratKeterangan->yang_menerangkan }}',
                     },
                 });
             });

@@ -177,8 +177,7 @@ class SkdomController extends Controller
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
-            'kd_instansi' => $request->kd_instansi,
-            'tahun' => $request->tahun,
+
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
             'jenis' => $request->register_as,
@@ -325,8 +324,6 @@ class SkdomController extends Controller
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
-                'kd_instansi' => $request->kd_instansi,
-                'tahun' => $request->tahun,
                 'tgl_surat' => $request->tgl_surat,
                 'nik' => $request->nik,
                 'jenis' => $request->register_as,

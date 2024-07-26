@@ -178,8 +178,7 @@ class SuketController extends Controller
             'id_kel'    => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
-            'kd_instansi' => $request->kd_instansi,
-            'tahun' => $request->tahun,
+
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
             'keterangan' => $request->keterangan,
@@ -196,6 +195,8 @@ class SuketController extends Controller
             'id_surat' => $suket->id,
             'status_surat' => 1,
         ]);
+
+        ///Notif WA ke Atasan
 
         return redirect()->route('suket.index');
     }
@@ -269,33 +270,33 @@ class SuketController extends Controller
 
         if ($suratKeterangan) {
 
-        $datapemohon = serialize([
-            'kk' => $request->kk,
-            'name' => $request->name,
-            'gender' => $request->gender,
-            'gender_nm' => $gender->nama,
-            'status_kwn' => $request->status_kwn,
-            'status_kwn_nm' => $status_kwn->nama,
-            'kewarganegaraan' => $request->kewarganegaraan,
-            'kewarganegaraan_nm' => $kewarganegaraan->nama,
-            'tempat_lhr' => $request->tempat_lhr,
-            'tgl_lhr' =>  $request->tgl_lhr,
-            'agama' => $request->agama,
-            'agama_nm' => $agama->nama,
-            'pendidikan' => $request->pendidikan,
-            'pendidikan_nm' => $pendidikan->nama,
-            'pekerjaan' => $request->pekerjaan,
-            'pekerjaan_nm' => $pekerjaan->nama,
-            'provinsi' => $request->provinsi,
-            'provinsi_nm' => $provinsi->nama,
-            'kabko' => $request->kabko,
-            'kabko_nm' => $kabko->nama,
-            'kecamatan' => $request->kecamatan,
-            'kecamatan_nm' => $kecamatan->nama,
-            'kelurahan' => $request->kelurahan,
-            'kelurahan_nm' => $kelurahan->nama,
-            'alamat' => $request->alamat
-        ]);
+            $datapemohon = serialize([
+                'kk' => $request->kk,
+                'name' => $request->name,
+                'gender' => $request->gender,
+                'gender_nm' => $gender->nama,
+                'status_kwn' => $request->status_kwn,
+                'status_kwn_nm' => $status_kwn->nama,
+                'kewarganegaraan' => $request->kewarganegaraan,
+                'kewarganegaraan_nm' => $kewarganegaraan->nama,
+                'tempat_lhr' => $request->tempat_lhr,
+                'tgl_lhr' =>  $request->tgl_lhr,
+                'agama' => $request->agama,
+                'agama_nm' => $agama->nama,
+                'pendidikan' => $request->pendidikan,
+                'pendidikan_nm' => $pendidikan->nama,
+                'pekerjaan' => $request->pekerjaan,
+                'pekerjaan_nm' => $pekerjaan->nama,
+                'provinsi' => $request->provinsi,
+                'provinsi_nm' => $provinsi->nama,
+                'kabko' => $request->kabko,
+                'kabko_nm' => $kabko->nama,
+                'kecamatan' => $request->kecamatan,
+                'kecamatan_nm' => $kecamatan->nama,
+                'kelurahan' => $request->kelurahan,
+                'kelurahan_nm' => $kelurahan->nama,
+                'alamat' => $request->alamat
+            ]);
             $resident = Resident::where('nik', $request->nik)->first();
 
             if (!$resident) {
@@ -317,8 +318,6 @@ class SuketController extends Controller
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
-                'kd_instansi' => $request->kd_instansi,
-                'tahun' => $request->tahun,
                 'tgl_surat' => $request->tgl_surat,
                 'nik' => $request->nik,
                 'keterangan' => $request->keterangan,
@@ -327,6 +326,9 @@ class SuketController extends Controller
                 'status' => 1,
                 'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
             ]);
+
+
+            ///Notif WA ke Atasan
 
             return redirect()->route('suket.index');
         } else {
@@ -347,6 +349,9 @@ class SuketController extends Controller
                 'id_surat' => $id,
                 'status_surat' => 2,
             ]);
+
+
+            ///Notif WA ke Atasan
 
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
@@ -430,18 +435,18 @@ class SuketController extends Controller
             'status_surat' => 0,
         ]);
 
+        ///Notif WA ke Admin
 
         return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
     }
 
     public function get(Request $request)
     {
-        if(isset($request->nik)){
+        if (isset($request->nik)) {
             $surat = SuratKeterangan::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_keterangans');
             }])->where('nik', $request->nik)->get();
-        }
-        else if(isset($request->id)){
+        } else if (isset($request->id)) {
             $surat = SuratKeterangan::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_keterangans');
             }])->findOrFail($request->id);
@@ -463,6 +468,9 @@ class SuketController extends Controller
                 'id_surat' => $id,
                 'status_surat' => 4,
             ]);
+
+
+            ///Notif WA ke Pengaju
 
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {

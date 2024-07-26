@@ -15,7 +15,8 @@
                             @csrf
 
                             <div class="row mb-3">
-                                <label for="name" class="col-md-4 col-form-label text-md-end">{{ __('Name') }}</label>
+                                <label for="name"
+                                    class="col-md-4 col-form-label text-md-end">{{ __('Name') }}</label>
 
                                 <div class="col-md-6">
                                     <input id="name" type="text"
@@ -94,6 +95,13 @@
                                             <strong>{{ $message }}</strong>
                                         </span>
                                     @enderror
+
+                                    <ul class="form-text text-primary">
+                                        <li>Panjang minimal 8 karakter.</li>
+                                        <li>Harus mengandung campuran huruf besar dan kecil.</li>
+                                        <li>Harus menyertakan angka.</li>
+                                        <li>Harus menyertakan simbol.</li>
+                                    </ul>
                                 </div>
                             </div>
 

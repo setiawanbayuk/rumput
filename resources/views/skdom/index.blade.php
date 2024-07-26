@@ -127,7 +127,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: 'https://esuket.dev/skdom/cetak/' + e,
+                    url: "{{ env('APP_URL', 'https://esuket.dev') }}" + "/skdom/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');

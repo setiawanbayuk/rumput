@@ -100,7 +100,7 @@
         </script>
         <script>
             function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'https://eskkelahiran.dev') }}" + "/skkelahiran/preview/" + e, 'preview',
+                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/skkelahiran/preview/" + e, 'preview',
                     'width=600,height=1000');
             }
 
@@ -108,7 +108,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: 'https://eskkelahiran.dev/skkelahiran/cetak/' + e,
+                    url: "{{ env('APP_URL', 'https://esuket.dev') }}" + "/skkelahiran/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
