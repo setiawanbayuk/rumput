@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Requests\AgamaController;
 use App\Http\Controllers\Requests\GenderController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\SkkematianController;
 use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SuketController;
+use App\Http\Controllers\WargaController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -54,10 +56,17 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function(){
     Route::post('/update/{id}', [SuketController::class, 'update'])->name('suket.update');
     Route::post('/naik/{id}', [SuketController::class, 'naik'])->name('suket.naik');
     Route::get('/preview/{id}', [SuketController::class, 'preview'])->name('suket.preview');
-    Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
+    // Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
     Route::post('/tolak/{id}', [SuketController::class, 'tolak'])->name('suket.tolak');
 });
-
+Route::prefix('suket')->group(function(){
+    Route::get('/warga', [SuketController::class, 'warga'])->name('suket.warga');
+    Route::get('/warga_add', [SuketController::class, 'warga_add'])->name('suket.warga_add');
+    Route::post('/warga', [SuketController::class, 'save'])->name('suket.save');
+    // Route::get('/warga/{id}', [SuketController::class, 'warga_edit'])->name('suket.warga_edit');
+    // Route::post('/warga_update/{id}', [SuketController::class, 'warga_update'])->name('suket.warga_update');
+    Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
+});
 
 Route::middleware(['auth', 'role:1,3,4'])->prefix('sktm')->group(function(){
     Route::get('/', [SktmController::class, 'index'])->name('sktm.index');
@@ -144,3 +153,8 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skkematian')->group(function(
     Route::get('/cetak/{id}', [SkkematianController::class, 'cetak'])->name('skkematian.cetak');
     Route::post('/tolak/{id}', [SkkematianController::class, 'tolak'])->name('skkematian.tolak');
 });
+
+
+Route::get('/sso', [LoginController::class, 'sso'])->name('sso.login');
+Route::get('/callback', [LoginController::class, 'callback'])->name('sso.callback');
+Route::get('/users/profile', [LoginController::class, 'profile'])->name('users.profile');

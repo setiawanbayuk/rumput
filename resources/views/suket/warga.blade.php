@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.warga')
 
 @section('title', 'Surat Keterangan')
 
@@ -13,11 +13,9 @@
         <br>
 
         <div class="d-flex gap-2">
-            @if (auth()->user()->role_id == 1)
-                <a class="btn btn-primary" href="{{ route('sktm.add') }}">
-                    <i class="ri-add-fill me-2"></i>
-                    <span>Tambah</span></a>
-            @endif
+            <a class="btn btn-primary" href="{{ route('suket.warga_add') }}">
+                <i class="ri-add-fill me-2"></i>
+                <span>Tambah</span></a>
             <button class="btn btn-secondary" onclick="reload()">Reload</button>
         </div>
 
@@ -25,15 +23,13 @@
 
         <div class="card card-body">
             <div class="table-responsive">
-                <table id="tableSurat" class="table table-hovered" style="width: 100%">
+                <table id="tableSurat" class="table table-hovered" style="width: 100%" style="width: 100%">
                     <thead>
                         <tr>
                             <th>No</th>
                             <th>No Surat</th>
-                            <th>NIK</th>
                             <th>Tanggal</th>
                             <th>Peruntukan</th>
-                            <th>Jenis</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -55,7 +51,7 @@
                     serverSide: true,
                     ordering: true,
                     scrollX: true,
-                    ajax: "{{ route('sktm.index') }}",
+                    ajax: "{{ route('suket.warga') }}",
                     columns: [{
                             data: 'no_urut_surat',
                             name: 'no_urut_surat'
@@ -67,10 +63,6 @@
                             searchable: false
                         },
                         {
-                            data: 'nik',
-                            name: 'nik'
-                        },
-                        {
                             data: 'tgl_surat',
                             name: 'tgl_surat',
                             width: '10%',
@@ -78,17 +70,6 @@
                         {
                             data: 'peruntukan',
                             name: 'peruntukan'
-                        },
-                        {
-                            data: 'jenis',
-                            // name: 'jenis'
-                            render: function(data, type) {
-                                var str = data;
-                                str = str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
-                                    return letter.toUpperCase();
-                                });
-                                return `<span>${str}</span> `;
-                            },
                         },
                         {
                             data: 'st',
@@ -107,7 +88,7 @@
                         },
                     ],
                     order: [
-                        [3, "desc"],
+                        [2, "desc"],
                         [0, "desc"]
                     ],
                     pageLength: 10,
@@ -120,7 +101,7 @@
         </script>
         <script>
             function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/sktm/preview/" + e, 'preview',
+                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/preview/" + e, 'preview',
                     'width=600,height=1000');
             }
 
@@ -128,7 +109,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: "{{ env('APP_URL', 'https://esuket.dev') }}" + "/sktm/cetak/" + e,
+                    url: "{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
@@ -139,7 +120,7 @@
 
             function handleTolak(e) {
                 console.log(e);
-                let url = "{{ route('sktm.tolak', ':id') }}"
+                let url = "{{ route('suket.tolak', ':id') }}"
                 url = url.replace(':id', e);
 
                 Swal.fire({
@@ -184,7 +165,7 @@
 
             function handleNaik(e) {
                 console.log(e);
-                let url = "{{ route('sktm.naik', ':id') }}"
+                let url = "{{ route('suket.naik', ':id') }}"
                 url = url.replace(':id', e);
 
                 $.ajax({

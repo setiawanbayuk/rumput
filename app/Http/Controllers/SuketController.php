@@ -69,6 +69,43 @@ class SuketController extends Controller
         return view('suket.index', compact('title'));
     }
 
+    public function warga()
+    {
+        // dd(auth()->user()->nik);
+        if (request()->ajax()) {
+            $data = SuratKeterangan::query();
+            $data->where('nik', auth()->user()->nik);
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('action', function ($row) {
+                    $nomorSurat = $this->getNoSrt($row);
+                    $id = $row->id;
+                    $route = 'suket.warga_edit';
+                    $status = $row->status;
+                    $jenis = 'suket';
+
+                    return view('includes.button-warga', compact('id', 'route', 'status'));
+                })
+                ->addColumn('no_surat', function ($row) {
+                    return $this->getNoSrt($row);
+                })
+                ->rawColumns(['action', 'no_surat'])
+                ->make(true);
+        };
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
+        return view('suket.warga', compact('title'));
+    }
+
+    public function warga_add()
+    {
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
+        $nik = auth()->user()->nik;
+        // $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
+        // $no_urut_surat = SuratKeterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
+        // $no_urut_surat = intval($no_urut_surat) + 1;
+        return view('suket.addwarga', compact('title', 'nik'));
+    }
+
     public function add()
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
@@ -215,6 +252,16 @@ class SuketController extends Controller
 
         return view('suket.edit', compact('title', 'currentUser', 'suratKeterangan'));
     }
+
+    // public function warga_edit($id)
+    // {
+    //     // dd($id);
+    //     $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
+    //     $suratKeterangan = SuratKeterangan::find($id);
+
+    //     return view('suket.editwarga', compact('title', 'suratKeterangan'));
+    // }
+
 
     public function update(Request $request, $id)
     {
@@ -436,8 +483,12 @@ class SuketController extends Controller
         ]);
 
         ///Notif WA ke Admin
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        } else {
 
-        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+            return redirect()->route('suket.warga');
+        }
     }
 
     public function get(Request $request)

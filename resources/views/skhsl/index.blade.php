@@ -25,7 +25,7 @@
 
         <div class="card card-body">
             <div class="table-responsive">
-                <table id="tableSurat" class="table table-hovered">
+                <table id="tableSurat" class="table table-hovered" style="width: 100%">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -53,6 +53,7 @@
                     processing: true,
                     serverSide: true,
                     ordering: true,
+                    scrollX: true,
                     ajax: "{{ route('skhsl.index') }}",
                     columns: [{
                             data: 'no_urut_surat',
