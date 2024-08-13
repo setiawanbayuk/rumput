@@ -28,7 +28,12 @@ Auth::routes();
 
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('home');
+        if (auth()->user()->role_id == 2){
+            return redirect()->route('warga');
+        }
+        else {
+            return redirect()->route('home');
+        }
     }
     return view('welcome');
 });
@@ -55,16 +60,16 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function(){
     Route::get('/edit/{id}', [SuketController::class, 'edit'])->name('suket.edit');
     Route::post('/update/{id}', [SuketController::class, 'update'])->name('suket.update');
     Route::post('/naik/{id}', [SuketController::class, 'naik'])->name('suket.naik');
-    Route::get('/preview/{id}', [SuketController::class, 'preview'])->name('suket.preview');
+    Route::get('/preview/{id}', [SuketController::class, 'preview'])->name('suket.preview') ;
     // Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
     Route::post('/tolak/{id}', [SuketController::class, 'tolak'])->name('suket.tolak');
 });
-Route::prefix('suket')->group(function(){
-    Route::get('/warga', [SuketController::class, 'warga'])->name('suket.warga');
-    Route::get('/warga_add', [SuketController::class, 'warga_add'])->name('suket.warga_add');
-    Route::post('/warga', [SuketController::class, 'save'])->name('suket.save');
-    // Route::get('/warga/{id}', [SuketController::class, 'warga_edit'])->name('suket.warga_edit');
-    // Route::post('/warga_update/{id}', [SuketController::class, 'warga_update'])->name('suket.warga_update');
+
+Route::prefix('warga')->group(function(){
+    Route::get('/', [HomeController::class, 'warga'])->middleware(['auth'])->name('warga');
+    Route::get('/suket', [SuketController::class, 'warga'])->name('suket.warga');
+    Route::get('/suket_add', [SuketController::class, 'warga_add'])->name('suket.warga_add');
+    Route::post('/suket', [SuketController::class, 'save'])->name('suket.save');
     Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
 });
 

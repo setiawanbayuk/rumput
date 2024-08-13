@@ -106,31 +106,6 @@
                             <span>Pelayanan Warga</span>
                         </a>
                         <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
-                            {{-- <li class="sidebar-item">
-                                <a href="{{ route('skbn.warga') }}" class="sidebar-link">Surat Ket. Belum Menikah</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skboro.warga') }}" class="sidebar-link">Surat Keterangan Boro</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skdom.warga') }}" class="sidebar-link">Surat Keterangan Domisili</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skkelahiran.warga') }}" class="sidebar-link">Surat Keterangan Kelahiran</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skkematian.warga') }}" class="sidebar-link">Surat Keterangan Kematian</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('sktm.warga') }}" class="sidebar-link">Surat Keterangan Miskin</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skhsl.warga') }}" class="sidebar-link">Surat Keterangan
-                                    Penghasilan</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skusaha.warga') }}" class="sidebar-link">Surat Keterangan Usaha</a>
-                            </li> --}}
                             <li class="sidebar-item">
                                 <a href="{{ route('suket.warga') }}" class="sidebar-link">Surat Keterangan</a>
                             </li>

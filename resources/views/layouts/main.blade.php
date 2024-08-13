@@ -99,44 +99,66 @@
                     </div>
                 </div>
                 <ul class="sidebar-nav">
-                    <li class="sidebar-item">
+                    {{-- <li class="sidebar-item">
                         <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
-                            data-bs-target="#pelayanan" aria-expanded="false" aria-controls="pelayanan">
+                            data-bs-target="#warga" aria-expanded="false" aria-controls="warga">
                             <i class="ri-article-line"></i>
-                            <span>Pelayanan Warga</span>
+                            <span>Pengajuan Surat Warga</span>
                         </a>
-                        <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
+                        <ul id="warga" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
-                                <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum Menikah</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skboro.index') }}" class="sidebar-link">Surat Keterangan Boro</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skdom.index') }}" class="sidebar-link">Surat Keterangan Domisili</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skkelahiran.index') }}" class="sidebar-link">Surat Keterangan Kelahiran</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skkematian.index') }}" class="sidebar-link">Surat Keterangan Kematian</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan Miskin</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan
-                                    Penghasilan</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('skusaha.index') }}" class="sidebar-link">Surat Keterangan Usaha</a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
+                                <a href="{{ route('suket.warga') }}" class="sidebar-link">Surat Keterangan</a>
                             </li>
                         </ul>
-                    </li>
 
+                    </li> --}}
+                    @if (auth()->user()->role_id != 2)
+                        <li class="sidebar-item">
+                            <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
+                                data-bs-target="#pelayanan" aria-expanded="false" aria-controls="pelayanan">
+                                <i class="ri-file-edit-line"></i>
+                                <span>Pelayanan Warga</span>
+                            </a>
+
+                            <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse"
+                                data-bs-parent="#sidebar">
+                                <li class="sidebar-item">
+                                    <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum
+                                        Menikah</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('skboro.index') }}" class="sidebar-link">Surat Keterangan Boro</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('skdom.index') }}" class="sidebar-link">Surat Keterangan
+                                        Domisili</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('skkelahiran.index') }}" class="sidebar-link">Surat Keterangan
+                                        Kelahiran</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('skkematian.index') }}" class="sidebar-link">Surat Keterangan
+                                        Kematian</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan
+                                        Miskin</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan
+                                        Penghasilan</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('skusaha.index') }}" class="sidebar-link">Surat Keterangan
+                                        Usaha</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
+                                </li>
+                            </ul>
+                        </li>
+                    @endif
                     <li class="sidebar-item">
                         <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
                             data-bs-target="#tools" aria-expanded="false" aria-controls="tools">
@@ -145,11 +167,16 @@
                         </a>
                         <ul id="tools" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
-                                <a href="{{ url('/') }}" class="sidebar-link">Rekap</a>
+                                <a href="{{ url('/') }}" class="sidebar-link">Profil</a>
                             </li>
-                            <li class="sidebar-item">
-                                <a href="{{ url('/') }}" class="sidebar-link">Profil Instansi</a>
-                            </li>
+                            @if (auth()->user()->role_id != 2)
+                                <li class="sidebar-item">
+                                    <a href="{{ url('/') }}" class="sidebar-link">Rekap</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ url('/') }}" class="sidebar-link">Profil Instansi</a>
+                                </li>
+                            @endif
                         </ul>
                     </li>
                     {{-- <li class="sidebar-item">

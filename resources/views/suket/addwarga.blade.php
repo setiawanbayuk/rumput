@@ -1,4 +1,4 @@
-@extends('layouts.warga')
+@extends('layouts.main')
 
 @section('title', '{{ $title }}')
 

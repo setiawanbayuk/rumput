@@ -3,7 +3,7 @@ function checkNIK() {
     console.log(nik);
 
     $.ajax({
-        url: "https://esuket.dev/api/personal?nik=" + nik,
+        url: window.location.origin + "/api/personal?nik=" + nik,
         success: function (response) {
             $("#kk").val(response.kk);
             $("#name").val(response.name);
@@ -268,7 +268,7 @@ $(document).ready(function () {
             minimumInputLenght: 2,
             ajax: {
                 url:
-                    "https://esuket.dev/api/kabko?kode_provinsi=" + provinsi_id,
+                    window.location.origin + "/api/kabko?kode_provinsi=" + provinsi_id,
                 dataType: "json",
                 processResults: function (response) {
                     return {
@@ -291,7 +291,7 @@ $(document).ready(function () {
             minimumInputLenght: 2,
             ajax: {
                 url:
-                    "https://esuket.dev/api/kecamatan?kode_kabkota=" + kabko_id, //route('regional.kecamatan'),
+                    window.location.origin + "/api/kecamatan?kode_kabkota=" + kabko_id, //route('regional.kecamatan'),
                 dataType: "json",
                 processResults: function (response) {
                     return {
@@ -315,7 +315,7 @@ $(document).ready(function () {
             minimumInputLenght: 2,
             ajax: {
                 url:
-                    "https://esuket.dev/api/kelurahan?kode_kecamatan=" +
+                    window.location.origin + "/api/kelurahan?kode_kecamatan=" +
                     kecamatan_id, //route('regional.kelurahan'),
                 dataType: "json",
                 processResults: function (response) {

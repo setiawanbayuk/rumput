@@ -10,7 +10,7 @@
                     <div class="card-header bg-transparent py-3 text-center fw-bold">{{ $title }}</div>
 
                     <div class="card-body">
-                        <form method="POST" enctype="multipart/form-data" action="{{ route('suket.store') }}">
+                        <form method="POST" enctype="multipart/form-data" action="{{ route('skboro.store') }}">
                             @csrf
                             <div class="row justify-content-center">
                                 <div class="col-md-6">
@@ -124,10 +124,17 @@
                                                     id="pengikut_hubungan" name="pengikut_hubungan"
                                                     data-placeholder="Hubungan">
                                                     <option value=""></option>
-                                                    <option value="Putranya">Putranya</option>
-                                                    <option value="Putrinya">Putrinya</option>
-                                                    <option value="Cucunya">Cucunya</option>
-                                                    <option value="Keluarga">Keluarga</option>
+                                                    <option value="KEPALA KELUARGA">KEPALA KELUARGA</option>
+                                                    <option value="SUAMI">SUAMI</option>
+                                                    <option value="ISTERI">ISTERI</option>
+                                                    <option value="ANAK">ANAK</option>
+                                                    <option value="MENANTU">MENANTU</option>
+                                                    <option value="CUCU">CUCU</option>
+                                                    <option value="ORANG TUA">ORANG TUA</option>
+                                                    <option value="MERTUA">MERTUA</option>
+                                                    <option value="FAMILI LAIN">FAMILI LAIN</option>
+                                                    <option value="PEMBANTU">PEMBANTU</option>
+                                                    <option value="LAINNYA">LAINNYA</option>
                                                 </select>
                                                 @error('pengikut_hubungan')
                                                     <span class="invalid-feedback" role="alert">
@@ -169,7 +176,11 @@
 
                                     <div class="card-header bg-transparent mb-3 text-center fw-bold">Bepergian / Boro Ke
                                     </div>
-                                    <x-boro><x-slot:alamat_boro></x-slot:alamat_boro></x-boro>
+                                    <x-boro>
+                                        <x-slot:alamat_boro></x-slot:alamat_boro>
+                                        <x-slot:tgl_awal></x-slot:tgl_awal>
+                                        <x-slot:tgl_akhir></x-slot:tgl_akhir>
+                                    </x-boro>
                                     <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
                                     <x-pengantar></x-pengantar>
                                     <div class="row mb-0">
@@ -204,27 +215,120 @@
                 });
             });
 
+            $("#pengikut_gender").select2({
+                theme: "bootstrap-5",
+                width: $(this).data("width") ?
+                    $(this).data("width") : $(this).hasClass("w-100") ?
+                    "100%" : "style",
+                placeholder: $(this).data("placeholder"),
+                minimumInputLenght: 2,
+                ajax: {
+                    url: route("gender.index"),
+                    dataType: "json",
+                    processResults: function(response) {
+                        return {
+                            results: response,
+                        };
+                    },
+                },
+            });
+
+            $("#pengikut_status_kwn").select2({
+                theme: "bootstrap-5",
+                width: $(this).data("width") ?
+                    $(this).data("width") : $(this).hasClass("w-100") ?
+                    "100%" : "style",
+                placeholder: $(this).data("placeholder"),
+                minimumInputLenght: 2,
+                ajax: {
+                    url: route("status_kwn.index"),
+                    dataType: "json",
+                    processResults: function(response) {
+                        return {
+                            results: response,
+                        };
+                    },
+                },
+            });
+
+
+
+
+            $("#pengikut_nik").keyup(function() {
+                if ($(this).val().length == 16) {
+                    let nik = this.value;
+                    let web = '{{ env('APP_URL') }}';
+                    $.ajax({
+                        url: web + "/api/personal?nik=" + nik,
+                        success: function(response) {
+                            $("#pengikut").val(response.name);
+                            $("#pengikut_gender").select2("trigger", "select", {
+                                data: {
+                                    id: response.gender,
+                                    text: response.gender_nm,
+                                },
+                            });
+                            $("#pengikut_status_kwn").select2("trigger", "select", {
+                                data: {
+                                    id: response.status_kwn,
+                                    text: response.status_kwn_nm,
+                                },
+                            });
+
+                            Toastify({
+                                text: "Data ditemukan!",
+                                duration: 1000,
+                                close: true,
+                                gravity: "top", // `top` or `bottom`
+                                position: "center", // `left`, `center` or `right`
+                                stopOnFocus: true, // Prevents dismissing of toast on hover
+                                style: {
+                                    background: "rgba(25, 135, 84, 1)",
+                                },
+                            }).showToast();
+                        },
+                        error: function(xhr) {
+                            Toastify({
+                                text: "Data tidak ditemukan!",
+                                duration: 1000,
+                                close: true,
+                                gravity: "top", // `top` or `bottom`
+                                position: "center", // `left`, `center` or `right`
+                                stopOnFocus: true, // Prevents dismissing of toast on hover
+                                style: {
+                                    background: "rgba(255, 0, 0, 1)",
+                                },
+                            }).showToast();
+                        },
+                    });
+
+                }
+            });
+
             $("#tambah_pengikut").click(function() {
                 var nik_p = $("#pengikut_nik").val();
                 var nm_p = $("#pengikut").val();
                 var jk = $("#pengikut_gender").val();
                 var umr = $("#pengikut_umur").val();
                 var stat = $("#pengikut_status_kwn").val();
+                var hub = $("#pengikut_hubungan").val();
                 if (nik_p != "" || nm_p != "") {
                     var add =
-                        "<tr><input type=\"hidden\" name=\"id_pengikut[]\"><td><input type=\"text\" name=\"add_nik[]\" value='" +
+                        "<tr><td><input type=\"text\" name=\"add_nik[]\" value='" +
                         nik_p + "' readonly></td><td><input type=\"text\" name=\"add_nama[]\" value='" + nm_p +
                         "' readonly></td><td><input type=\"text\" name=\"add_jk[]\" value='" + jk +
-                        "' readonly></td><td width=\"5%\"><input type=\"text\" name=\"add_umr[]\" value='" + umr +
+                        "' readonly></td><td><input type=\"text\" name=\"add_umr[]\" value='" + umr +
                         "' readonly></td><td><input type=\"text\" name=\"add_stat[]\" value='" + stat +
-                        "' readonly><td><button type=\"button\" class=\"btn btn-danger btn-sm\" onClick=\"return hapus_temp(this)\"><i class=\"fa fa-times-circle\"></i> </td></button></tr>";
+                        "' readonly></td><td><input type=\"text\" name=\"add_hub[]\" value='" + hub +
+                        "' readonly><td><button type=\"button\" class=\"btn btn-danger btn-sm\" onClick=\"return hapus_temp(this)\"><i class=\"ri-delete-bin-6-line\"></i> </td></button></tr>";
                     $("#tabelbody").append(add);
 
                     $("#pengikut_nik").val('');
                     $("#pengikut").val('');
-                    $("#pengikut_gender").val('');
+                    // $("#pengikut_gender").val('');
                     $("#pengikut_umur").val('');
-                    $("#pengikut_status_kwn").val('');
+                    // $("#pengikut_status_kwn").val('');
+                    // $("#pengikut_hubungan").val('');
                 } else {
                     alert("NIK atau Nama Harus Diisi");
                 }

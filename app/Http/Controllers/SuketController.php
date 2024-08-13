@@ -93,17 +93,18 @@ class SuketController extends Controller
                 ->make(true);
         };
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
-        return view('suket.warga', compact('title'));
+        $nik = auth()->user()->nik;
+        return view('suket.warga', compact('title', 'nik'));
     }
 
     public function warga_add()
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
-        $nik = auth()->user()->nik;
+        // $nik = auth()->user()->nik;
         // $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
         // $no_urut_surat = SuratKeterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         // $no_urut_surat = intval($no_urut_surat) + 1;
-        return view('suket.addwarga', compact('title', 'nik'));
+        return view('suket.addwarga', compact('title'));
     }
 
     public function add()

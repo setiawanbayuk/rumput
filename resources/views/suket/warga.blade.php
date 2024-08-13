@@ -13,9 +13,12 @@
         <br>
 
         <div class="d-flex gap-2">
-            <a class="btn btn-primary" href="{{ route('suket.warga_add') }}">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
+                <i class="ri-add-fill me-2"></i><span>Tambah</span>
+            </button>
+            {{-- <a class="btn btn-primary" href="{{ route('suket.warga_add') }}">
                 <i class="ri-add-fill me-2"></i>
-                <span>Tambah</span></a>
+                <span>Tambah</span></a> --}}
             <button class="btn btn-secondary" onclick="reload()">Reload</button>
         </div>
 
@@ -39,7 +42,8 @@
         </div>
     </div>
 
-    <x-esign></x-esign>
+    @include('modals.suket-add-modal')
+    {{-- <x-esign></x-esign> --}}
     @push('scripts')
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>

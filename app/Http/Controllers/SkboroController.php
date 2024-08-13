@@ -19,6 +19,7 @@ use App\Models\Provinsi;
 use App\Models\Resident;
 use App\Models\StatusKwn;
 use App\Models\SuratBoro;
+use App\Models\SuratBoroPengikut;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -94,8 +95,14 @@ class SkboroController extends Controller
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
-            'kepada' => ['required', 'string'],
+            'provinsi_boro' => ['required', 'string'],
+            'kabko_boro' => ['required', 'string'],
+            'kecamatan_boro' => ['required', 'string'],
+            'kelurahan_boro' => ['required', 'string'],
+            'alamat_boro' => ['required', 'max:100'],
             'peruntukan' => ['required', 'string'],
+            'tgl_awal' => ['required', 'date'],
+            'tgl_akhir' => ['required', 'date'],
             'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
@@ -164,19 +171,51 @@ class SkboroController extends Controller
             }
         }
 
+        $provinsi_boro = Provinsi::find($request->provinsi_boro);
+        $kabko_boro = Kabko::find($request->kabko_boro);
+        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
+        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
+
         $suket = SuratBoro::create([
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
-
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
-            'kepada' => $request->kepada,
+            'prov_boro' => $request->provinsi_boro,
+            'prov_boro_nm' => $provinsi_boro->nama,
+            'kabko_boro' => $request->kabko_boro,
+            'kabko_boro_nm' => $kabko_boro->nama,
+            'kec_boro' => $request->kecamatan_boro,
+            'kec_boro_nm' => $kecamatan_boro->nama,
+            'kel_boro' => $request->kelurahan_boro,
+            'kel_boro_nm' => $kelurahan_boro->nama,
+            'alamat_boro' => $request->alamat_boro,
+            'tgl_awal' => $request->tgl_awal,
+            'tgl_akhir' => $request->tgl_akhir,
             'peruntukan' => $request->peruntukan,
             'pengantar' => $request->pengantar,
             'status' => 1,
             'pengantar' => $request->file('pengantar') ? $fileLocation : ''
         ]);
+
+        foreach ($request->add_nik as $key => $value) {
+
+            $gender_pengikut = Gender::find($request->add_jk[$key]);
+            $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
+
+            SuratBoroPengikut::create([
+                'boro_id' => $suket->id,
+                'nik' => $request->add_nik[$key],
+                'nama' => $request->add_nama[$key],
+                'gender' => $request->add_jk[$key],
+                'gender_nm' => $gender_pengikut->nama,
+                'status_kwn' => $request->add_stat[$key],
+                'status_kwn_nm' => $status_kwn_pengikut->nama,
+                'umur' => $request->add_umr[$key],
+                'hubungan' => $request->add_hub[$key],
+            ]);
+        }
 
         Log_surat::create([
             'nik' => $request->nik,
@@ -194,11 +233,14 @@ class SkboroController extends Controller
         $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
         $suratKeterangan = SuratBoro::find($id);
+        $pengikut = SuratBoroPengikut::where('boro_id', $id)->get();
+
+        // dd($pengikut->all());
         if ($suratKeterangan->no_urut_surat == 0) {
             $no_urut_surat = SuratBoro::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
-        return view('skboro.edit', compact('title', 'currentUser', 'suratKeterangan'));
+        return view('skboro.edit', compact('title', 'currentUser', 'suratKeterangan', 'pengikut'));
     }
 
     public function update(Request $request, $id)
@@ -225,12 +267,19 @@ class SkboroController extends Controller
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
-            'kepada' => ['required', 'string'],
+            'provinsi_boro' => ['required', 'string'],
+            'kabko_boro' => ['required', 'string'],
+            'kecamatan_boro' => ['required', 'string'],
+            'kelurahan_boro' => ['required', 'string'],
+            'alamat_boro' => ['required', 'max:100'],
             'peruntukan' => ['required', 'string'],
+            'tgl_awal' => ['required', 'date'],
+            'tgl_akhir' => ['required', 'date'],
             'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
 
 
+        dd($request->all());
         if ($request->file('pengantar')) {
             Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skboro');
             $path = '/public/pengantar/' . date('Y') . '/skboro';
@@ -413,12 +462,11 @@ class SkboroController extends Controller
 
     public function get(Request $request)
     {
-        if(isset($request->nik)){
+        if (isset($request->nik)) {
             $surat = SuratBoro::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_boros');
             }])->where('nik', $request->nik)->get();
-        }
-        else if(isset($request->id)){
+        } else if (isset($request->id)) {
             $surat = SuratBoro::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_boros');
             }])->findOrFail($request->id);

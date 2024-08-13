@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -43,6 +44,33 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
         $this->middleware('auth')->only('logout');
+    }
+
+    /**
+     * Handle an authentication attempt.
+     */
+    public function login(Request $request): RedirectResponse
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+
+            if (auth()->user()->role_id == 2) {
+                return redirect()->intended(route('warga'));
+            }
+            else{
+                return redirect()->intended(route('home'));
+            }
+
+        }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
     }
 
     public function sso(Request $request)
@@ -144,7 +172,7 @@ class LoginController extends Controller
         }
 
         return $request->wantsJson()
-                    ? new JsonResponse([], 204)
-                    : to_route('home');
+            ? new JsonResponse([], 204)
+            : to_route('home');
     }
 }

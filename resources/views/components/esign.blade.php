@@ -50,11 +50,12 @@
             `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`
         );
         if (nik.length == 16) {
+            let web = '{{ env('APP_URL') }}';
             document.getElementById('nik').innerHTML = nik.length + '/16';
             $.ajax({
                 type: "GET",
                 dataType: "json",
-                url: 'https://esuket.dev/api/esign/check/' + nik,
+                url: web + '/api/esign/check/' + nik,
                 success: function(response) {
                     $("#status").html(response.message);
                     if (response.status_code == '1111') {
@@ -82,10 +83,11 @@
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.value) {
+                let web = '{{ env('APP_URL') }}';
                 var data = $('#clientsForm').serialize();
                 $.ajax({
                     type: 'POST',
-                    url: 'https://esuket.dev/api/esign/sign',
+                    url: web + '/api/esign/sign',
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                         'Content-Type': 'aplication/json'

@@ -608,8 +608,9 @@
             $("#nik_pelapor").keyup(function() {
                 if ($(this).val().length == 16) {
                     let nik = this.value;
+                    let web = '{{ env('APP_URL') }}';
                     $.ajax({
-                        url: "https://esuket.dev/api/personal?nik=" + nik,
+                        url: web + "/api/personal?nik=" + nik,
                         success: function(response) {
                             $("#kk_pelapor").val(response.kk);
                             $("#name_pelapor").val(response.name);
@@ -661,8 +662,9 @@
             $("#nik_saksi1").keyup(function() {
                 if ($(this).val().length == 16) {
                     let nik = this.value;
+                    let web = '{{ env('APP_URL') }}';
                     $.ajax({
-                        url: "https://esuket.dev/api/personal?nik=" + nik,
+                        url: web + "/api/personal?nik=" + nik,
                         success: function(response) {
                             $("#kk_saksi1").val(response.kk);
                             $("#name_saksi1").val(response.name);
@@ -706,8 +708,9 @@
             $("#nik_saksi2").keyup(function() {
                 if ($(this).val().length == 16) {
                     let nik = this.value;
+                    let web = '{{ env('APP_URL') }}';
                     $.ajax({
-                        url: "https://esuket.dev/api/personal?nik=" + nik,
+                        url: web + "/api/personal?nik=" + nik,
                         success: function(response) {
                             $("#kk_saksi2").val(response.kk);
                             $("#name_saksi2").val(response.name);
@@ -751,8 +754,9 @@
             $("#nik_ayah").keyup(function() {
                 if ($(this).val().length == 16) {
                     let nik = this.value;
+                    let web = '{{ env('APP_URL') }}';
                     $.ajax({
-                        url: "https://esuket.dev/api/personal?nik=" + nik,
+                        url: web + "/api/personal?nik=" + nik,
                         success: function(response) {
                             $("#kk_ayah").val(response.kk);
                             $("#name_ayah").val(response.name);
@@ -798,8 +802,9 @@
             $("#nik_ibu").keyup(function() {
                 if ($(this).val().length == 16) {
                     let nik = this.value;
+                    let web = '{{ env('APP_URL') }}';
                     $.ajax({
-                        url: "https://esuket.dev/api/personal?nik=" + nik,
+                        url: web + "/api/personal?nik=" + nik,
                         success: function(response) {
                             $("#kk_ibu").val(response.kk);
                             $("#name_ibu").val(response.name);
@@ -845,8 +850,9 @@
             $("#nik").keyup(function() {
                 if ($(this).val().length == 16) {
                     let nik = this.value;
+                    let web = '{{ env('APP_URL') }}';
                     $.ajax({
-                        url: "https://esuket.dev/api/personal?nik=" + nik,
+                        url: web + "/api/personal?nik=" + nik,
                         success: function(response) {
                             $("#name").val(response.name);
 

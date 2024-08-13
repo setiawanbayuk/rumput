@@ -31,6 +31,10 @@ class HomeController extends Controller
         }
     }
 
+    public function warga(){
+        return view('warga');
+    }
+
     public function activity()
     {
         return Activity::all();
