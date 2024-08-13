@@ -279,7 +279,7 @@ class SkboroController extends Controller
         ]);
 
 
-        dd($request->all());
+        // dd($request->all());
         if ($request->file('pengantar')) {
             Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skboro');
             $path = '/public/pengantar/' . date('Y') . '/skboro';
@@ -298,6 +298,10 @@ class SkboroController extends Controller
         $kabko = Kabko::find($request->kabko);
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
+        $provinsi_boro = Provinsi::find($request->provinsi_boro);
+        $kabko_boro = Kabko::find($request->kabko_boro);
+        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
+        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
 
         $suratKeterangan = SuratBoro::find($id);
 
@@ -354,12 +358,39 @@ class SkboroController extends Controller
                 'no_urut_surat' => $request->no_urut_surat,
                 'tgl_surat' => $request->tgl_surat,
                 'nik' => $request->nik,
-                'kepada' => $request->kepada,
+                'prov_boro' => $request->provinsi_boro,
+                'prov_boro_nm' => $provinsi_boro->nama,
+                'kabko_boro' => $request->kabko_boro,
+                'kabko_boro_nm' => $kabko_boro->nama,
+                'kec_boro' => $request->kecamatan_boro,
+                'kec_boro_nm' => $kecamatan_boro->nama,
+                'kel_boro' => $request->kelurahan_boro,
+                'kel_boro_nm' => $kelurahan_boro->nama,
+                'alamat_boro' => $request->alamat_boro,
+                'tgl_awal' => $request->tgl_awal,
+                'tgl_akhir' => $request->tgl_akhir,
                 'peruntukan' => $request->peruntukan,
                 'pengantar' => $request->pengantar,
                 'status' => 1,
-                'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
+                'pengantar' => $request->file('pengantar') ? $fileLocation : ''
             ]);
+
+            SuratBoroPengikut::where('boro_id', $id)->delete();
+            foreach ($request->add_nik as $key => $value) {
+                $gender_pengikut = Gender::find($request->add_jk[$key]);
+                $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
+                SuratBoroPengikut::create([
+                    'boro_id' => $id,
+                    'nik' => $request->add_nik[$key],
+                    'nama' => $request->add_nama[$key],
+                    'gender' => $request->add_jk[$key],
+                    'gender_nm' => $gender_pengikut->nama,
+                    'status_kwn' => $request->add_stat[$key],
+                    'status_kwn_nm' => $status_kwn_pengikut->nama,
+                    'umur' => $request->add_umr[$key],
+                    'hubungan' => $request->add_hub[$key],
+                ]);
+            }
 
             return redirect()->route('skboro.index');
         } else {
