@@ -419,7 +419,10 @@ class SkboroController extends Controller
     public function preview($id)
     {
         $surat = SuratBoro::find($id);
-        $surat['tgl_berlaku'] = Carbon::parse($surat['tgl_berlaku'])->isoFormat('D MMMM Y');
+        $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
+        $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
+        $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $id)->count();
+        $pengikut = SuratBoroPengikut::where('boro_id', $id)->get();
         $resident = Resident::where('nik', $surat->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
@@ -428,8 +431,10 @@ class SkboroController extends Controller
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
         $url = '';
+        // dd($pengikut);
         $pdf = Pdf::loadView('skboro.pdf', compact(
             'surat',
+            'pengikut',
             'penduduk',
             'user',
             'nomorSurat',
