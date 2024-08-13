@@ -163,6 +163,7 @@
                                                         <th>Jenis Kelamin</th>
                                                         <th>Umur</th>
                                                         <th>Status</th>
+                                                        <th>Hubungan</th>
                                                         <th>Aksi</th>
                                                     </tr>
                                                 </thead>

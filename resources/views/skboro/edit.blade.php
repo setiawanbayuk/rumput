@@ -163,6 +163,7 @@
                                                         <th>Jenis Kelamin</th>
                                                         <th>Umur</th>
                                                         <th>Status</th>
+                                                        <th>Hubungan</th>
                                                         <th>Aksi</th>
                                                     </tr>
                                                 </thead>
@@ -181,8 +182,8 @@
                                                                     value="<?= $p->umur ?>" readonly></td>
                                                             <td><input type="text" name="add_stat[]"
                                                                     value="<?= $p->status_kwn ?>" readonly></td>
-                                                            <input type="hidden" name="add_hub[]"
-                                                                value="<?= $p->hubungan ?>" readonly>
+                                                            <td><input type="text" name="add_hub[]"
+                                                                value="<?= $p->hubungan ?>" readonly></td>
                                                             <td><button class="btn btn-sm btn-danger"
                                                                     onclick="$(this).parent().parent().remove();"><i
                                                                         class="fa fa-times-circle"></i></button></td>
