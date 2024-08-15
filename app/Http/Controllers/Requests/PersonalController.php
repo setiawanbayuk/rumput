@@ -15,7 +15,7 @@ class PersonalController extends Controller
     public function index(Request $request)
     {
         $response = Http::withoutVerifying()->withToken('1|EwECYS9m7pQqZYQnaURpP7ScgKEgIDKOzmp5YuVL7f011c47')
-        ->get(env('APP_URL', 'https://esuket.dev') . '/api/resident?nik=' . $request->nik);
+        ->get(env('APP_URL', 'https://esuket.test') . '/api/resident?nik=' . $request->nik);
         $hasil = $response->json();
         // dd($response);
         if (isset($hasil['data'])) {

@@ -158,7 +158,7 @@ class EsignController extends Controller
         $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $skpd->instansi_kode . '/' . $tahunSrt->format('Y');
         // $nomorSurat = $this->getNoSrt($surat);
 
-        $verify = env('APP_URL', 'https://esuket.dev') . '/verify/' . $output['jenis'] . '/' . $output['_id'];
+        $verify = env('APP_URL', 'https://esuket.test') . '/verify/' . $output['jenis'] . '/' . $output['_id'];
         $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
 
         $fileName = md5($nomorSurat . date("Y-m-d H:i:s")) . '.pdf';

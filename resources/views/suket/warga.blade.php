@@ -16,9 +16,6 @@
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
                 <i class="ri-add-fill me-2"></i><span>Tambah</span>
             </button>
-            {{-- <a class="btn btn-primary" href="{{ route('suket.warga_add') }}">
-                <i class="ri-add-fill me-2"></i>
-                <span>Tambah</span></a> --}}
             <button class="btn btn-secondary" onclick="reload()">Reload</button>
         </div>
 
@@ -105,7 +102,7 @@
         </script>
         <script>
             function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/preview/" + e, 'preview',
+                window.open("{{ env('APP_URL', 'https://esuket.test') }}" + "/suket/preview/" + e, 'preview',
                     'width=600,height=1000');
             }
 
@@ -113,7 +110,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: "{{ env('APP_URL', 'https://esuket.dev') }}" + "/suket/cetak/" + e,
+                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/suket/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');

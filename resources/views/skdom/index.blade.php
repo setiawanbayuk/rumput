@@ -120,7 +120,7 @@
         </script>
         <script>
             function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'https://esuket.dev') }}" + "/skdom/preview/" + e, 'preview',
+                window.open("{{ env('APP_URL', 'https://esuket.test') }}" + "/skdom/preview/" + e, 'preview',
                     'width=600,height=1000');
             }
 
@@ -128,7 +128,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: "{{ env('APP_URL', 'https://esuket.dev') }}" + "/skdom/cetak/" + e,
+                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/skdom/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
