@@ -207,14 +207,15 @@
                             <i class="lni lni-popup"></i>
                             <span>Notification</span>
                         </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="#" class="sidebar-link">
-                            <i class="lni lni-cog"></i>
-                            <span>Setting</span>
-                        </a>
                     </li> --}}
                 </ul>
+
+                <li class="sidebar-item">
+                    <a href="{{ route('warga') }}" class="sidebar-link">
+                        <i class="ri-user-shared-fill"></i>
+                        <span>Masuk Sebagai Warga</span>
+                    </a>
+                </li>
                 <div class="sidebar-footer">
                     <a class="sidebar-link" data-bs-toggle="tooltip" data-bs-title="Logout"
                         href="{{ route('logout') }}"

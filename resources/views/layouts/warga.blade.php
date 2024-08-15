@@ -99,7 +99,7 @@
                     </div>
                 </div>
                 <ul class="sidebar-nav">
-                    <li class="sidebar-item">
+                    {{-- <li class="sidebar-item">
                         <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
                             data-bs-target="#pelayanan" aria-expanded="false" aria-controls="pelayanan">
                             <i class="ri-article-line"></i>
@@ -110,7 +110,7 @@
                                 <a href="{{ route('suket.warga') }}" class="sidebar-link">Surat Keterangan</a>
                             </li>
                         </ul>
-                    </li>
+                    </li> --}}
 
                     <li class="sidebar-item">
                         <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
@@ -160,9 +160,16 @@
                         </a>
                     </li> --}}
                 </ul>
+                @if (auth()->user()->role_id != 2)
+                    <li class="sidebar-item">
+                        <a href="{{ route('home') }}" class="sidebar-link">
+                            <i class="ri-user-shared-fill"></i>
+                            <span>Masuk Sebagai Admin</span>
+                        </a>
+                    </li>
+                @endif
                 <div class="sidebar-footer">
-                    <a class="sidebar-link" data-bs-toggle="tooltip" data-bs-title="Logout"
-                        href="{{ route('logout') }}"
+                    <a class="sidebar-link" data-bs-toggle="tooltip" data-bs-title="Logout" href="{{ route('logout') }}"
                         onclick="event.preventDefault();
                                      document.getElementById('logout-form').submit();">
                         <i class="ri-logout-box-line"></i>
