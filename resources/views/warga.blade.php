@@ -30,7 +30,7 @@
         <div class="row">
             <div class="col-12">
 
-                <h5 class="fw-bold">Jumlah Permohonan per Kategori</h5>
+                <h5 class="fw-bold">Jumlah Permohonan per Jenis Surat Keterangan</h5>
                 <hr>
                 <div class="row">
                     <div class="col-6 col-md-4">
