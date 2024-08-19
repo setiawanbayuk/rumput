@@ -17,6 +17,7 @@ use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\Requests\SkpdController;
 use App\Http\Controllers\Requests\StatusPerkawinanController;
 use App\Http\Controllers\SkbnController;
+use App\Http\Controllers\SkboroController;
 use App\Http\Controllers\SkdomController;
 use App\Http\Controllers\SkhslController;
 use App\Http\Controllers\SktmController;
@@ -74,6 +75,10 @@ Route::middleware('auth:sanctum')->prefix('skusaha')->group(function(){
     Route::post('/', [SkusahaController::class, 'save']);
 });
 
+Route::middleware('auth:sanctum')->prefix('skboro')->group(function(){
+    Route::get('/', [SkboroController::class, 'get']);
+    Route::post('/', [SkboroController::class, 'save']);
+});
 
 Route::middleware('auth:sanctum')->prefix('resident')->group(function(){
     Route::post('/simpan', [ResidentController::class, 'simpan']);

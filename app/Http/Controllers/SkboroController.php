@@ -453,10 +453,10 @@ class SkboroController extends Controller
 
     public function save(Request $request)
     {
+        // dd($request->all());
         $request->validate([
             'nik' => ['required', 'min:16'],
             'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required'],
             'pengantar' => ['required', 'mimes:jpg,bmp,png'],
         ]);
 
@@ -469,6 +469,11 @@ class SkboroController extends Controller
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
+        
+        $provinsi_boro = Provinsi::find($request->provinsi_boro);
+        $kabko_boro = Kabko::find($request->kabko_boro);
+        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
+        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
 
         $suket = SuratBoro::create([
             'id_kel'    => auth()->user()->id_instansi,
@@ -478,13 +483,39 @@ class SkboroController extends Controller
             'tahun' => date('Y'),
             'tgl_surat' => date('Y-m-d'),
             'nik' => $request->nik,
-            'kepada' => $request->kepada,
+            'prov_boro' => $request->provinsi_boro,
+            'prov_boro_nm' => $provinsi_boro->nama,
+            'kabko_boro' => $request->kabko_boro,
+            'kabko_boro_nm' => $kabko_boro->nama,
+            'kec_boro' => $request->kecamatan_boro,
+            'kec_boro_nm' => $kecamatan_boro->nama,
+            'kel_boro' => $request->kelurahan_boro,
+            'kel_boro_nm' => $kelurahan_boro->nama,
+            'alamat_boro' => $request->alamat_boro,
+            'tgl_awal' => $request->tgl_awal,
+            'tgl_akhir' => $request->tgl_akhir,
             'peruntukan' => $request->peruntukan,
-            'pengantar' => $request->pengantar,
-            'kepada' => $request->kepada,
             'status' => 0,
             'pengantar' => $fileLocation
         ]);
+
+        foreach ($request->add_nik as $key => $value) {
+
+            $gender_pengikut = Gender::find($request->add_jk[$key]);
+            $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
+
+            SuratBoroPengikut::create([
+                'boro_id' => $suket->id,
+                'nik' => $request->add_nik[$key],
+                'nama' => $request->add_nama[$key],
+                'gender' => $request->add_jk[$key],
+                'gender_nm' => $gender_pengikut->nama,
+                'status_kwn' => $request->add_stat[$key],
+                'status_kwn_nm' => $status_kwn_pengikut->nama,
+                'umur' => $request->add_umr[$key],
+                'hubungan' => $request->add_hub[$key],
+            ]);
+        }
 
         Log_surat::create([
             'nik' => $suket->nik,
