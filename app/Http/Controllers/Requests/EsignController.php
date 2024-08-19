@@ -12,6 +12,8 @@ use App\Models\Resident;
 use App\Models\Skpd;
 use App\Models\Surat_keterangan;
 use App\Models\Surat_skbn;
+use App\Models\SuratBoro;
+use App\Models\SuratBoroPengikut;
 use App\Models\SuratDomisili;
 use App\Models\SuratKelahiran;
 use App\Models\SuratKematian;
@@ -149,6 +151,13 @@ class EsignController extends Controller
             $surat = SuratKematian::find($output['_id']);
             $tabel_surat = 'surat_kematians';
             $nama_surat = 'SURAT KETERANGAN KEMATIAN';
+        } else if ($output['jenis'] == 'skboro') {
+            $surat = SuratBoro::find($output['_id']);
+            $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
+            $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
+            $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $output['_id'])->count();
+            $tabel_surat = 'surat_boros';
+            $nama_surat = 'SURAT KETERANGAN BORO';
         }
 
         $skpd = new Skpd_resource(Skpd::find($surat->id_kel));
@@ -256,6 +265,21 @@ class EsignController extends Controller
                 'hh_kematian',
                 'mm_kematian',
             ))->setPaper('legal', 'portrait');
+        } else if ($output['jenis'] == 'skboro') {
+            $nik = $surat->nik;
+            $pengikut = SuratBoroPengikut::where('boro_id', $output['_id'])->get();
+            $resident = Resident::where('nik', $surat->nik)->first();
+            $penduduk = unserialize($resident->data);
+            $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+            $pdf = Pdf::loadView($output['jenis'] . '.pdf', compact(
+                'surat',
+                'pengikut',
+                'penduduk',
+                'nomorSurat',
+                'pejabat',
+                'tglSurat',
+                'url'
+            ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
         } else {
             $nik = $surat->nik;
             $resident = Resident::where('nik', $surat->nik)->first();
@@ -286,10 +310,16 @@ class EsignController extends Controller
             'location' => 'Kediri'
         );
 
+        $arrContextOptions = array(
+            "ssl" => array(
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ),
+        );
         $query = http_build_query($data);
         $r = Http::withBasicAuth(env('ESIGN_USER'), env('ESIGN_PASS'))
             ->asMultipart()
-            ->attach('file', file_get_contents(asset($fileLocation)), $fileName)
+            ->attach('file', file_get_contents(asset($fileLocation), false, stream_context_create($arrContextOptions)), $fileName)
             ->post(env('APP_URL_TTE') . '/api/sign/pdf?' . $query);
 
         $fp = fopen(public_path($fileLocation), 'wb');
@@ -302,6 +332,9 @@ class EsignController extends Controller
         } else if ($output['jenis'] == 'skdom') {
             // $surat['tgl_berlaku'] = $tgl_berlaku;
             $surat = SuratDomisili::find($output['_id']);
+        } else if ($output['jenis'] == 'skboro') {
+            // $surat['tgl_berlaku'] = $tgl_berlaku;
+            $surat = SuratBoro::find($output['_id']);
         }
 
         $surat->update(['status' => 3, 'file' => $fileLocation]);
