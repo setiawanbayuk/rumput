@@ -62,7 +62,32 @@ class SkdomController extends Controller
         $title = "USULAN PENGAJUAN SURAT KETERANGAN DOMISILI";
         return view('skdom.index', compact('title'));
     }
+    public function warga()
+    {
+        // dd(auth()->user()->nik);
+        if (request()->ajax()) {
+            $data = SuratDomisili::query();
+            $data->where('nik', auth()->user()->nik);
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('action', function ($row) {
+                    $nomorSurat = $this->getNoSrt($row);
+                    $id = $row->id;
+                    $status = $row->status;
+                    $jenis = 'skdom';
 
+                    return view('includes.button-warga', compact('id', 'status'));
+                })
+                ->addColumn('no_surat', function ($row) {
+                    return $this->getNoSrt($row);
+                })
+                ->rawColumns(['action', 'no_surat'])
+                ->make(true);
+        };
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN DOMISILI";
+        $nik = auth()->user()->nik;
+        return view('skdom.warga', compact('title', 'nik'));
+    }
     public function add()
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN DOMISILI";
@@ -446,17 +471,21 @@ class SkdomController extends Controller
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
-        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        } else {
+
+            return redirect()->route('skdom.warga');
+        }
     }
 
     public function get(Request $request)
     {
-        if(isset($request->nik)){
+        if (isset($request->nik)) {
             $surat = SuratDomisili::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_domisilis');
             }])->where('nik', $request->nik)->get();
-        }
-        else if(isset($request->id)){
+        } else if (isset($request->id)) {
             $surat = SuratDomisili::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_domisilis');
             }])->findOrFail($request->id);

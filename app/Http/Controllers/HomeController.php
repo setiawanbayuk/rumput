@@ -34,9 +34,9 @@ class HomeController extends Controller
     public function index()
     {
         if (auth()->user()->role_id == 2) {
-            return view('warga');
+            return redirect()->route('warga');
         } else {
-            return view('home');
+            return view('home');    
         }
     }
 

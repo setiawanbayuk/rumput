@@ -61,16 +61,26 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function(){
     Route::post('/update/{id}', [SuketController::class, 'update'])->name('suket.update');
     Route::post('/naik/{id}', [SuketController::class, 'naik'])->name('suket.naik');
     Route::get('/preview/{id}', [SuketController::class, 'preview'])->name('suket.preview') ;
-    // Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
+    Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
     Route::post('/tolak/{id}', [SuketController::class, 'tolak'])->name('suket.tolak');
 });
 
 Route::prefix('warga')->group(function(){
     Route::get('/', [HomeController::class, 'warga'])->middleware(['auth'])->name('warga');
     Route::get('/suket', [SuketController::class, 'warga'])->name('suket.warga');
-    Route::get('/suket_add', [SuketController::class, 'warga_add'])->name('suket.warga_add');
     Route::post('/suket', [SuketController::class, 'save'])->name('suket.save');
-    Route::get('/cetak/{id}', [SuketController::class, 'cetak'])->name('suket.cetak');
+    Route::get('/skusaha', [SkusahaController::class, 'warga'])->name('skusaha.warga');
+    Route::post('/skusaha', [SkusahaController::class, 'save'])->name('skusaha.save');
+    Route::get('/skhsl', [SkhslController::class, 'warga'])->name('skhsl.warga');
+    Route::post('/skhsl', [SkhslController::class, 'save'])->name('skhsl.save');
+    Route::get('/skdom', [SkdomController::class, 'warga'])->name('skdom.warga');
+    Route::post('/skdom', [SkdomController::class, 'save'])->name('skdom.save');
+    Route::get('/sktm', [SktmController::class, 'warga'])->name('sktm.warga');
+    Route::post('/sktm', [SktmController::class, 'save'])->name('sktm.save');
+    Route::get('/skbn', [SkbnController::class, 'warga'])->name('skbn.warga');
+    Route::post('/skbn', [SkbnController::class, 'save'])->name('skbn.save');
+    Route::get('/skboro', [SkboroController::class, 'warga'])->name('skboro.warga');
+    Route::post('/skboro', [SkboroController::class, 'save'])->name('skboro.save');
 });
 
 Route::middleware(['auth', 'role:1,3,4'])->prefix('sktm')->group(function(){

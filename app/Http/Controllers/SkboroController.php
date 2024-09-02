@@ -61,7 +61,32 @@ class SkboroController extends Controller
         $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
         return view('skboro.index', compact('title'));
     }
+    public function warga()
+    {
+        // dd(auth()->user()->nik);
+        if (request()->ajax()) {
+            $data = SuratBoro::query();
+            $data->where('nik', auth()->user()->nik);
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('action', function ($row) {
+                    $nomorSurat = $this->getNoSrt($row);
+                    $id = $row->id;
+                    $status = $row->status;
+                    $jenis = 'skboro';
 
+                    return view('includes.button-warga', compact('id', 'status'));
+                })
+                ->addColumn('no_surat', function ($row) {
+                    return $this->getNoSrt($row);
+                })
+                ->rawColumns(['action', 'no_surat'])
+                ->make(true);
+        };
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
+        $nik = auth()->user()->nik;
+        return view('skboro.warga', compact('title', 'nik'));
+    }
     public function add()
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
@@ -524,7 +549,12 @@ class SkboroController extends Controller
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
-        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        } else {
+
+            return redirect()->route('skboro.warga');
+        }
     }
 
     public function get(Request $request)

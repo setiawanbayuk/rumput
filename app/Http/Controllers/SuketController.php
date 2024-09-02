@@ -80,11 +80,9 @@ class SuketController extends Controller
                 ->addColumn('action', function ($row) {
                     $nomorSurat = $this->getNoSrt($row);
                     $id = $row->id;
-                    $route = 'suket.warga_edit';
                     $status = $row->status;
                     $jenis = 'suket';
-
-                    return view('includes.button-warga', compact('id', 'route', 'status'));
+                    return view('includes.button-warga', compact('id', 'status'));
                 })
                 ->addColumn('no_surat', function ($row) {
                     return $this->getNoSrt($row);
@@ -95,16 +93,6 @@ class SuketController extends Controller
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
         $nik = auth()->user()->nik;
         return view('suket.warga', compact('title', 'nik'));
-    }
-
-    public function warga_add()
-    {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
-        // $nik = auth()->user()->nik;
-        // $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
-        // $no_urut_surat = SuratKeterangan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
-        // $no_urut_surat = intval($no_urut_surat) + 1;
-        return view('suket.addwarga', compact('title'));
     }
 
     public function add()

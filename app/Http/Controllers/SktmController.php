@@ -64,6 +64,30 @@ class SktmController extends Controller
         return view('sktm.index', compact('title'));
     }
 
+    public function warga()
+    {
+        if (request()->ajax()) {
+            $data = SuratSktm::query();
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('action', function ($row) {
+                    $nomorSurat = $this->getNoSrt($row);
+                    $id = $row->id;
+                    $status = $row->status;
+                    $jenis = 'sktm';
+                    return view('includes.button-warga', compact('id', 'status'));
+                })
+                ->addColumn('no_surat', function ($row) {
+                    return $this->getNoSrt($row);
+                })
+                ->rawColumns(['action', 'no_surat'])
+                ->make(true);
+        };
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
+        $nik = auth()->user()->nik;
+        return view('sktm.warga', compact('title', 'nik'));
+    }
+
     public function add()
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
@@ -477,17 +501,21 @@ class SktmController extends Controller
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
-        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        } else {
+
+            return redirect()->route('sktm.warga');
+        }
     }
 
     public function get(Request $request)
     {
-        if(isset($request->nik)){
+        if (isset($request->nik)) {
             $surat = SuratSktm::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_sktms');
             }])->where('nik', $request->nik)->get();
-        }
-        else if(isset($request->id)){
+        } else if (isset($request->id)) {
             $surat = SuratSktm::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_sktms');
             }])->findOrFail($request->id);

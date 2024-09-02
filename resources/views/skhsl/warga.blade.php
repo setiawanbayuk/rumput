@@ -39,20 +39,49 @@
         </div>
     </div>
 
-    @include('modals.suket-add-modal')
+    @include('modals.skhsl-add-modal')
     {{-- <x-esign></x-esign> --}}
     @push('scripts')
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script type="text/javascript">
+            $(document).ready(function() {
+                $("#kepada_gender").select2({
+                    theme: "bootstrap-5",
+                    width: $(this).data("width") ?
+                        $(this).data("width") : $(this).hasClass("w-100") ?
+                        "100%" : "style",
+                    placeholder: $(this).data("placeholder"),
+                    minimumInputLenght: 2,
+                    ajax: {
+                        url: route("gender.index"),
+                        dataType: "json",
+                        processResults: function(response) {
+                            return {
+                                results: response,
+                            };
+                        },
+                    },
+                });
+
+                $("#kepada_hubungan").select2({
+                    theme: "bootstrap-5",
+                    width: $(this).data("width") ?
+                        $(this).data("width") : $(this).hasClass("w-100") ?
+                        "100%" : "style",
+                    placeholder: $(this).data("placeholder"),
+                    minimumInputLenght: 2,
+                });
+            });
             $(function() {
                 var table = $('#tableSurat').DataTable({
                     processing: true,
                     serverSide: true,
                     ordering: true,
                     scrollX: true,
-                    ajax: "{{ route('suket.warga') }}",
+                    ajax: "{{ route('skhsl.warga') }}",
                     columns: [{
                             data: 'no_urut_surat',
                             name: 'no_urut_surat'
@@ -105,13 +134,23 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/suket/cetak/" + e,
+                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/skhsl/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
                     }
                 });
             }
+
+            $('#penghasilan').keyup(function() {
+                var txtsrc = $(this);
+                var txtout = $("#terbilang");
+                if (txtsrc.val() != "") {
+                    readNumbers(txtsrc, txtout);
+                } else {
+                    txtout.val("");
+                }
+            });
         </script>
     @endpush
 @endsection

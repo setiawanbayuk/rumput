@@ -62,6 +62,33 @@ class SkhslController extends Controller
         return view('skhsl.index', compact('title'));
     }
 
+    public function warga()
+    {
+        // dd(auth()->user()->nik);
+        if (request()->ajax()) {
+            $data = SuratPenghasilan::query();
+            $data->where('nik', auth()->user()->nik);
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('action', function ($row) {
+                    $nomorSurat = $this->getNoSrt($row);
+                    $id = $row->id;
+                    $status = $row->status;
+                    $jenis = 'skhsl';
+
+                    return view('includes.button-warga', compact('id', 'status'));
+                })
+                ->addColumn('no_surat', function ($row) {
+                    return $this->getNoSrt($row);
+                })
+                ->rawColumns(['action', 'no_surat'])
+                ->make(true);
+        };
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN PENGHASILAN";
+        $nik = auth()->user()->nik;
+        return view('skhsl.warga', compact('title', 'nik'));
+    }
+
     public function add()
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN PENGHASILAN";
@@ -475,17 +502,21 @@ class SkhslController extends Controller
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
-        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        } else {
+
+            return redirect()->route('skhsl.warga');
+        }
     }
 
     public function get(Request $request)
     {
-        if(isset($request->nik)){
+        if (isset($request->nik)) {
             $surat = SuratPenghasilan::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_penghasilans');
             }])->where('nik', $request->nik)->get();
-        }
-        else if(isset($request->id)){
+        } else if (isset($request->id)) {
             $surat = SuratPenghasilan::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_penghasilans');
             }])->findOrFail($request->id);

@@ -20,6 +20,7 @@ class SuratUsaha extends Model
         'no_urut_surat',
         'tgl_surat',
         'nik',
+        'jenis',
         'peruntukan',
         'nama_usaha',
         'alamat_usaha',

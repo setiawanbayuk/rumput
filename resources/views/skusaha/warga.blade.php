@@ -39,7 +39,7 @@
         </div>
     </div>
 
-    @include('modals.suket-add-modal')
+    @include('modals.skusaha-add-modal')
     {{-- <x-esign></x-esign> --}}
     @push('scripts')
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
@@ -52,7 +52,7 @@
                     serverSide: true,
                     ordering: true,
                     scrollX: true,
-                    ajax: "{{ route('suket.warga') }}",
+                    ajax: "{{ route('skusaha.warga') }}",
                     columns: [{
                             data: 'no_urut_surat',
                             name: 'no_urut_surat'
@@ -105,7 +105,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/suket/cetak/" + e,
+                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/skusaha/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
