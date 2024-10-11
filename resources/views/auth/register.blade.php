@@ -83,14 +83,14 @@
                             </div>
 
                             <div class="row mb-3">
-                                <label for="instansi"
+                                <label for="id_instansi"
                                     class="col-md-4 col-form-label text-md-end">{{ __('Kelurahan') }}</label>
 
                                 <div class="col-md-6">
-                                    <select class="form-control @error('instansi') is-invalid @enderror" id="instansi"
-                                        name="instansi" data-placeholder="Kelurahan">
+                                    <select class="form-control @error('id_instansi') is-invalid @enderror" id="id_instansi"
+                                        name="id_instansi" data-placeholder="Kelurahan">
                                     </select>
-                                    @error('instansi')
+                                    @error('id_instansi')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
@@ -151,7 +151,7 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
-        $("#instansi").select2({
+        $("#id_instansi").select2({
             theme: "bootstrap-5",
             width: $(this).data("width") ?
                 $(this).data("width") : $(this).hasClass("w-100") ?

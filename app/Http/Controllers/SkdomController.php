@@ -134,7 +134,7 @@ class SkdomController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skdom');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skdom', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skdom';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skdom/' . $fileName;
@@ -278,7 +278,7 @@ class SkdomController extends Controller
 
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skdom');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skdom', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skdom';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skdom/' . $fileName;
@@ -432,7 +432,7 @@ class SkdomController extends Controller
             'alamat_domisili' => ['required', 'string'],
         ]);
 
-        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skdom');
+        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skdom', 0755);
         $path = '/public/pengantar/' . date('Y') . '/skdom';
         $fileName = $request->file('pengantar')->hashName();
         $fileLocation = '/storage/pengantar/' . date('Y') . '/skdom/' . $fileName;

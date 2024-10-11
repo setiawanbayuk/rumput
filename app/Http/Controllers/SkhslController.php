@@ -137,7 +137,7 @@ class SkhslController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skhsl');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skhsl', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skhsl';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skhsl/' . $fileName;
@@ -293,7 +293,7 @@ class SkhslController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skhsl');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skhsl', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skhsl';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skhsl/' . $fileName;
@@ -457,7 +457,7 @@ class SkhslController extends Controller
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
         ]);
 
-        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skhsl');
+        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skhsl', 0755);
         $path = '/public/pengantar/' . date('Y') . '/skhsl';
         $fileName = $request->file('pengantar')->hashName();
         $fileLocation = '/storage/pengantar/' . date('Y') . '/skhsl/' . $fileName;

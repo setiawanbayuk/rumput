@@ -103,7 +103,7 @@ class SkkematianController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skkematian');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skkematian', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skkematian';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skkematian/' . $fileName;
@@ -227,7 +227,7 @@ class SkkematianController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skkematian');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skkematian', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skkematian';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skkematian/' . $fileName;
@@ -383,7 +383,7 @@ class SkkematianController extends Controller
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
         ]);
 
-        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skkematian');
+        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skkematian', 0755);
         $path = '/public/pengantar/' . date('Y') . '/skkematian';
         $fileName = $request->file('pengantar')->hashName();
         $fileLocation = '/storage/pengantar/' . date('Y') . '/skkematian/' . $fileName;

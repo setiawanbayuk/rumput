@@ -295,7 +295,7 @@ class EsignController extends Controller
             ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
         }
         // return $pdf->stream();
-        Storage::disk('local')->makeDirectory('/public/pdf/' . date('Y') . '/' . $output['jenis']);
+        //Storage::makeDirectory('/public/pdf/' . date('Y') . '/' . $output['jenis'], 0755);
         $path = '/public/pdf/' . date('Y') . '/' . $output['jenis'];
         $content = $pdf->download()->getOriginalContent();
         Storage::put($path . '/' . $fileName, $content);

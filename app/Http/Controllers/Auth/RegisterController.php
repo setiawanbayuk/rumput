@@ -53,7 +53,8 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'nik' => ['required', 'string', 'size:16', 'unique:users'],
-            'phone' => ['required', 'numeric', 'min', 'max:13'],
+            'phone' => ['required', 'numeric', 'digits_between:10,13'],
+            'id_instansi' => ['required', 'string'],
             'password' => ['required', Password::min(8)->mixedCase()->numbers()->symbols()->uncompromised(), 'confirmed'],
         ]);
     }
@@ -72,7 +73,7 @@ class RegisterController extends Controller
             'nik' => $data['nik'],
             'phone' => $data['phone'],
             'role_id' => 2,
-            'id_instansi' => $data['instansi'],
+            'id_instansi' => $data['id_instansi'],
             'password' => Hash::make($data['password']),
         ]);
     }

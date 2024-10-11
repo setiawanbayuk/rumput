@@ -133,7 +133,7 @@ class SkbnController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skbn');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skbn', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skbn';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skbn/' . $fileName;
@@ -264,7 +264,7 @@ class SkbnController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skbn');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skbn', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skbn';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skbn/' . $fileName;
@@ -405,7 +405,7 @@ class SkbnController extends Controller
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
         ]);
 
-        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/skbn');
+        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skbn', 0755);
         $path = '/public/pengantar/' . date('Y') . '/skbn';
         $fileName = $request->file('pengantar')->hashName();
         $fileLocation = '/storage/pengantar/' . date('Y') . '/skbn/' . $fileName;

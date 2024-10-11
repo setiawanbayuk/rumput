@@ -135,7 +135,7 @@ class SuketController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/suket');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/suket', 0755);
             $path = '/public/pengantar/' . date('Y') . '/suket';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
@@ -283,7 +283,7 @@ class SuketController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/suket');
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/suket', 0755);
             $path = '/public/pengantar/' . date('Y') . '/suket';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
@@ -437,7 +437,7 @@ class SuketController extends Controller
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
         ]);
 
-        Storage::disk('local')->makeDirectory('/public/pengantar/' . date('Y') . '/suket');
+        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/suket', 0755);
         $path = '/public/pengantar/' . date('Y') . '/suket';
         $fileName = $request->file('pengantar')->hashName();
         $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;

@@ -33,6 +33,7 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('auth')->group(function(){
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('/login_sso', [AuthController::class, 'loginWithSSO']);
     Route::get('/profile', [AuthController::class, 'profile'])->middleware('auth:sanctum');
 });
