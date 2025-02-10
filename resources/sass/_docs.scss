@@ -1,0 +1,11 @@
+.code-snippet {
+    background-color: #e2b6cc;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+@include color-mode(dark) {
+    .code-snippet {
+        background-color: rgb(92, 95, 134);
+    }
+}
