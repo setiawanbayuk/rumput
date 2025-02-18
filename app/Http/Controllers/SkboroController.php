@@ -22,6 +22,7 @@ use App\Models\SuratBoro;
 use App\Models\SuratBoroPengikut;
 use App\Models\User;
 use App\Traits\GetNoSurat;
+use App\Traits\GeneratePDF;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ use Yajra\DataTables\DataTables;
 
 class SkboroController extends Controller
 {
-    use GetNoSurat;
+    use GetNoSurat, GeneratePDF;
     public function index()
     {
         if (request()->ajax()) {
@@ -456,18 +457,42 @@ class SkboroController extends Controller
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
         $url = '';
-        // dd($pengikut);
-        $pdf = Pdf::loadView('skboro.pdf', compact(
-            'surat',
-            'pengikut',
-            'penduduk',
-            'user',
-            'nomorSurat',
-            'pejabat',
-            'tglSurat',
-            'url'
-        ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
-        return $pdf->stream();
+
+        $data = [
+            'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+            'skpd_kel' => strtoupper($pejabat->skpd->nama),
+            'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+            'skpd_telp' => $pejabat->skpd->instansi_telp,
+            'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+            'skpd_kepala' => $pejabat->nama,
+            'skpd_nip_kepala' => $pejabat->nip,
+            'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+            'surat_no' => $nomorSurat,
+            'surat_nama' => $penduduk['name'],
+            'surat_nik' => $surat->nik,
+            'surat_tmpl' => $penduduk['tempat_lhr'],
+            'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+            'surat_gender' => $penduduk['gender_nm'],
+            'surat_perkawinan' => $penduduk['status_kwn_nm'],
+            'surat_agama' => $penduduk['agama_nm'],
+            'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+            'surat_pendidikan' => $penduduk['pendidikan_nm'],
+            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_tgl' => $tglSurat,
+            'surat_tgl_berlaku' =>  $surat['tgl_awal'] . 's/d' .  $surat['tgl_akhir'],
+            'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
+            'surat_keperluan' => $surat->peruntukan,
+            'surat_jml_pengikut' => $surat->pengikut,
+            'detail_pengikut' => collect($pengikut)->toArray()
+        ];
+
+        // Path template .docx
+        $templateFile = public_path('templates/SKBORO.docx');
+        $outputPdf = hash('sha256', 'SKBN_' . $id);
+        // Generate PDF dari template
+        $pdfPath = $this->generatePdfTable($data, $templateFile, $outputPdf);
+
+        return response()->file($pdfPath);
     }
 
     public function cetak($id)
@@ -494,7 +519,7 @@ class SkboroController extends Controller
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
-        
+
         $provinsi_boro = Provinsi::find($request->provinsi_boro);
         $kabko_boro = Kabko::find($request->kabko_boro);
         $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
@@ -562,7 +587,7 @@ class SkboroController extends Controller
         if (isset($request->nik)) {
             $surat = SuratBoro::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_boros');
-            }])->where('nik', $request->nik)->get();
+            }])->where('nik', $request->nik)->orderBy('id', 'desc')->get();
         } else if (isset($request->id)) {
             $surat = SuratBoro::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_boros');
