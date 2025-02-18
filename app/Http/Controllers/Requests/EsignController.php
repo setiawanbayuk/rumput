@@ -24,6 +24,8 @@ use App\Models\SuratSktm;
 use App\Models\SuratUsaha;
 use App\Models\User;
 use App\Traits\GetNoSurat;
+use App\Traits\GeneratePDF;
+use App\Traits\GlobalFunction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use DateTime;
@@ -36,7 +38,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class EsignController extends Controller
 {
 
-    use GetNoSurat;
+    use GetNoSurat, GeneratePDF, GlobalFunction;
     /**
      * Display a listing of the resource.
      */
@@ -116,6 +118,7 @@ class EsignController extends Controller
 
     public function sign(Request $request)
     {
+        $outputPdf = "";
         parse_str($request->getContent(), $output);
         if ($output['jenis'] == 'suket') {
             $surat = SuratKeterangan::find($output['_id']);
@@ -153,9 +156,6 @@ class EsignController extends Controller
             $nama_surat = 'SURAT KETERANGAN KEMATIAN';
         } else if ($output['jenis'] == 'skboro') {
             $surat = SuratBoro::find($output['_id']);
-            $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
-            $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
-            $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $output['_id'])->count();
             $tabel_surat = 'surat_boros';
             $nama_surat = 'SURAT KETERANGAN BORO';
         }
@@ -166,13 +166,65 @@ class EsignController extends Controller
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $skpd->instansi_kode . '/' . $tahunSrt->format('Y');
         // $nomorSurat = $this->getNoSrt($surat);
+        $verify = env('APP_URL', 'http://rumput.test') . '/verify/' . $output['jenis'] . '/' . $output['_id'];
+        // $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
+        // dd($url);
 
-        $verify = env('APP_URL', 'https://esuket.test') . '/verify/' . $output['jenis'] . '/' . $output['_id'];
-        $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
+        $fileName = hash('sha256', $nomorSurat . date("Y-m-d H:i:s")) . '.pdf';
 
-        $fileName = md5($nomorSurat . date("Y-m-d H:i:s")) . '.pdf';
+        $nik = $surat->nik;
 
-        if ($output['jenis'] == 'skkelahiran') {
+        if ($output['jenis'] == 'suket') {
+        } else if ($output['jenis'] == 'skbn') {
+            $resident = Resident::where('nik', $surat->nik)->first();
+            $penduduk = unserialize($resident->data);
+            $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+
+            $data = [
+                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                'skpd_telp' => $pejabat->skpd->instansi_telp,
+                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                'skpd_kepala' => $pejabat->nama,
+                'skpd_nip_kepala' => $pejabat->nip,
+                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                'surat_no' => $nomorSurat,
+                'surat_nama' => $penduduk['name'],
+                'surat_nik' => $surat->nik,
+                'surat_tmpl' => $penduduk['tempat_lhr'],
+                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                'surat_gender' => $penduduk['gender_nm'],
+                'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                'surat_agama' => $penduduk['agama_nm'],
+                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                'surat_keterangan' => 'Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.',
+                'surat_kepada' => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+                'surat_tgl' => $tglSurat,
+            ];
+
+            // Path template .docx
+            $templateFile = public_path('templates/SKBN.docx');
+            $outputPdf = hash('sha256', 'SKBN_' . $output['_id']) . '_signed';
+            // Generate PDF dari template
+            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+            // dd($pdfPath);
+
+            $request = [
+                'path' => $pdfPath,
+                'file_name' => $outputPdf . '.pdf',
+                'nik' => $output['nik'],
+                'passphrase' => $output['passphrase'],
+                'qr_loc' => 'qr_here',
+                'verify' => $verify,
+                'is_visible' => true,
+            ];
+            $res = $this->TTE_sign($request);
+            // dd($res);
+        } else if ($output['jenis'] == 'skkelahiran') {
             $nik = $surat->nik_pelapor;
             $tgl_lhr_ayah = explode('-', $surat->tgl_lhr_ayah);
             $y_lhr_ayah = $tgl_lhr_ayah[0];
@@ -266,20 +318,62 @@ class EsignController extends Controller
                 'mm_kematian',
             ))->setPaper('legal', 'portrait');
         } else if ($output['jenis'] == 'skboro') {
-            $nik = $surat->nik;
+            // $nik = $surat->nik;
+            $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
+            $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
+            $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $output['_id'])->count();
             $pengikut = SuratBoroPengikut::where('boro_id', $output['_id'])->get();
             $resident = Resident::where('nik', $surat->nik)->first();
             $penduduk = unserialize($resident->data);
             $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-            $pdf = Pdf::loadView($output['jenis'] . '.pdf', compact(
-                'surat',
-                'pengikut',
-                'penduduk',
-                'nomorSurat',
-                'pejabat',
-                'tglSurat',
-                'url'
-            ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
+
+            // dd($surat);
+            $data = [
+                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                'skpd_telp' => $pejabat->skpd->instansi_telp,
+                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                'skpd_kepala' => $pejabat->nama,
+                'skpd_nip_kepala' => $pejabat->nip,
+                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                'surat_no' => $nomorSurat,
+                'surat_nama' => $penduduk['name'],
+                'surat_nik' => $surat->nik,
+                'surat_tmpl' => $penduduk['tempat_lhr'],
+                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                'surat_gender' => $penduduk['gender_nm'],
+                'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                'surat_agama' => $penduduk['agama_nm'],
+                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                'surat_tgl' => $tglSurat,
+                'surat_tgl_berlaku' =>  $surat['tgl_awal'] . 's/d' .  $surat['tgl_akhir'],
+                'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
+                'surat_keperluan' => $surat->peruntukan,
+                'surat_jml_pengikut' => $surat->pengikut,
+                'detail_pengikut' => collect($pengikut)->toArray()
+            ];
+            // dd($data);
+
+            // Path template .docx
+            $templateFile = public_path('templates/SKBORO.docx');
+            $outputPdf = hash('sha256', 'SKBN_' . $output['_id']) . '_signed';
+            // Generate PDF dari template
+            $pdfPath = $this->generatePdfTable($data, $templateFile, $outputPdf);
+            // dd($pdfPath);
+
+            $request = [
+                'path' => $pdfPath,
+                'file_name' => $outputPdf . '.pdf',
+                'nik' => $output['nik'],
+                'passphrase' => $output['passphrase'],
+                'qr_loc' => 'qr_here',
+                'verify' => $verify,
+                'is_visible' => true,
+            ];
+            $res = $this->TTE_sign($request);
         } else {
             $nik = $surat->nik;
             $resident = Resident::where('nik', $surat->nik)->first();
@@ -294,37 +388,6 @@ class EsignController extends Controller
                 'url'
             ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
         }
-        // return $pdf->stream();
-        //Storage::makeDirectory('/public/pdf/' . date('Y') . '/' . $output['jenis'], 0755);
-        $path = '/public/pdf/' . date('Y') . '/' . $output['jenis'];
-        $content = $pdf->download()->getOriginalContent();
-        Storage::put($path . '/' . $fileName, $content);
-        $fileLocation = '/storage/pdf/' . date('Y') . '/' . $output['jenis'] . '/' . $fileName;
-
-        $data = array(
-            'nik' => $output['nik'],
-            'passphrase' => $output['passphrase'],
-            'tampilan' => 'invisible',
-            'page' => 1,
-            'reason' => 'Dokumen telah ditanda tangani secara digital',
-            'location' => 'Kediri'
-        );
-
-        $arrContextOptions = array(
-            "ssl" => array(
-                "verify_peer" => false,
-                "verify_peer_name" => false,
-            ),
-        );
-        $query = http_build_query($data);
-        $r = Http::withBasicAuth(env('ESIGN_USER'), env('ESIGN_PASS'))
-            ->asMultipart()
-            ->attach('file', file_get_contents(asset($fileLocation), false, stream_context_create($arrContextOptions)), $fileName)
-            ->post(env('APP_URL_TTE') . '/api/sign/pdf?' . $query);
-
-        $fp = fopen(public_path($fileLocation), 'wb');
-        fwrite($fp, $r);
-        fclose($fp);
 
         if ($output['jenis'] == 'sktm') {
             // $surat['kepada_tgl_lhr'] = $kepada_tgl_lhr;
@@ -337,7 +400,7 @@ class EsignController extends Controller
             $surat = SuratBoro::find($output['_id']);
         }
 
-        $surat->update(['status' => 3, 'file' => $fileLocation]);
+        $surat->update(['status' => 3, 'file' => 'storage/pdf/' . $outputPdf . '.pdf']);
 
         Log_surat::create([
             'nik' => $nik,

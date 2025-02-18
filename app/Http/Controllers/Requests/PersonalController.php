@@ -14,10 +14,10 @@ class PersonalController extends Controller
      */
     public function index(Request $request)
     {
-        $response = Http::withoutVerifying()->withToken('1|EwECYS9m7pQqZYQnaURpP7ScgKEgIDKOzmp5YuVL7f011c47')
-        ->get(env('APP_URL', 'https://esuket.test') . '/api/resident?nik=' . $request->nik);
+        $response = Http::withoutVerifying()->withToken(env('API_TOKEN'))
+        ->get(env('APP_URL', 'http://rumput.test') . '/api/resident?nik=' . $request->nik);
         $hasil = $response->json();
-        // dd($response);
+        // dd($hasil);
         if (isset($hasil['data'])) {
             $dt = unserialize($hasil['data']);
             $data = [

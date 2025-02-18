@@ -35,7 +35,8 @@ Route::get('/', function () {
             return redirect()->route('home');
         }
     }
-    return view('welcome');
+    return redirect()->route('login');
+    // return view('welcome');
 });
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->name('home');
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');

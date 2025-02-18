@@ -18,8 +18,11 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->create([
             'name' => 'Bayu Setiawan',
+            'nik' => '3571013101930001',
             'email' => 'bayukkominfo@gmail.com',
             'password' => Hash::make('`'),
+            'role_id' => '1',
+            'id_instansi' => '1'
         ]);
     }
 }
