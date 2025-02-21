@@ -3,10 +3,12 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use NcJoes\OfficeConverter\OfficeConverter;
 use PhpOffice\PhpWord\Element\Table;
 use PhpOffice\PhpWord\SimpleType\TblWidth;
 use PhpOffice\PhpWord\TemplateProcessor;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 trait GeneratePDF
 {
@@ -20,6 +22,14 @@ trait GeneratePDF
         foreach ($data as $key => $value) {
             $templateProcessor->setValue($key, $value);
         }
+        $code = time();
+        $qr = QrCode::format('png')->generate($data['link']);
+        $qrImageName = $code . '.png';
+
+        // simpan ke local storage
+        Storage::put('public/qr/' . $qrImageName, $qr);
+
+        $templateProcessor->setImageValue('qr', array('path' => storage_path('app/public/qr/' . $qrImageName), 'width' => 100, 'height' => 100, 'ratio' => true));
 
         // Define temporary paths for .docx and .pdf
         if (!File::exists(storage_path('app/public/doc/'))) {
@@ -106,6 +116,15 @@ trait GeneratePDF
             // Mengatur complex block dalam template
             $templateProcessor->setComplexBlock('detail_pengikut#' . ($index + 1), $table);
         }
+
+        $code = time();
+        $qr = QrCode::format('png')->generate($data['link']);
+        $qrImageName = $code . '.png';
+
+        // simpan ke local storage
+        Storage::put('public/qr/' . $qrImageName, $qr);
+
+        $templateProcessor->setImageValue('qr', array('path' => storage_path('app/public/qr/' . $qrImageName), 'width' => 100, 'height' => 100, 'ratio' => true));
 
         // Define temporary paths for .docx and .pdf
         if (!File::exists(storage_path('app/public/doc/'))) {

@@ -27,6 +27,7 @@ use App\Models\Surat_keterangan;
 use App\Models\SuratKeterangan;
 use App\Models\User;
 use App\Traits\GetNoSurat;
+use App\Traits\GeneratePDF;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use DateTime;
@@ -38,7 +39,7 @@ use Yajra\DataTables\DataTables;
 
 class SuketController extends Controller
 {
-    use GetNoSurat;
+    use GetNoSurat, GeneratePDF;
     public function index()
     {
         if (request()->ajax()) {
@@ -407,18 +408,41 @@ class SuketController extends Controller
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
 
-        $url = '';
+        $url = env('APP_URL', 'http://rumput.test') . '/verify/' . 'suket/' . $id;
+        $data = [
+            'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+            'skpd_kel' => strtoupper($pejabat->skpd->nama),
+            'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+            'skpd_telp' => $pejabat->skpd->instansi_telp,
+            'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+            'skpd_kepala' => $pejabat->nama,
+            'skpd_nip_kepala' => $pejabat->nip,
+            'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+            'surat_no' => $nomorSurat,
+            'surat_nama' => $penduduk['name'],
+            'surat_nik' => $surat->nik,
+            'surat_tmpl' => $penduduk['tempat_lhr'],
+            'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+            'surat_gender' => $penduduk['gender_nm'],
+            'surat_perkawinan' => $penduduk['status_kwn_nm'],
+            'surat_agama' => $penduduk['agama_nm'],
+            'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+            'surat_pendidikan' => $penduduk['pendidikan_nm'],
+            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_keterangan' => $surat->keterangan,
+            'surat_kepada' => $surat->kepada,
+            'surat_peruntukan' => $surat->peruntukan,
+            'surat_tgl' => $tglSurat,
+            'link' => $url
+        ];
+        // dd($data);
 
-        $pdf = Pdf::loadView('suket.pdf', compact(
-            'surat',
-            'penduduk',
-            'user',
-            'nomorSurat',
-            'pejabat',
-            'tglSurat',
-            'url'
-        ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
-        return $pdf->stream();
+        // Path template .docx
+        $templateFile = public_path('templates/SUKET.docx');
+        $outputPdf = hash('sha256', 'SUKET_' . $id);
+        // Generate PDF dari template
+        $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+        return response()->file($pdfPath);
     }
 
     public function cetak($id)
@@ -485,7 +509,7 @@ class SuketController extends Controller
         if (isset($request->nik)) {
             $surat = SuratKeterangan::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_keterangans');
-            }])->where('nik', $request->nik)->get();
+            }])->where('nik', $request->nik)->orderBy('id', 'desc')->get();
         } else if (isset($request->id)) {
             $surat = SuratKeterangan::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_keterangans');

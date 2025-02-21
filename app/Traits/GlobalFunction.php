@@ -4,6 +4,10 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Imagick\Driver;
+use Intervention\Image\Geometry\Factories\RectangleFactory;
+use Intervention\Image\Typography\FontFactory;
 
 trait GlobalFunction
 {
@@ -17,8 +21,8 @@ trait GlobalFunction
         if (isset($data['type'])) {
             if (preg_match('/image/i', $data['type'])) {
                 $flag_location =  $data['qr_loc'];
-                $x_widht = 25;
-                $y_height = 20;
+                // $x_widht = 85;
+                $y_height = 50;
             }
         }
 
@@ -143,8 +147,8 @@ trait GlobalFunction
             if (preg_match('/image/i', $request['type'])) {
                 $data['linkQR'] = '';
                 $data['image'] = true;
-                $data['width'] = $request['x'] + 40;
-                $data['height'] =  $request['y'] + 40;
+                $data['width'] = $request['x'] + 210;
+                $data['height'] =  $request['y'] + 90;
             }
         }
         $arrContextOptions = array(
@@ -168,7 +172,7 @@ trait GlobalFunction
 
             if (isset($request['type'])) {
                 if (preg_match('/image/i', $request['type'])) {
-                    $r = $r->attach('imageTTD', file_get_contents(public_path('assets/media/logos/' . $request['image_path']), false, stream_context_create($arrContextOptions)), $request['image_path']);
+                    $r = $r->attach('imageTTD', file_get_contents(public_path('img/' . $request['image_path']), false, stream_context_create($arrContextOptions)), $request['image_path']);
                 }
             }
             $r = $r->post(env('APP_URL_TTE') . '/sign/pdf?' . $query);
@@ -225,5 +229,57 @@ trait GlobalFunction
         } catch (\Exception $e) {
             return ['message' => $e->getMessage(), 'status' => false];
         }
+    }
+
+    public function generateTte($request, $kec = null)
+    {
+        $manager = new ImageManager(Driver::class);
+        $image = $manager->create(600, 200)->fill('white');
+        $image->drawRectangle(0, 0, function (RectangleFactory $rectangle) {
+            $rectangle->size(600, 200); // width & height of rectangle
+            $rectangle->background('white'); // background color of rectangle
+            $rectangle->border('black', 5); // border color & size of rectangle
+        });
+        $image->place(public_path('img/logo.png'), 'left', 10);
+        if (isset($kec)) {
+            $image->text('Register : ', 180, 25, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Medium.ttf');
+                $font->size(20);
+                $font->color('black');
+            });
+        }
+        $image->text('Ditandatangani secara elektronik oleh:', 180, 50, function (FontFactory $font) {
+            $font->filename('./fonts/KumbhSans-Medium.ttf');
+            $font->size(20);
+            $font->color('black');
+        });
+        $image->text('Lurah Kelurahan ' . ucfirst(strtolower($request->skpd->nama)) . ',', 180, 75, function (FontFactory $font) {
+            $font->filename('./fonts/KumbhSans-Bold.ttf');
+            $font->size(24);
+            $font->color('black');
+        });
+        $image->text('Kota Kediri', 180, 100, function (FontFactory $font) {
+            $font->filename('./fonts/KumbhSans-Bold.ttf');
+            $font->size(24);
+            $font->color('black');
+        });
+        $image->text($request->nama, 180, 150, function (FontFactory $font) {
+            $font->filename('./fonts/KumbhSans-Bold.ttf');
+            $font->size(24);
+            $font->color('black');
+        });
+        $image->text('NIP. ' . $request->nip, 180, 175, function (FontFactory $font) {
+            $font->filename('./fonts/KumbhSans-Medium.ttf');
+            $font->size(24);
+            $font->color('black');
+        });
+        $imgName = 'tte_' . hash('sha256', now()) . '.png';
+        $outputTte = 'img/' . $imgName;
+        $image->toPng()->save($outputTte);
+        $result = [
+            'filename' => $imgName,
+            'path' => $outputTte,
+        ];
+        return $result;
     }
 }

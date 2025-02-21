@@ -456,7 +456,7 @@ class SkboroController extends Controller
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
-        $url = '';
+        $url = env('APP_URL', 'http://rumput.test') . '/verify/' . 'skboro/' . $id;
 
         $data = [
             'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
@@ -479,11 +479,12 @@ class SkboroController extends Controller
             'surat_pendidikan' => $penduduk['pendidikan_nm'],
             'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
             'surat_tgl' => $tglSurat,
-            'surat_tgl_berlaku' =>  $surat['tgl_awal'] . 's/d' .  $surat['tgl_akhir'],
+            'surat_tgl_berlaku' =>  $surat['tgl_awal'] . ' s/d ' .  $surat['tgl_akhir'],
             'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
             'surat_keperluan' => $surat->peruntukan,
             'surat_jml_pengikut' => $surat->pengikut,
-            'detail_pengikut' => collect($pengikut)->toArray()
+            'detail_pengikut' => collect($pengikut)->toArray(),
+            'link' => $url
         ];
 
         // Path template .docx

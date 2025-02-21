@@ -379,7 +379,7 @@ class SkbnController extends Controller
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
-        $url = '';
+        $url = env('APP_URL', 'http://rumput.test') . '/verify/' . 'skbn/' . $id;
 
         $data = [
             'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
@@ -405,6 +405,7 @@ class SkbnController extends Controller
             'surat_kepada' => $surat->kepada,
             'surat_peruntukan' => $surat->peruntukan,
             'surat_tgl' => $tglSurat,
+            'link' => $url
 
         ];
         // Path template .docx
