@@ -36,6 +36,10 @@ trait GlobalFunction
                     $data['x'] = $hasil['data'][0] + (($hasil['data'][2] - $hasil['data'][0]) / 2) - $x_widht;
                     $data['y'] = $hasil['data'][1] + (($hasil['data'][3] - $hasil['data'][1]) / 2) - $y_height;
                     $data['page'] = $hasil['page'];
+                    if (($data['jenis'] == 'skkelahiran') || ($data['jenis'] == 'skkematian')) {
+                        $data['x'] = $data['x'] - 75;
+                    }
+                    // dd($data);
                 }
 
                 $response = $this->TTE_Visible($data);

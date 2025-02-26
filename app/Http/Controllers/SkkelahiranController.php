@@ -469,7 +469,7 @@ class SkkelahiranController extends Controller
     {
         $surat = SuratKelahiran::with(['history' => function ($query) {
             return $query->where('tabel_surat', 'surat_kelahirans');
-        }])->where('nik', $request->nik)->get();
+        }])->where('nik', $request->nik)->orderBy('id', 'desc')->get();
         return response()->json($surat);
     }
 

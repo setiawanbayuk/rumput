@@ -99,7 +99,7 @@ class EsignController extends Controller
 
     public function check(string $nik)
     {
-        $r = Http::withBasicAuth(env('ESIGN_USER'), env('ESIGN_PASS'))->get('http://103.78.106.34/api/user/status/' . $nik);
+        $r = Http::withBasicAuth(env('ESIGN_USER'), env('ESIGN_PASS'))->get(env('APP_URL_TTE') . '/user/status/' . $nik);
         $response = $r->json();
 
         if (!$response) {
@@ -169,13 +169,16 @@ class EsignController extends Controller
         $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $skpd->instansi_kode . '/' . $tahunSrt->format('Y');
         // $nomorSurat = $this->getNoSrt($surat);
         $verify = env('APP_URL', 'http://rumput.test') . '/verify/' . $output['jenis'] . '/' . $output['_id'];
-        // $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
+        $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
         // dd($url);
 
-        $fileName = hash('sha256', $nomorSurat . date("Y-m-d H:i:s")) . '.pdf';
+        if ($output['jenis'] == 'skkelahiran' || $output['jenis'] == 'skkematian') {
+            $nik = $surat->nik_pelapor;
+        } else {
+            $nik = $surat->nik;
+        }
 
-        $nik = $surat->nik;
-
+        // dd($nik);
         $resident = Resident::where('nik', $nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
@@ -297,6 +300,11 @@ class EsignController extends Controller
                 'mm_lhr_anak',
                 'num_padded'
             ))->setPaper('legal', 'portrait');
+            $path = '/public/pdf/';
+            $content = $pdf->download()->getOriginalContent();
+            $outputPdf = hash('sha256', 'SKKELAHIRAN_' . $output['_id']) . '_signed';
+            Storage::put($path . '/' . $outputPdf . '.pdf', $content);
+            $pdfPath = storage_path('app/public/pdf') . '/' . $outputPdf . '.pdf';
         } else if ($output['jenis'] == 'skkematian') {
             $nik = $surat->nik_pelapor;
 
@@ -341,6 +349,11 @@ class EsignController extends Controller
                 'hh_kematian',
                 'mm_kematian',
             ))->setPaper('legal', 'portrait');
+            $path = '/public/pdf/';
+            $content = $pdf->download()->getOriginalContent();
+            $outputPdf = hash('sha256', 'SKKEMATIAN_' . $output['_id']) . '_signed';
+            Storage::put($path . '/' . $outputPdf . '.pdf', $content);
+            $pdfPath = storage_path('app/public/pdf') . '/' . $outputPdf . '.pdf';
         } else if ($output['jenis'] == 'skboro') {
             $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
             $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
@@ -511,16 +524,18 @@ class EsignController extends Controller
                 'url'
             ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
         }
-        if ($output['jenis'] == 'sktm') {
-            // $surat['kepada_tgl_lhr'] = $kepada_tgl_lhr;
-            $surat = SuratSktm::find($output['_id']);
-        } else if ($output['jenis'] == 'skdom') {
-            // $surat['tgl_berlaku'] = $tgl_berlaku;
-            $surat = SuratDomisili::find($output['_id']);
-        } else if ($output['jenis'] == 'skboro') {
-            // $surat['tgl_berlaku'] = $tgl_berlaku;
-            $surat = SuratBoro::find($output['_id']);
-        }
+
+        // if ($output['jenis'] == 'sktm') {
+        //     // $surat['kepada_tgl_lhr'] = $kepada_tgl_lhr;
+        //     $surat = SuratSktm::find($output['_id']);
+        // } else if ($output['jenis'] == 'skdom') {
+        //     // $surat['tgl_berlaku'] = $tgl_berlaku;
+        //     $surat = SuratDomisili::find($output['_id']);
+        // } else if ($output['jenis'] == 'skboro') {
+        //     // $surat['tgl_berlaku'] = $tgl_berlaku;
+        //     $surat = SuratBoro::find($output['_id']);
+        // }
+
         $imgTte = $this->generateTte($pejabat);
         $request = [
             'path' => $pdfPath,
@@ -533,8 +548,22 @@ class EsignController extends Controller
             'type' => 'image',
             'image_path' => $imgTte['filename']
         ];
+        if ($output['jenis'] == 'skkelahiran') {
+            $request2 = [
+                'jenis' => 'skkelahiran',
+            ];
+            $request = array_merge($request, $request2);
+        } else if ($output['jenis'] == 'skkematian') {
+            $request2 = [
+                'jenis' => 'skkematian',
+            ];
+            $request = array_merge($request, $request2);
+        }
+        // dd($request);
         $res = $this->TTE_sign($request);
+        // dd($res);
         unlink(public_path($imgTte['path']));
+        // dd($outputPdf);
         $surat->update(['status' => 3, 'file' => 'storage/pdf/' . $outputPdf . '.pdf']);
 
         Log_surat::create([

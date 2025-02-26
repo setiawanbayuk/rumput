@@ -23,6 +23,7 @@ use App\Models\StatusKwn;
 use App\Models\SuratSktm;
 use App\Models\User;
 use App\Traits\GetNoSurat;
+use App\Traits\GeneratePDF;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ use Yajra\DataTables\DataTables;
 
 class SktmController extends Controller
 {
-    use GetNoSurat;
+    use GetNoSurat, GeneratePDF;
 
     public function index()
     {
@@ -363,27 +364,44 @@ class SktmController extends Controller
 
             $kepada_gender = Gender::find($request->kepada_gender);
 
-            $suratKeterangan->update([
-                'kd_jenis_surat' => $request->kd_jenis_surat,
-                'no_urut_surat' => $request->no_urut_surat,
-                'tgl_surat' => $request->tgl_surat,
-                'nik' => $request->nik,
-                'jenis' => $request->register_as,
-                'kepada' => $request->kepada,
-                'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-                'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-                'kepada_gender' => $request->kepada_gender,
-                'kepada_gender_nm' => $kepada_gender->nama,
-                'kepada_hubungan' => $request->kepada_hubungan,
-                'kepada_sekolah' => $request->kepada_sekolah,
-                'kepada_kelas' => $request->kepada_kelas,
-                'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
-                'peruntukan' => $request->peruntukan,
-                'kategori' => $request->kategori,
-                'pengantar' => $request->pengantar,
-                'status' => 1,
-                'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
-            ]);
+            if ($request->register_as == 'sekolah') {
+                $suratKeterangan->update([
+                    'kd_jenis_surat' => $request->kd_jenis_surat,
+                    'no_urut_surat' => $request->no_urut_surat,
+                    'tgl_surat' => $request->tgl_surat,
+                    'nik' => $request->nik,
+                    'jenis' => $request->register_as,
+                    'kepada' => $request->kepada,
+                    'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
+                    'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
+                    'kepada_gender' => $request->kepada_gender,
+                    'kepada_gender_nm' => $kepada_gender->nama,
+                    'kepada_hubungan' => $request->kepada_hubungan,
+                    'kepada_sekolah' => $request->kepada_sekolah,
+                    'kepada_kelas' => $request->kepada_kelas,
+                    'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
+                    'peruntukan' => $request->peruntukan,
+                    'kategori' => $request->kategori,
+                    'pengantar' => $request->pengantar,
+                    'status' => 1,
+                    'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
+                ]);
+            } else {
+                $suratKeterangan->update([
+                    'kd_jenis_surat' => $request->kd_jenis_surat,
+                    'no_urut_surat' => $request->no_urut_surat,
+                    'tgl_surat' => $request->tgl_surat,
+                    'nik' => $request->nik,
+                    'jenis' => $request->register_as,
+                    'kepada' => $request->kepada,
+                    'peruntukan' => $request->peruntukan,
+                    'kategori' => $request->kategori,
+                    'pengantar' => $request->pengantar,
+                    'status' => 1,
+                    'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
+                ]);
+            }
+
 
             return redirect()->route('sktm.index');
         } else {
@@ -420,17 +438,83 @@ class SktmController extends Controller
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
-        $url = '';
-        $pdf = Pdf::loadView('sktm.pdf', compact(
-            'surat',
-            'penduduk',
-            'user',
-            'nomorSurat',
-            'pejabat',
-            'tglSurat',
-            'url'
-        ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
-        return $pdf->stream();
+        $url = env('APP_URL', 'http://rumput.test') . '/verify/' . 'sktm/' . $id;
+        // dd($surat);
+        if ($surat->jenis == 'sekolah') {
+            $data = [
+                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                'skpd_telp' => $pejabat->skpd->instansi_telp,
+                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                'skpd_kepala' => $pejabat->nama,
+                'skpd_nip_kepala' => $pejabat->nip,
+                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                'surat_no' => $nomorSurat,
+                'surat_nama' => $penduduk['name'],
+                'surat_nik' => $surat->nik,
+                'surat_tmpl' => $penduduk['tempat_lhr'],
+                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                'surat_gender' => $penduduk['gender_nm'],
+                'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                'surat_agama' => $penduduk['agama_nm'],
+                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
+                'surat_kepada' => $surat->kepada,
+                'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
+                'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
+                'surat_kepada_sekolah' => $surat->kepada_sekolah,
+                'surat_kepada_kelas' => $surat->kepada_kelas,
+                'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
+                'surat_kepada_hubungan' => $surat->kepada_hubungan,
+                'surat_peruntukan' => $surat->peruntukan,
+                'surat_tgl' => $tglSurat,
+                'surat_kategori' => $surat->kategori,
+                'link' => $url
+            ];
+            // dd($data);
+
+            // Path template .docx
+            $templateFile = public_path('templates/SKTM_SEKOLAH.docx');
+        } else {
+            $data = [
+                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                'skpd_telp' => $pejabat->skpd->instansi_telp,
+                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                'skpd_kepala' => $pejabat->nama,
+                'skpd_nip_kepala' => $pejabat->nip,
+                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                'surat_no' => $nomorSurat,
+                'surat_nama' => $penduduk['name'],
+                'surat_nik' => $surat->nik,
+                'surat_tmpl' => $penduduk['tempat_lhr'],
+                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                'surat_gender' => $penduduk['gender_nm'],
+                'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                'surat_agama' => $penduduk['agama_nm'],
+                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
+                'surat_peruntukan' => $surat->peruntukan,
+                'surat_tgl' => $tglSurat,
+                'surat_kategori' => $surat->kategori,
+                'link' => $url
+            ];
+            // dd($data);
+
+            // Path template .docx
+            $templateFile = public_path('templates/SKTM_PERORANGAN.docx');
+        }
+
+        $outputPdf = hash('sha256', 'SKTM_' . $id);
+        // Generate PDF dari template
+        $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+        return response()->file($pdfPath);
     }
 
     public function cetak($id)
@@ -514,7 +598,7 @@ class SktmController extends Controller
         if (isset($request->nik)) {
             $surat = SuratSktm::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_sktms');
-            }])->where('nik', $request->nik)->get();
+            }])->where('nik', $request->nik)->orderBy('id', 'desc')->get();
         } else if (isset($request->id)) {
             $surat = SuratSktm::with(['history' => function ($query) {
                 return $query->where('tabel_surat', 'surat_sktms');
