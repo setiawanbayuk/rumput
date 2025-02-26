@@ -251,6 +251,82 @@ class EsignController extends Controller
             // Generate PDF dari template
             $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
             // dd($pdfPath);
+        } else if ($output['jenis'] == 'skboro') {
+            $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
+            $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
+            $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $output['_id'])->count();
+            $pengikut = SuratBoroPengikut::where('boro_id', $output['_id'])->get();
+            $data = [
+                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                'skpd_telp' => $pejabat->skpd->instansi_telp,
+                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                'skpd_kepala' => $pejabat->nama,
+                'skpd_nip_kepala' => $pejabat->nip,
+                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                'surat_no' => $nomorSurat,
+                'surat_nama' => $penduduk['name'],
+                'surat_nik' => $surat->nik,
+                'surat_tmpl' => $penduduk['tempat_lhr'],
+                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                'surat_gender' => $penduduk['gender_nm'],
+                'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                'surat_agama' => $penduduk['agama_nm'],
+                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                'surat_tgl' => $tglSurat,
+                'surat_tgl_berlaku' =>  $surat['tgl_awal'] . ' s/d ' .  $surat['tgl_akhir'],
+                'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
+                'surat_keperluan' => $surat->peruntukan,
+                'surat_jml_pengikut' => $surat->pengikut,
+                'detail_pengikut' => collect($pengikut)->toArray(),
+                'link' => $verify
+            ];
+            // dd($data);
+
+            // Path template .docx
+            $templateFile = public_path('templates/SKBORO.docx');
+            $outputPdf = hash('sha256', 'SKBORO_' . $output['_id']) . '_signed';
+            // Generate PDF dari template
+            $pdfPath = $this->generatePdfTable($data, $templateFile, $outputPdf);
+        } else if ($output['jenis'] == 'skdom') {
+            $data = [
+                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                'skpd_telp' => $pejabat->skpd->instansi_telp,
+                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                'skpd_kepala' => $pejabat->nama,
+                'skpd_nip_kepala' => $pejabat->nip,
+                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                'surat_no' => $nomorSurat,
+                'surat_nama' => $penduduk['name'],
+                'surat_nik' => $surat->nik,
+                'surat_tmpl' => $penduduk['tempat_lhr'],
+                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                'surat_gender' => $penduduk['gender_nm'],
+                'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                'surat_agama' => $penduduk['agama_nm'],
+                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                'surat_keterangan' => $surat['jenis'] == 'perorangan' ?
+                    'Bahwa nama tersebut di atas benar - benar berdomisili di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) :
+                    'Pendiri / pemilik usaha ' . $surat['nama_perusahaan'] . ' yang bertempat di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) . ' yang berstatus bangunan ' . $surat['status_bangunan'] . ' dengan karyawan berjumlah ' . $surat['jumlah_karyawan'] . ' orang.',
+                'surat_kepada' => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+                'surat_tgl' => $tglSurat,
+                'link' => $verify
+            ];
+            // dd($data);
+
+            // Path template .docx
+            $templateFile = public_path('templates/SKDOM.docx');
+            $outputPdf = hash('sha256', 'SKDOM_' . $output['_id']) . '_signed';
+            // Generate PDF dari template
+            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
         } else if ($output['jenis'] == 'skkelahiran') {
             $nik = $surat->nik_pelapor;
             $tgl_lhr_ayah = explode('-', $surat->tgl_lhr_ayah);
@@ -354,82 +430,6 @@ class EsignController extends Controller
             $outputPdf = hash('sha256', 'SKKEMATIAN_' . $output['_id']) . '_signed';
             Storage::put($path . '/' . $outputPdf . '.pdf', $content);
             $pdfPath = storage_path('app/public/pdf') . '/' . $outputPdf . '.pdf';
-        } else if ($output['jenis'] == 'skboro') {
-            $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
-            $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
-            $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $output['_id'])->count();
-            $pengikut = SuratBoroPengikut::where('boro_id', $output['_id'])->get();
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_tgl' => $tglSurat,
-                'surat_tgl_berlaku' =>  $surat['tgl_awal'] . ' s/d ' .  $surat['tgl_akhir'],
-                'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
-                'surat_keperluan' => $surat->peruntukan,
-                'surat_jml_pengikut' => $surat->pengikut,
-                'detail_pengikut' => collect($pengikut)->toArray(),
-                'link' => $verify
-            ];
-            // dd($data);
-
-            // Path template .docx
-            $templateFile = public_path('templates/SKBORO.docx');
-            $outputPdf = hash('sha256', 'SKBORO_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdfTable($data, $templateFile, $outputPdf);
-        } else if ($output['jenis'] == 'skdom') {
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_keterangan' => $surat['jenis'] == 'perorangan' ?
-                    'Bahwa nama tersebut di atas benar - benar berdomisili di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) :
-                    'Pendiri / pemilik usaha ' . $surat['nama_perusahaan'] . ' yang bertempat di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) . ' yang berstatus bangunan ' . $surat['status_bangunan'] . ' dengan karyawan berjumlah ' . $surat['jumlah_karyawan'] . ' orang.',
-                'surat_kepada' => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-                'surat_tgl' => $tglSurat,
-                'link' => $verify
-            ];
-            // dd($data);
-
-            // Path template .docx
-            $templateFile = public_path('templates/SKDOM.docx');
-            $outputPdf = hash('sha256', 'SKDOM_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
         } else if ($output['jenis'] == 'skhsl') {
             $data = [
                 'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
@@ -468,6 +468,77 @@ class EsignController extends Controller
             // Path template .docx
             $templateFile = public_path('templates/SKHSL.docx');
             $outputPdf = hash('sha256', 'SKHSL_' . $output['_id']) . '_signed';
+            // Generate PDF dari template
+            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+        } else if ($output['jenis'] == 'sktm') {
+            if ($surat->jenis == 'sekolah') {
+                $data = [
+                    'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                    'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                    'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                    'skpd_telp' => $pejabat->skpd->instansi_telp,
+                    'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                    'skpd_kepala' => $pejabat->nama,
+                    'skpd_nip_kepala' => $pejabat->nip,
+                    'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                    'surat_no' => $nomorSurat,
+                    'surat_nama' => $penduduk['name'],
+                    'surat_nik' => $surat->nik,
+                    'surat_tmpl' => $penduduk['tempat_lhr'],
+                    'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                    'surat_gender' => $penduduk['gender_nm'],
+                    'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                    'surat_agama' => $penduduk['agama_nm'],
+                    'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                    'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                    'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                    'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
+                    'surat_kepada' => $surat->kepada,
+                    'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
+                    'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
+                    'surat_kepada_sekolah' => $surat->kepada_sekolah,
+                    'surat_kepada_kelas' => $surat->kepada_kelas,
+                    'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
+                    'surat_kepada_hubungan' => $surat->kepada_hubungan,
+                    'surat_peruntukan' => $surat->peruntukan,
+                    'surat_tgl' => $tglSurat,
+                    'surat_kategori' => $surat->kategori,
+                    'link' => $verify
+                ];
+                // Path template .docx
+                $templateFile = public_path('templates/SKTM_SEKOLAH.docx');
+            } else {
+                $data = [
+                    'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+                    'skpd_kel' => strtoupper($pejabat->skpd->nama),
+                    'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+                    'skpd_telp' => $pejabat->skpd->instansi_telp,
+                    'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+                    'skpd_kepala' => $pejabat->nama,
+                    'skpd_nip_kepala' => $pejabat->nip,
+                    'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+                    'surat_no' => $nomorSurat,
+                    'surat_nama' => $penduduk['name'],
+                    'surat_nik' => $surat->nik,
+                    'surat_tmpl' => $penduduk['tempat_lhr'],
+                    'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+                    'surat_gender' => $penduduk['gender_nm'],
+                    'surat_perkawinan' => $penduduk['status_kwn_nm'],
+                    'surat_agama' => $penduduk['agama_nm'],
+                    'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+                    'surat_pendidikan' => $penduduk['pendidikan_nm'],
+                    'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+                    'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
+                    'surat_peruntukan' => $surat->peruntukan,
+                    'surat_tgl' => $tglSurat,
+                    'surat_kategori' => $surat->kategori,
+                    'link' => $verify
+                ];
+                // Path template .docx
+                $templateFile = public_path('templates/SKTM_PERORANGAN.docx');
+            }
+
+            $outputPdf = hash('sha256', 'SKTM_' . $output['_id']) . '_signed';
             // Generate PDF dari template
             $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
         } else if ($output['jenis'] == 'skusaha') {

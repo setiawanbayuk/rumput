@@ -474,8 +474,6 @@ class SktmController extends Controller
                 'surat_kategori' => $surat->kategori,
                 'link' => $url
             ];
-            // dd($data);
-
             // Path template .docx
             $templateFile = public_path('templates/SKTM_SEKOLAH.docx');
         } else {
@@ -505,8 +503,6 @@ class SktmController extends Controller
                 'surat_kategori' => $surat->kategori,
                 'link' => $url
             ];
-            // dd($data);
-
             // Path template .docx
             $templateFile = public_path('templates/SKTM_PERORANGAN.docx');
         }
