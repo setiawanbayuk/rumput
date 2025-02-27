@@ -20,7 +20,7 @@ trait GlobalFunction
 
         if (isset($data['type'])) {
             if (preg_match('/image/i', $data['type'])) {
-                $flag_location =  $data['qr_loc'];
+                // $flag_location =  $data['qr_loc'];
                 // $x_widht = 85;
                 $y_height = 50;
             }
@@ -30,7 +30,7 @@ trait GlobalFunction
         $meta = [];
         if ($data['is_visible']) {
             $meta = $this->get_esign_coordinate($data['path'], $flag_location);
-            // dd($meta);
+            // dd($flag_location);
             if ($meta['status'] == true) {
                 foreach ($meta['hasil'] as $hasil) {
                     $data['x'] = $hasil['data'][0] + (($hasil['data'][2] - $hasil['data'][0]) / 2) - $x_widht;
@@ -38,7 +38,7 @@ trait GlobalFunction
                     $data['page'] = $hasil['page'];
                     if (isset($data['jenis'])) {
                         // if (($data['jenis'] == 'skkelahiran') || ($data['jenis'] == 'skkematian')) {
-                            $data['x'] = $data['x'] - 75;
+                        $data['x'] = $data['x'] - 75;
                         // }
                     }
                     // dd($data);
@@ -247,7 +247,8 @@ trait GlobalFunction
             $rectangle->border('black', 5); // border color & size of rectangle
         });
         $image->place(public_path('img/logo.png'), 'left', 10);
-        if (isset($kec)) {
+        if ($kec == true) {
+            // dd($kec);
             $image->text('Register : ', 180, 25, function (FontFactory $font) {
                 $font->filename('./fonts/KumbhSans-Medium.ttf');
                 $font->size(20);

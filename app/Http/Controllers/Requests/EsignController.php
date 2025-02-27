@@ -537,10 +537,17 @@ class EsignController extends Controller
                 // Path template .docx
                 $templateFile = public_path('templates/SKTM_PERORANGAN.docx');
             }
-
-            $outputPdf = hash('sha256', 'SKTM_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+            if ($output['role'] == 5) {
+                // $pdfPath = asset($surat->file);
+                $flname = explode('/', $surat->file);
+                $outputPdf = end($flname);
+                $pdfPath = storage_path('app/public/pdf/') . $outputPdf;
+                // dd($pdfPath);
+            } else {
+                $outputPdf = hash('sha256', 'SKTM_' . $output['_id']) . '_signed';
+                // Generate PDF dari template
+                $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+            }
         } else if ($output['jenis'] == 'skusaha') {
             $data = [
                 'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
@@ -606,14 +613,19 @@ class EsignController extends Controller
         //     // $surat['tgl_berlaku'] = $tgl_berlaku;
         //     $surat = SuratBoro::find($output['_id']);
         // }
-
-        $imgTte = $this->generateTte($pejabat);
+        // dd($output);
+        if ($output['role'] == 5) {
+            $imgTte = $this->generateTte($pejabat, true);
+        } else {
+            $imgTte = $this->generateTte($pejabat);
+        }
+        // dd($pdfPath);
         $request = [
             'path' => $pdfPath,
-            'file_name' => $outputPdf . '.pdf',
+            'file_name' => $output['role'] == 5 ? $outputPdf : $outputPdf . '.pdf',
             'nik' => $output['nik'],
             'passphrase' => $output['passphrase'],
-            'qr_loc' => 'qr_here',
+            'qr_loc' => $output['role'] == 5 ? 'qr_camat' : 'qr_here',
             'verify' => $verify,
             'is_visible' => true,
             'type' => 'image',
@@ -635,7 +647,7 @@ class EsignController extends Controller
         // dd($res);
         unlink(public_path($imgTte['path']));
         // dd($outputPdf);
-        $surat->update(['status' => 3, 'file' => 'storage/pdf/' . $outputPdf . '.pdf']);
+        $surat->update(['status' => ($output['role'] == 5 ? 5 : 3), 'file' => 'storage/pdf/' . ($output['role'] == 5 ? $outputPdf : $outputPdf . '.pdf')]);
 
         Log_surat::create([
             'nik' => $nik,

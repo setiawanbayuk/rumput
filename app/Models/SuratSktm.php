@@ -61,9 +61,11 @@ class SuratSktm extends Model
         } else if ($this->status == 2) {
             return ['name' => 'Dinaikan', 'color' => 'orange'];
         } else if ($this->status == 3) {
-            return ['name' => 'Disetujui', 'color' => 'green'];
+            return ['name' => 'Disetujui Lurah', 'color' => 'green'];
         } else if ($this->status == 4) {
             return ['name' => 'Ditolak', 'color' => 'red'];
+        } else if ($this->status == 5) {
+            return ['name' => 'Disetujui Camat', 'color' => 'purple'];
         } else {
             return ['name' => 'Pengajuan', 'color' => 'black'];
         }

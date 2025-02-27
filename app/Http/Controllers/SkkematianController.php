@@ -36,10 +36,11 @@ class SkkematianController extends Controller
                     $route = 'skkematian.edit';
                     $status = $row->status;
                     $jenis = 'skkematian';
+                    $role = auth()->user()->role_id;
                     if (auth()->user()->role_id == 1) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
                     } else if (auth()->user()->role_id == 3) {
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis'));
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role'));
                     } else {
                         return view('includes.button-verifikator', compact('id', 'status'));
                     }
