@@ -46,6 +46,7 @@ Route::get('/kecamatan/splp',[KecamatanController::class, 'splp']);
 Route::get('/kelurahan/splp',[KelurahanController::class, 'splp']);
 Route::get('/esign/check/{nik}',[EsignController::class, 'check']);
 Route::post('/esign/sign',[EsignController::class, 'sign']);
+Route::post('/register',[SktmController::class, 'register']);
 Route::get('/regional/kelurahan',[RegionalController::class, 'kelurahan'])->name('regional.kelurahan');
 Route::get('/regional/kecamatan',[RegionalController::class, 'kecamatan'])->name('regional.kecamatan');
 

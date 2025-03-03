@@ -237,7 +237,7 @@ trait GlobalFunction
         }
     }
 
-    public function generateTte($request, $kec = null)
+    public function generateTte($request, $kec = null, $no_reg = null)
     {
         $manager = new ImageManager(Driver::class);
         $image = $manager->create(600, 200)->fill('white');
@@ -249,37 +249,64 @@ trait GlobalFunction
         $image->place(public_path('img/logo.png'), 'left', 10);
         if ($kec == true) {
             // dd($kec);
-            $image->text('Register : ', 180, 25, function (FontFactory $font) {
+            $image->text('Register : ' . $no_reg, 180, 25, function (FontFactory $font) {
                 $font->filename('./fonts/KumbhSans-Medium.ttf');
                 $font->size(20);
                 $font->color('black');
             });
+            $image->text('Ditandatangani secara elektronik oleh:', 180, 50, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Medium.ttf');
+                $font->size(20);
+                $font->color('black');
+            });
+            $image->text('Camat Kecamatan ' . ucfirst(strtolower($request->skpd->nama)) . ',', 180, 75, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Bold.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
+            $image->text('Kota Kediri', 180, 100, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Bold.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
+            $image->text($request->nama, 180, 150, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Bold.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
+            $image->text('NIP. ' . $request->nip, 180, 175, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Medium.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
+        } else {
+            $image->text('Ditandatangani secara elektronik oleh:', 180, 50, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Medium.ttf');
+                $font->size(20);
+                $font->color('black');
+            });
+            $image->text('Lurah Kelurahan ' . ucfirst(strtolower($request->skpd->nama)) . ',', 180, 75, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Bold.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
+            $image->text('Kota Kediri', 180, 100, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Bold.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
+            $image->text($request->nama, 180, 150, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Bold.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
+            $image->text('NIP. ' . $request->nip, 180, 175, function (FontFactory $font) {
+                $font->filename('./fonts/KumbhSans-Medium.ttf');
+                $font->size(24);
+                $font->color('black');
+            });
         }
-        $image->text('Ditandatangani secara elektronik oleh:', 180, 50, function (FontFactory $font) {
-            $font->filename('./fonts/KumbhSans-Medium.ttf');
-            $font->size(20);
-            $font->color('black');
-        });
-        $image->text('Lurah Kelurahan ' . ucfirst(strtolower($request->skpd->nama)) . ',', 180, 75, function (FontFactory $font) {
-            $font->filename('./fonts/KumbhSans-Bold.ttf');
-            $font->size(24);
-            $font->color('black');
-        });
-        $image->text('Kota Kediri', 180, 100, function (FontFactory $font) {
-            $font->filename('./fonts/KumbhSans-Bold.ttf');
-            $font->size(24);
-            $font->color('black');
-        });
-        $image->text($request->nama, 180, 150, function (FontFactory $font) {
-            $font->filename('./fonts/KumbhSans-Bold.ttf');
-            $font->size(24);
-            $font->color('black');
-        });
-        $image->text('NIP. ' . $request->nip, 180, 175, function (FontFactory $font) {
-            $font->filename('./fonts/KumbhSans-Medium.ttf');
-            $font->size(24);
-            $font->color('black');
-        });
+
         $imgName = 'tte_' . hash('sha256', now()) . '.png';
         $outputTte = 'img/' . $imgName;
         $image->toPng()->save($outputTte);

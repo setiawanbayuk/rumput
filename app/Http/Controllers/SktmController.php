@@ -53,7 +53,7 @@ class SktmController extends Controller
                     } else if ((auth()->user()->role_id == 3 || auth()->user()->role_id == 5)) {
                         return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role'));
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'role'));
                     }
                 })
                 ->addColumn('no_surat', function ($row) {
@@ -619,6 +619,26 @@ class SktmController extends Controller
                 'status_surat' => 4,
             ]);
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
+        }
+    }
+
+    public function register(Request $request)
+    {
+        parse_str($request->getContent(), $output);
+        $suratKeterangan = SuratSktm::find($output['_id']);
+        // dd($suratKeterangan);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 5, 'no_register' => $output['register']]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_sktms',
+                'nama_surat' => 'SURAT KETERANGAN MISKIN',
+                'id_surat' => $output['_id'],
+                'status_surat' => 5
+            ]);
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $output['_id']]);
         } else {
             return response()->json(['message' => 'Data updated failed.']);
         }

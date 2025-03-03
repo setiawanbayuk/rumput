@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('kepada_hubungan')->nullable();
             $table->string('jenis');
             $table->string('status');
+            $table->string('no_register')->nullable();
             $table->string('file')->nullable();
             $table->string('pengantar')->nullable();
             $table->timestamps();

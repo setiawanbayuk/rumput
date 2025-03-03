@@ -33,6 +33,7 @@ class SuratSktm extends Model
         'kepada_alamat_sekolah',
         'jenis',
         'status',
+        'no_register',
         'file',
         'pengantar'
     ];
@@ -50,7 +51,8 @@ class SuratSktm extends Model
 
     protected $appends = ['st', 'nomor_surat'];
 
-    public function getNomorSuratAttribute(){
+    public function getNomorSuratAttribute()
+    {
         return $this->getNoSrt($this);
     }
 
@@ -65,6 +67,8 @@ class SuratSktm extends Model
         } else if ($this->status == 4) {
             return ['name' => 'Ditolak', 'color' => 'red'];
         } else if ($this->status == 5) {
+            return ['name' => 'Dinaikkan ke Camat', 'color' => 'brown'];
+        } else if ($this->status == 6) {
             return ['name' => 'Disetujui Camat', 'color' => 'purple'];
         } else {
             return ['name' => 'Pengajuan', 'color' => 'black'];
