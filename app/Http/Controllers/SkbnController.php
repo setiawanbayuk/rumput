@@ -23,6 +23,7 @@ use App\Models\Skbn;
 use App\Models\Status_kwn;
 use App\Models\StatusKwn;
 use App\Models\SuratSkbn;
+use App\Models\SuratTemplate;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use App\Traits\GeneratePDF;
@@ -33,6 +34,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpWord\TemplateProcessor;
 use Yajra\DataTables\DataTables;
 
 class SkbnController extends Controller
@@ -57,7 +59,7 @@ class SkbnController extends Controller
                     } else if (auth()->user()->role_id == 3) {
                         return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role'));
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'role'));
                     }
                 })
                 ->addColumn('no_surat', function ($row) {
@@ -103,7 +105,14 @@ class SkbnController extends Controller
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
         $no_urut_surat = SuratSkbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
-        return view('skbn.add', compact('title', 'currentUser', 'no_urut_surat'));
+        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        if (isset($template)) {
+            $var = unserialize($template->variable);
+            // dd($var);
+            return view('skbn.add', compact('title', 'currentUser', 'no_urut_surat', 'var'));
+        } else {
+            return view('skbn.add', compact('title', 'currentUser', 'no_urut_surat'));
+        }
     }
 
     public function store(Request $request)
@@ -200,15 +209,34 @@ class SkbnController extends Controller
             }
         }
 
+        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        if (isset($template)) {
+            $templateFile = public_path($template->path_docs);
+            $templateProcessor = new TemplateProcessor($templateFile);
+            $inputword = $templateProcessor->getVariables();
+            $inputpost = [];
+            foreach ($request->all() as $key => $in) {
+                $inputpost[] = $key;
+            }
+            $arr_intersect = array_values(array_intersect($inputword, $inputpost));
+            $var = array();
+            foreach ($arr_intersect as $key => $value) {
+                $var[$value] = $request[$value];
+            }
+            $datavar = serialize($var);
+        }
+
+        // dd($datavar);
+
         $suket = SuratSkbn::create([
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
-
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
             'peruntukan' => $request->peruntukan,
             'kepada' => $request->kepada,
+            'variable' => isset($template) ? $datavar : '',
             'status' => 1,
             'pengantar' => $request->file('pengantar') ? $fileLocation : ''
         ]);
@@ -410,7 +438,14 @@ class SkbnController extends Controller
 
         ];
         // Path template .docx
-        $templateFile = public_path('templates/SKBN.docx');
+        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        if (isset($template) && ($surat->variable != "")) {
+            $var = unserialize($surat->variable);
+            $templateFile = public_path($template->path_docs);
+            $data = array_merge($data, $var);
+        } else {
+            $templateFile = public_path('templates/SKBN.docx');
+        }
         $outputPdf = hash('sha256', 'SKBN_' . $id);
         // Generate PDF dari template
         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);

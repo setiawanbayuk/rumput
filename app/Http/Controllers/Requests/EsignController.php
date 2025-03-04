@@ -21,6 +21,7 @@ use App\Models\SuratKeterangan;
 use App\Models\SuratPenghasilan;
 use App\Models\SuratSkbn;
 use App\Models\SuratSktm;
+use App\Models\SuratTemplate;
 use App\Models\SuratUsaha;
 use App\Models\User;
 use App\Traits\GetNoSurat;
@@ -246,7 +247,14 @@ class EsignController extends Controller
             ];
 
             // Path template .docx
-            $templateFile = public_path('templates/SKBN.docx');
+            $template = SuratTemplate::where('id_kel', '=', $surat->id_kel)->first();
+            if (isset($template) && ($surat->variable != "")) {
+                $var = unserialize($surat->variable);
+                $templateFile = public_path($template->path_docs);
+                $data = array_merge($data, $var);
+            } else {
+                $templateFile = public_path('templates/SKBN.docx');
+            }
             $outputPdf = hash('sha256', 'SKBN_' . $output['_id']) . '_signed';
             // Generate PDF dari template
             $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);

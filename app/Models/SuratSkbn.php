@@ -22,6 +22,7 @@ class SuratSkbn extends Model
         'nik',
         'peruntukan',
         'kepada',
+        'variable',
         'status',
         'file',
         'pengantar'

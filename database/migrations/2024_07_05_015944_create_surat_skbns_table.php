@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('nik');
             $table->text('peruntukan');
             $table->string('kepada');
+            $table->text('variable')->nullable();
             $table->string('status');
             $table->string('file')->nullable();
             $table->string('pengantar')->nullable();

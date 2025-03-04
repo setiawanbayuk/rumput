@@ -16,6 +16,7 @@ use App\Http\Controllers\SkkematianController;
 use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SuketController;
+use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\WargaController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,7 @@ Route::get('/', function () {
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->name('home');
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
 Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');
+Route::get('/template', [TemplateController::class, 'index'])->middleware(['auth', 'role:1'])->name('template.index');
 
 Route::middleware(['auth', 'role:1,3,4'])->prefix('skbn')->group(function () {
     Route::get('/', [SkbnController::class, 'index'])->name('skbn.index');
