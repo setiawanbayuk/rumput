@@ -105,7 +105,7 @@ class SkbnController extends Controller
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
         $no_urut_surat = SuratSkbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
-        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
         if (isset($template)) {
             $var = unserialize($template->variable);
             // dd($var);
@@ -209,7 +209,7 @@ class SkbnController extends Controller
             }
         }
 
-        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
         if (isset($template)) {
             $templateFile = public_path($template->path_docs);
             $templateProcessor = new TemplateProcessor($templateFile);
@@ -261,8 +261,17 @@ class SkbnController extends Controller
             $no_urut_surat = SuratSkbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
+        if (isset($template)) {
+            $var = unserialize($template->variable);
+            $var_value = unserialize($suratKeterangan->variable);
 
-        return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan'));
+            // dd($var,$var_value);
+            // dd($var);
+            return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
+        } else {
+            return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan'));
+        }
     }
 
     public function update(Request $request, $id)
@@ -363,6 +372,25 @@ class SkbnController extends Controller
                 }
             }
 
+
+            $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
+            if (isset($template)) {
+                $templateFile = public_path($template->path_docs);
+                $templateProcessor = new TemplateProcessor($templateFile);
+                $inputword = $templateProcessor->getVariables();
+                $inputpost = [];
+                foreach ($request->all() as $key => $in) {
+                    $inputpost[] = $key;
+                }
+                $arr_intersect = array_values(array_intersect($inputword, $inputpost));
+                $var = array();
+                foreach ($arr_intersect as $key => $value) {
+                    $var[$value] = $request[$value];
+                }
+                $datavar = serialize($var);
+            }
+
+
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
@@ -370,6 +398,7 @@ class SkbnController extends Controller
                 'nik' => $request->nik,
                 'peruntukan' => $request->peruntukan,
                 'kepada' => $request->kepada,
+                'variable' => isset($template) ? $datavar : '',
                 'status' => 1,
                 'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
             ]);
@@ -438,7 +467,7 @@ class SkbnController extends Controller
 
         ];
         // Path template .docx
-        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
         if (isset($template) && ($surat->variable != "")) {
             $var = unserialize($surat->variable);
             $templateFile = public_path($template->path_docs);

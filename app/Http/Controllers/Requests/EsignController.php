@@ -247,7 +247,7 @@ class EsignController extends Controller
             ];
 
             // Path template .docx
-            $template = SuratTemplate::where('id_kel', '=', $surat->id_kel)->first();
+            $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => 'skbn'])->first();
             if (isset($template) && ($surat->variable != "")) {
                 $var = unserialize($surat->variable);
                 $templateFile = public_path($template->path_docs);
@@ -472,9 +472,14 @@ class EsignController extends Controller
                 'link' => $verify
             ];
             // dd($data);
-
-            // Path template .docx
-            $templateFile = public_path('templates/SKHSL.docx');
+            $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => 'skhsl'])->first();
+            if (isset($template) && ($surat->variable != "")) {
+                $var = unserialize($surat->variable);
+                $templateFile = public_path($template->path_docs);
+                $data = array_merge($data, $var);
+            } else {
+                $templateFile = public_path('templates/SKHSL.docx');
+            }
             $outputPdf = hash('sha256', 'SKHSL_' . $output['_id']) . '_signed';
             // Generate PDF dari template
             $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
