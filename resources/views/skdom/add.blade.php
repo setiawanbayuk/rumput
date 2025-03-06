@@ -109,8 +109,8 @@
                                             <div class="col-md-8">
                                                 <input id="tgl_berlaku" type="date"
                                                     class="form-control @error('tgl_berlaku') is-invalid @enderror"
-                                                    name="tgl_berlaku" value="{{ old('tgl_berlaku') }}" autocomplete="tgl_berlaku"
-                                                    autofocus>
+                                                    name="tgl_berlaku" value="{{ old('tgl_berlaku') }}"
+                                                    autocomplete="tgl_berlaku" autofocus>
 
                                                 @error('tgl_berlaku')
                                                     <span class="invalid-feedback" role="alert">
@@ -153,7 +153,26 @@
                                             @enderror
                                         </div>
                                     </div>
+                                    @isset($var)
+                                        @foreach ($var as $item)
+                                            <div class="row mb-3">
+                                                <label for="{{ $item }}"
+                                                    class="col-md-3 col-form-label text-md-end">{{ $item }}</label>
 
+                                                <div class="col-md-8">
+                                                    <input type="text"
+                                                        class="form-control @error('{{ $item }}') is-invalid @enderror"
+                                                        name="<?= $item ?>" id="<?= $item ?>" placeholder="" />
+
+                                                    @error('{{ $item }}')
+                                                        <span class="invalid-feedback" role="alert">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endisset
                                     <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
                                     <x-pengantar></x-pengantar>
                                     <div class="row mb-0">

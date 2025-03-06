@@ -21,6 +21,7 @@ use App\Models\Regional;
 use App\Models\Resident;
 use App\Models\StatusKwn;
 use App\Models\SuratDomisili;
+use App\Models\SuratTemplate;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use App\Traits\GeneratePDF;
@@ -96,7 +97,14 @@ class SkdomController extends Controller
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
         $no_urut_surat = SuratDomisili::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
-        return view('skdom.add', compact('title', 'currentUser', 'no_urut_surat'));
+        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        if (isset($template)) {
+            $var = unserialize($template->variable);
+            // dd($var);
+            return view('skdom.add', compact('title', 'currentUser', 'no_urut_surat', 'var'));
+        } else {
+            return view('skdom.add', compact('title', 'currentUser', 'no_urut_surat'));
+        }
     }
 
     public function store(Request $request)

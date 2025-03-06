@@ -57,8 +57,7 @@
                                             <div class="col-md-8">
                                                 <input id="kepada" type="text"
                                                     class="form-control @error('kepada') is-invalid @enderror"
-                                                    name="kepada" value="{{ old('kepada') }}"
-                                                    autocomplete="kepada">
+                                                    name="kepada" value="{{ old('kepada') }}" autocomplete="kepada">
 
                                                 @error('kepada')
                                                     <span class="invalid-feedback" role="alert">
@@ -86,8 +85,8 @@
                                             <div class="col-md-3">
                                                 <input id="kepada_tgl_lhr" type="date"
                                                     class="form-control @error('kepada_tgl_lhr') is-invalid @enderror"
-                                                    name="kepada_tgl_lhr" value="{{ old('kepada_tgl_lhr') }}" autocomplete="kepada_tgl_lhr"
-                                                    autofocus>
+                                                    name="kepada_tgl_lhr" value="{{ old('kepada_tgl_lhr') }}"
+                                                    autocomplete="kepada_tgl_lhr" autofocus>
 
                                                 @error('kepada_tgl_lhr')
                                                     <span class="invalid-feedback" role="alert">
@@ -102,7 +101,8 @@
 
                                             <div class="col-md-8">
                                                 <select class="form-control @error('kepada_gender') is-invalid @enderror"
-                                                    id="kepada_gender" name="kepada_gender" data-placeholder="Jenis Kelamin">
+                                                    id="kepada_gender" name="kepada_gender"
+                                                    data-placeholder="Jenis Kelamin">
                                                 </select>
                                                 @error('kepada_gender')
                                                     <span class="invalid-feedback" role="alert">
@@ -120,7 +120,7 @@
                                             <div class="col-md-8">
                                                 <select class="form-control @error('kepada_hubungan') is-invalid @enderror"
                                                     id="kepada_hubungan" name="kepada_hubungan" data-placeholder="Hubungan">
-                                                <option value=""></option>
+                                                    <option value=""></option>
                                                     <option value="Putranya">Putranya</option>
                                                     <option value="Putrinya">Putrinya</option>
                                                     <option value="Cucunya">Cucunya</option>
@@ -175,8 +175,8 @@
                                                 class="col-md-3 col-form-label text-md-end">{{ __('Alamat Sekolah') }}</label>
 
                                             <div class="col-md-8">
-                                                <textarea class="form-control @error('kepada_alamat_sekolah') is-invalid @enderror" id="kepada_alamat_sekolah" name="kepada_alamat_sekolah"
-                                                    autocomplete="kepada_alamat_sekolah" autofocus>{{ old('kepada_alamat_sekolah') }}</textarea>
+                                                <textarea class="form-control @error('kepada_alamat_sekolah') is-invalid @enderror" id="kepada_alamat_sekolah"
+                                                    name="kepada_alamat_sekolah" autocomplete="kepada_alamat_sekolah" autofocus>{{ old('kepada_alamat_sekolah') }}</textarea>
                                                 @error('kepada_alamat_sekolah')
                                                     <span class="invalid-feedback" role="alert">
                                                         <strong>{{ $message }}</strong>
@@ -206,6 +206,26 @@
                                             @enderror
                                         </div>
                                     </div>
+                                    @isset($var)
+                                        @foreach ($var as $item)
+                                            <div class="row mb-3">
+                                                <label for="{{ $item }}"
+                                                    class="col-md-3 col-form-label text-md-end">{{ $item }}</label>
+
+                                                <div class="col-md-8">
+                                                    <input type="text"
+                                                        class="form-control @error('{{ $item }}') is-invalid @enderror"
+                                                        name="<?= $item ?>" id="<?= $item ?>" placeholder="" />
+
+                                                    @error('{{ $item }}')
+                                                        <span class="invalid-feedback" role="alert">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endisset
                                     <x-pengantar></x-pengantar>
                                     <div class="row mb-0">
                                         <div class="col-md-8 offset-md-3">

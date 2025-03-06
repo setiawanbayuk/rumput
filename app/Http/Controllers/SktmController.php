@@ -21,6 +21,7 @@ use App\Models\Regional;
 use App\Models\Resident;
 use App\Models\StatusKwn;
 use App\Models\SuratSktm;
+use App\Models\SuratTemplate;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use App\Traits\GeneratePDF;
@@ -96,7 +97,14 @@ class SktmController extends Controller
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
         $no_urut_surat = SuratSktm::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
-        return view('sktm.add', compact('title', 'currentUser', 'no_urut_surat'));
+        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        if (isset($template)) {
+            $var = unserialize($template->variable);
+            // dd($var);
+            return view('sktm.add', compact('title', 'currentUser', 'no_urut_surat', 'var'));
+        } else {
+            return view('sktm.add', compact('title', 'currentUser', 'no_urut_surat'));
+        }
     }
 
     public function store(Request $request)
