@@ -44,6 +44,7 @@
     </div>
 
     <x-esign></x-esign>
+    <x-register></x-register>
     @push('scripts')
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
@@ -120,7 +121,7 @@
         </script>
         <script>
             function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'https://esuket.test') }}" + "/sktm/preview/" + e, 'preview',
+                window.open("{{ env('APP_URL', 'http://rumput.test') }}" + "/sktm/preview/" + e, 'preview',
                     'width=600,height=1000');
             }
 
@@ -128,7 +129,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/sktm/cetak/" + e,
+                    url: "{{ env('APP_URL', 'http://rumput.test') }}" + "/sktm/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');
@@ -225,14 +226,29 @@
                     let btn = $(e.relatedTarget);
                     let id = btn.data('id');
                     let jenis = btn.data('jenis');
+                    let role = btn.data('role');
                     let form = $(this).find('form#esignModal');
                     $(this).find('[name="_id"]').val(id);
                     $(this).find('[name="jenis"]').val(jenis);
+                    $(this).find('[name="role"]').val(role);
                     $(this).find('.modal-title').text("Tanda Tangan No Surat : " + btn.data('no_surat'));
                 });
 
                 $('#esignModal').on('hidden.bs.modal', function() {
                     $(this).find('form#esignModal').trigger('reset');
+                })
+
+
+                $('#registerModal').on('show.bs.modal', function(e) {
+                    let btn = $(e.relatedTarget);
+                    let id = btn.data('id');
+                    let form = $(this).find('form#registerModal');
+                    $(this).find('[name="_id"]').val(id);
+                    $(this).find('.modal-title').text("Register Surat : ");
+                });
+
+                $('#registerModal').on('hidden.bs.modal', function() {
+                    $(this).find('form#registerModal').trigger('reset');
                 })
             });
         </script>

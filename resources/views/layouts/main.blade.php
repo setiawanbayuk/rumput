@@ -122,40 +122,49 @@
 
                             <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse"
                                 data-bs-parent="#sidebar">
-                                <li class="sidebar-item">
-                                    <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum
-                                        Menikah</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('skboro.index') }}" class="sidebar-link">Surat Keterangan Boro</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('skdom.index') }}" class="sidebar-link">Surat Keterangan
-                                        Domisili</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('skkelahiran.index') }}" class="sidebar-link">Surat Keterangan
-                                        Kelahiran</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('skkematian.index') }}" class="sidebar-link">Surat Keterangan
-                                        Kematian</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan
-                                        Miskin</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan
-                                        Penghasilan</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('skusaha.index') }}" class="sidebar-link">Surat Keterangan
-                                        Usaha</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
-                                </li>
+                                @if (auth()->user()->role_id == 5 || auth()->user()->role_id == 6)
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan
+                                            Miskin</a>
+                                    </li>
+                                @else
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum
+                                            Menikah</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('skboro.index') }}" class="sidebar-link">Surat Keterangan
+                                            Boro</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('skdom.index') }}" class="sidebar-link">Surat Keterangan
+                                            Domisili</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('skkelahiran.index') }}" class="sidebar-link">Surat
+                                            Keterangan
+                                            Kelahiran</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('skkematian.index') }}" class="sidebar-link">Surat Keterangan
+                                            Kematian</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan
+                                            Miskin</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan
+                                            Penghasilan</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('skusaha.index') }}" class="sidebar-link">Surat Keterangan
+                                            Usaha</a>
+                                    </li>
+                                    <li class="sidebar-item">
+                                        <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
+                                    </li>
+                                @endif
                             </ul>
                         </li>
                     @endif
@@ -175,6 +184,9 @@
                                 </li>
                                 <li class="sidebar-item">
                                     <a href="{{ url('/') }}" class="sidebar-link">Profil Instansi</a>
+                                </li>
+                                <li class="sidebar-item">
+                                    <a href="{{ url('/template') }}" class="sidebar-link">Template Surat</a>
                                 </li>
                             @endif
                         </ul>

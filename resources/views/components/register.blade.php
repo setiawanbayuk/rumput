@@ -1,4 +1,4 @@
-<div class="modal fade" id="esignModal" tabindex="-1" role="dialog" aria-labelledby="modalTitleId" aria-hidden="true">
+<div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="modalTitleId" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -9,25 +9,12 @@
             </div>
 
             <div class="modal-body">
-                <form id="clientsForm" action="" method="post">
+                <form id="registerForm" action="" method="post">
                     <input type="hidden" name="_id">
-                    <input type="hidden" name="jenis">
-                    <input type="hidden" name="role">
 
                     <div class="mb-3">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="nik" name="nik"
-                                placeholder="Masukkan 16 digit NIK" aria-label="NIK" aria-describedby="basic-addon2">
-                            <button type="button" class="input-group-text btn btn-subtle-primary"
-                                onclick="checkEsign()">Cek</button>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="text-center" id="status" style="font-weight: bold;font-size: 14px;"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Passphrase <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="passphrase" name="passphrase" autocomplete=""
+                        <label class="form-label">No Register <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="register" name="register" autocomplete=""
                             required>
                     </div>
                 </form>
@@ -37,45 +24,18 @@
                 <button type="button" class="btn btn-subtle-secondary" data-bs-dismiss="modal">
                     Close
                 </button>
-                <button type="button" class="btn btn-subtle-primary px-5" id="btn-ttd" name="btn-ttd" disabled
-                    onclick="handleSubmit(this)">Sign</button>
+                <button type="button" class="btn btn-subtle-primary px-5" id="btn-reg" name="btn-reg"
+                    onclick="handleSubmitReg(this)">Register</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    function checkEsign() {
-        let nik = document.getElementById("nik").value;
-        $("#status").html(
-            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`
-        );
-        if (nik.length == 16) {
-            let web = '{{ env('APP_URL') }}';
-            document.getElementById('nik').innerHTML = nik.length + '/16';
-            $.ajax({
-                type: "GET",
-                dataType: "json",
-                url: web + '/api/esign/check/' + nik,
-                success: function(response) {
-                    $("#status").html(response.message);
-                    if (response.status_code == '1111') {
-                        $("#btn-ttd").removeAttr('disabled');
-                    } else {
-                        $('#btn-ttd').prop("disabled", true);
-                    }
-                }
-            });
-        } else {
-            $("#status").html('<span style="color:red">NIK Tidak Valid</span>');
-            document.getElementById('nik').innerHTML = nik.length + '/16';
-        }
-    }
-
-    function handleSubmit(e) {
+    function handleSubmitReg(e) {
         Swal.fire({
             title: 'Apakah Anda Yakin?',
-            text: "Aapakah yakin akan membubuhkan TTE pada dokumen ini?!",
+            text: "Aapakah yakin akan mendaftarkan dokumen ini?!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
@@ -85,10 +45,11 @@
         }).then((result) => {
             if (result.value) {
                 let web = '{{ env('APP_URL') }}';
-                var data = $('#clientsForm').serialize();
+                var data = $('#registerForm').serialize();
+                console.log(data);
                 $.ajax({
                     type: 'POST',
-                    url: web + '/api/esign/sign',
+                    url: web + '/api/register',
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                         'Content-Type': 'aplication/json'
@@ -110,17 +71,17 @@
                             response.message,
                             'Terima kasih!',
                             response.status).then(function() {
-                            $('#esignModal').modal('hide')
+                            $('#registerModal').modal('hide')
                             // window.location.href = obj.url;
                         });
                         $('#tableSurat').DataTable().ajax.reload();
                     },
                     error: function() { // if error occured
                         Swal.fire(
-                            'Tanda Tangan Dokumen Gagal!',
+                            'Registrasi Dokumen Gagal!',
                             'Mohon Maaf!',
                             'error').then(function() {
-                            $('#esignModal').modal('hide')
+                            $('#registerModal').modal('hide')
                         });
                         $('#tableSurat').DataTable().ajax.reload();
                     },

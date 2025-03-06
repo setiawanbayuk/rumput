@@ -41,7 +41,14 @@ Route::get('/', function () {
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->name('home');
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
 Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');
-Route::get('/template', [TemplateController::class, 'index'])->middleware(['auth', 'role:1'])->name('template.index');
+
+Route::middleware(['auth', 'role:1'])->prefix('template')->group(function () {
+    Route::get('/', [TemplateController::class, 'index'])->name('template.index');
+    Route::post('/', [TemplateController::class, 'store'])->name('template.store');
+    Route::get('/download/{id}', [TemplateController::class, 'download'])->name('template.download');
+    Route::post('/hapus/{id}', [TemplateController::class, 'hapus'])->name('template.hapus');
+    Route::get('/add', [TemplateController::class, 'add'])->name('template.add');
+});
 
 Route::middleware(['auth', 'role:1,3,4'])->prefix('skbn')->group(function () {
     Route::get('/', [SkbnController::class, 'index'])->name('skbn.index');

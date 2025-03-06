@@ -650,7 +650,7 @@
     <br>
     <div>
         <table class="text-center" style="width: 100%">
-            <tr >
+            <tr>
                 <td style="width: 50%;">Mengetahui,</td>
                 <td style="width: 50%;">Kediri, {{ $tglSurat }}</td>
             </tr>
@@ -659,23 +659,30 @@
                 <td>Pemohon</td>
             </tr>
             <tr>
-                <td style="padding: 10px">
-
-                    @if ($url != '')
-                        <img src="data:image/png;base64, {!! $url !!} " style="width: 100px">
-                    @else
-                        <img src="img/placeholder.png" alt="" style="width: 100px">
-                    @endif
-                </td>
+                <td>&nbsp;</td>
                 <td>&nbsp;</td>
             </tr>
             <tr>
-                <td style="text-decoration: underline;font-weight: bold;">{{ $pejabat->nama }}</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>
+                    [[qr_here]]
+                </td>
                 <td>{{ $surat->nama_pelapor }}</td>
             </tr>
             <tr>
-                <td>NIP. {{ $pejabat->nip }}</td>
-                <td></td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
             </tr>
         </table>
     </div>

@@ -10,6 +10,8 @@ class Skpd extends Model
 {
     use HasFactory;
 
+    public $primaryKey = 'id';
+
     public function kelurahan(): BelongsTo
     {
         return $this->belongsTo(Kelurahan::class, 'id_region', 'id');

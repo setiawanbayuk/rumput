@@ -134,7 +134,7 @@
                 $.ajax({
                     type: "GET",
                     dataType: "json",
-                    url: "{{ env('APP_URL', 'https://esuket.test') }}" + "/skdom/cetak/" + e,
+                    url: "{{ env('APP_URL', 'http://rumput.test') }}" + "/skdom/cetak/" + e,
                     success: function(response) {
                         window.open(response.file, 'preview',
                             'width=600,height=1000');

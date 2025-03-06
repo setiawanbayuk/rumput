@@ -44,9 +44,14 @@
                                 </li>
                             @endif
 
-                            @if (Route::has('register'))
+                            {{-- @if (Route::has('register'))
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
+                                </li>
+                            @endif --}}
+                            @if (Route::has('sso.login'))
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('sso.login') }}">{{ __('Login SSO') }}</a>
                                 </li>
                             @endif
                         @else

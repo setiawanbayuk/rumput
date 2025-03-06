@@ -16,9 +16,9 @@ class KelurahanController extends Controller
     public function index(Request $request)
     {
         if (isset($request->id)) {
-            $kelurahan = Kelurahan::where('id', $request->id)->paginate();
+            $kelurahan = Kelurahan::where('id', $request->id)->get();
         } else {
-            $kelurahan = Kelurahan::where('kode_kecamatan', $request->kode_kecamatan)->where('nama', 'like', '%' . $request->q . '%')->paginate();
+            $kelurahan = Kelurahan::where('kode_kecamatan', $request->kode_kecamatan)->where('nama', 'like', '%' . $request->q . '%')->get();
         }
         $data = Kelurahan_resource::collection($kelurahan);
         return response()->json($data, 200);

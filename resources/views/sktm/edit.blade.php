@@ -193,7 +193,6 @@
                                     <div class="row mb-3">
                                         <label for="kategori"
                                             class="col-md-3 col-form-label text-md-end">{{ __('Kategori') }}</label>
-
                                         <div class="col-md-8">
                                             <select class="form-control @error('kategori') is-invalid @enderror"
                                                 id="kategori" name="kategori" data-placeholder="Kategori">
@@ -212,7 +211,8 @@
                                     <div class="row mb-3">
                                         <label class="col-md-3 col-form-label text-md-end"></label>
                                         <div class="col-md-8">
-                                            <img src="{{ asset($suratKeterangan->pengantar) }}" alt="" height="100%" style="max-height: 400px">
+                                            <img src="{{ asset($suratKeterangan->pengantar) }}" alt=""
+                                                height="100%" style="max-height: 400px">
                                         </div>
                                     </div>
                                     <div class="row mb-0">
@@ -272,7 +272,7 @@
                     placeholder: $(this).data("placeholder"),
                     minimumInputLenght: 2,
                 });
-                if ('{{ $suratKeterangan->jenis}}'  == 'sekolah' ) {
+                if ('{{ $suratKeterangan->jenis }}' == 'sekolah') {
                     $("#flexRadioDefault2").attr('checked', true).trigger('click');
                     handleChangeRegisterAs('sekolah');
 
@@ -290,14 +290,14 @@
                             text: '{{ $suratKeterangan->kepada_hubungan }}',
                         },
                     });
-
-                    $("#kategori").select2("trigger", "select", {
-                        data: {
-                            id: '{{ $suratKeterangan->kategori }}',
-                            text: '{{ $suratKeterangan->kategori }}',
-                        },
-                    });
                 }
+
+                $("#kategori").select2("trigger", "select", {
+                    data: {
+                        id: '{{ $suratKeterangan->kategori }}',
+                        text: '{{ $suratKeterangan->kategori }}',
+                    },
+                });
             });
 
             const handleChangeRegisterAs = (value) => {
