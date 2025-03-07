@@ -157,6 +157,27 @@
                                             @enderror
                                         </div>
                                     </div>
+
+                                    @isset($var)
+                                        @foreach ($var as $item)
+                                            <div class="row mb-3">
+                                                <label for="{{ $item }}"
+                                                    class="col-md-3 col-form-label text-md-end">{{ $item }}</label>
+
+                                                <div class="col-md-8">
+                                                    <input type="text"
+                                                        class="form-control @error('{{ $item }}') is-invalid @enderror"
+                                                        name="<?= $item ?>" id="<?= $item ?>" placeholder="" value="{{$var_value[$item] }}"/>
+
+                                                    @error('{{ $item }}')
+                                                        <span class="invalid-feedback" role="alert">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endisset
                                     <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
                                     <x-pengantar></x-pengantar>
                                     <div class="row mb-3">

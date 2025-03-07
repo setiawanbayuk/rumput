@@ -28,6 +28,7 @@ class SuratDomisili extends Model
         'kepada',
         'tgl_berlaku',
         'jenis',
+        'variable',
         'status',
         'file',
         'pengantar'

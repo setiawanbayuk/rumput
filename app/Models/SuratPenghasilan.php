@@ -33,6 +33,7 @@ class SuratPenghasilan extends Model
         'kepada_kelas',
         'kepada_alamat_sekolah',
         'jenis',
+        'variable',
         'status',
         'file',
         'pengantar'

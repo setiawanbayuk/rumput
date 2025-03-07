@@ -265,9 +265,6 @@ class SkbnController extends Controller
         if (isset($template)) {
             $var = unserialize($template->variable);
             $var_value = unserialize($suratKeterangan->variable);
-
-            // dd($var,$var_value);
-            // dd($var);
             return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
         } else {
             return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan'));

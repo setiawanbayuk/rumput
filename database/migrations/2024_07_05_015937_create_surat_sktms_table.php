@@ -33,6 +33,7 @@ return new class extends Migration
             $table->string('no_register')->nullable();
             $table->string('file')->nullable();
             $table->string('pengantar')->nullable();
+            $table->text('variable')->nullable();
             $table->timestamps();
         });
     }

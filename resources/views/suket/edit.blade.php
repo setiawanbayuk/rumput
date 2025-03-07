@@ -10,7 +10,8 @@
                     <div class="card-header bg-transparent py-3 text-center fw-bold">{{ $title }}</div>
 
                     <div class="card-body">
-                        <form method="POST" enctype="multipart/form-data" action="{{ route('suket.update', ['id' => $suratKeterangan->id]) }}">
+                        <form method="POST" enctype="multipart/form-data"
+                            action="{{ route('suket.update', ['id' => $suratKeterangan->id]) }}">
                             @csrf
 
                             <div class="row justify-content-center">
@@ -27,12 +28,35 @@
 
                                     <x-keterangan><x-slot:keterangan>{{ $suratKeterangan->keterangan }}</x-slot:keterangan></x-keterangan>
                                     <x-kepada><x-slot:kepada>{{ $suratKeterangan->kepada }}</x-slot:kepada></x-kepada>
+
+                                    @isset($var)
+                                        @foreach ($var as $item)
+                                            <div class="row mb-3">
+                                                <label for="{{ $item }}"
+                                                    class="col-md-3 col-form-label text-md-end">{{ $item }}</label>
+
+                                                <div class="col-md-8">
+                                                    <input type="text"
+                                                        class="form-control @error('{{ $item }}') is-invalid @enderror"
+                                                        name="<?= $item ?>" id="<?= $item ?>" placeholder=""
+                                                        value="{{ $var_value[$item] }}" />
+
+                                                    @error('{{ $item }}')
+                                                        <span class="invalid-feedback" role="alert">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endisset
                                     <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
                                     <x-pengantar></x-pengantar>
                                     <div class="row mb-3">
                                         <label class="col-md-3 col-form-label text-md-end"></label>
                                         <div class="col-md-8">
-                                            <img src="{{ asset($suratKeterangan->pengantar) }}" alt="" height="100%" style="max-height: 400px">
+                                            <img src="{{ asset($suratKeterangan->pengantar) }}" alt=""
+                                                height="100%" style="max-height: 400px">
                                         </div>
                                     </div>
                                     <div class="row mb-0">

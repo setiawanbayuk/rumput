@@ -32,6 +32,7 @@ class SuratSktm extends Model
         'kepada_kelas',
         'kepada_alamat_sekolah',
         'jenis',
+        'variable',
         'status',
         'no_register',
         'file',

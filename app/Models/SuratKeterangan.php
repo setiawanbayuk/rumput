@@ -23,6 +23,7 @@ class SuratKeterangan extends Model
         'peruntukan',
         'keterangan',
         'kepada',
+        'variable',
         'status',
         'file',
         'pengantar'

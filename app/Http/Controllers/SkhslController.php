@@ -28,6 +28,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpWord\TemplateProcessor;
 use Yajra\DataTables\DataTables;
 
 class SkhslController extends Controller
@@ -98,7 +99,7 @@ class SkhslController extends Controller
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
         $no_urut_surat = SuratPenghasilan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
-        $template = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->first();
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skhsl'])->first();
         if (isset($template)) {
             $var = unserialize($template->variable);
             // dd($var);
@@ -213,12 +214,26 @@ class SkhslController extends Controller
 
 
         $kepada_gender = Gender::find($request->kepada_gender);
-
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skhsl'])->first();
+        if (isset($template)) {
+            $templateFile = public_path($template->path_docs);
+            $templateProcessor = new TemplateProcessor($templateFile);
+            $inputword = $templateProcessor->getVariables();
+            $inputpost = [];
+            foreach ($request->all() as $key => $in) {
+                $inputpost[] = $key;
+            }
+            $arr_intersect = array_values(array_intersect($inputword, $inputpost));
+            $var = array();
+            foreach ($arr_intersect as $key => $value) {
+                $var[$value] = $request[$value];
+            }
+            $datavar = serialize($var);
+        }
         $suket = SuratPenghasilan::create([
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
             'no_urut_surat' => $request->no_urut_surat,
-
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
             'kepada' => $request->kepada,
@@ -234,6 +249,7 @@ class SkhslController extends Controller
             'terbilang' => $request->terbilang,
             'peruntukan' => $request->peruntukan,
             'pengantar' => $request->pengantar,
+            'variable' => isset($template) ? $datavar : '',
             'status' => 1,
             'pengantar' => $request->file('pengantar') ? $fileLocation : ''
         ]);
@@ -259,7 +275,17 @@ class SkhslController extends Controller
             $no_urut_surat = SuratPenghasilan::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
-        return view('skhsl.edit', compact('title', 'currentUser', 'suratKeterangan'));
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skhsl'])->first();
+        if (isset($template)) {
+            $var = unserialize($template->variable);
+            $var_value = unserialize($suratKeterangan->variable);
+
+            // dd($var,$var_value);
+            // dd($var);
+            return view('skhsl.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
+        } else {
+            return view('skhsl.edit', compact('title', 'currentUser', 'suratKeterangan'));
+        }
     }
 
     public function update(Request $request, $id)
@@ -372,6 +398,22 @@ class SkhslController extends Controller
             }
 
             $kepada_gender = Gender::find($request->kepada_gender);
+            $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skhsl'])->first();
+            if (isset($template)) {
+                $templateFile = public_path($template->path_docs);
+                $templateProcessor = new TemplateProcessor($templateFile);
+                $inputword = $templateProcessor->getVariables();
+                $inputpost = [];
+                foreach ($request->all() as $key => $in) {
+                    $inputpost[] = $key;
+                }
+                $arr_intersect = array_values(array_intersect($inputword, $inputpost));
+                $var = array();
+                foreach ($arr_intersect as $key => $value) {
+                    $var[$value] = $request[$value];
+                }
+                $datavar = serialize($var);
+            }
 
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
@@ -391,6 +433,7 @@ class SkhslController extends Controller
                 'terbilang' => $request->terbilang,
                 'peruntukan' => $request->peruntukan,
                 'pengantar' => $request->pengantar,
+                'variable' => isset($template) ? $datavar : '',
                 'status' => 1,
                 'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
             ]);
@@ -465,7 +508,14 @@ class SkhslController extends Controller
             'link' => $url
         ];
         // Path template .docx
-        $templateFile = public_path('templates/SKHSL.docx');
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skhsl'])->first();
+        if (isset($template) && ($surat->variable != "")) {
+            $var = unserialize($surat->variable);
+            $templateFile = public_path($template->path_docs);
+            $data = array_merge($data, $var);
+        } else {
+            $templateFile = public_path('templates/SKHSL.docx');
+        }
         $outputPdf = hash('sha256', 'SKHSL_' . $id);
         // Generate PDF dari template
         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);

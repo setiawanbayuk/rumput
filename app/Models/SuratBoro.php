@@ -32,6 +32,7 @@ class SuratBoro extends Model
         'tgl_awal',
         'tgl_akhir',
         'peruntukan',
+        'variable',
         'status',
         'file',
         'pengantar'

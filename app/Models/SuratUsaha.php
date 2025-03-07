@@ -25,6 +25,7 @@ class SuratUsaha extends Model
         'nama_usaha',
         'alamat_usaha',
         'kepada',
+        'variable',
         'status',
         'file',
         'pengantar'

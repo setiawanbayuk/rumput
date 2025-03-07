@@ -32,6 +32,7 @@ return new class extends Migration
             $table->string('status');
             $table->string('file')->nullable();
             $table->string('pengantar')->nullable();
+            $table->text('variable')->nullable();
             $table->timestamps();
         });
     }
