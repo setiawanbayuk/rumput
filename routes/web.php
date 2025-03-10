@@ -94,7 +94,7 @@ Route::prefix('warga')->group(function () {
 
 Route::middleware(['auth', 'role:1,3,4,5,6'])->prefix('sktm')->group(function () {
     Route::get('/', [SktmController::class, 'index'])->name('sktm.index');
-    Route::get('/add', [SktmController::class, 'add'])->name('sktm.add');
+    Route::get('/add/{id}', [SktmController::class, 'add'])->name('sktm.add');
     Route::post('/', [SktmController::class, 'store'])->name('sktm.store');
     Route::get('/edit/{id}', [SktmController::class, 'edit'])->name('sktm.edit');
     Route::post('/update/{id}', [SktmController::class, 'update'])->name('sktm.update');

@@ -14,9 +14,9 @@
 
         <div class="d-flex gap-2">
             @if (auth()->user()->role_id == 1)
-                <a class="btn btn-primary" href="{{ route('sktm.add') }}">
-                    <i class="ri-add-fill me-2"></i>
-                    <span>Tambah</span></a>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tambahModal">
+                    Tambah
+                </button>
             @endif
             <button class="btn btn-secondary" onclick="reload()">Reload</button>
         </div>
@@ -39,6 +39,33 @@
                         </tr>
                     </thead>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="tambahModal" tabindex="-1" aria-labelledby="tambahModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="tambahModalLabel">Modal title</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <div class="d-flex justify-content-between">
+                        <a class="btn btn-primary btn-block" href="{{ route('sktm.add', 'perorangan') }}">
+                            {{-- <i class="ri-add-fill me-2"></i> --}}
+                            <span>SKTM PERORANGAN</span></a>
+                        <a class="btn btn-primary btn-block" href="{{ route('sktm.add', 'sekolah') }}">
+                            {{-- <i class="ri-add-fill me-2"></i> --}}
+                            <span>SKTM SEKOLAH</span></a>
+                    </div>
+                </div>
+                {{-- <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div> --}}
             </div>
         </div>
     </div>
