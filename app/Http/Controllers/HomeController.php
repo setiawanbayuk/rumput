@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\JenisSurat;
 use App\Models\SuratBoro;
 use App\Models\SuratDomisili;
 use App\Models\SuratKelahiran;
@@ -12,6 +13,7 @@ use App\Models\SuratSkbn;
 use App\Models\SuratSktm;
 use App\Models\SuratUsaha;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Spatie\Activitylog\Models\Activity;
 
 class HomeController extends Controller
@@ -36,33 +38,31 @@ class HomeController extends Controller
         if (auth()->user()->role_id == 2) {
             return redirect()->route('warga');
         } else {
-            return view('home');    
+            return view('home');
         }
+    }
+
+    public function berita()
+    {
+        $url = 'https://api-splp.layanan.go.id/t/kedirikota.go.id/web_kediri_kota/1.0/api/berita';
+        $response = Http::withoutVerifying()->get($url);
+
+        if ($response->status() !== 200) {
+            return response()->json(['error' => 'Something went wrong!'], $response->status());
+        }
+
+        return json_decode($response->json()['berita'], true);
     }
 
     public function warga()
     {
-        $jumlah_skbn = SuratSkbn::where('nik', auth()->user()->nik)->get()->count();
-        $jumlah_boro = SuratBoro::where('nik', auth()->user()->nik)->get()->count();
-        $jumlah_domisili = SuratDomisili::where('nik', auth()->user()->nik)->get()->count();
-        $jumlah_kelahiran = SuratKelahiran::where('nik_pelapor', auth()->user()->nik)->get()->count();
-        $jumlah_kematian = SuratKematian::where('nik_pelapor', auth()->user()->nik)->get()->count();
-        $jumlah_sktm = SuratSktm::where('nik', auth()->user()->nik)->get()->count();
-        $jumlah_penghasilan = SuratPenghasilan::where('nik', auth()->user()->nik)->get()->count();
-        $jumlah_usaha = SuratUsaha::where('nik', auth()->user()->nik)->get()->count();
-        $jumlah_suket = SuratKeterangan::where('nik', auth()->user()->nik)->get()->count();
-        return view('warga', compact(
-            'jumlah_skbn',
-            'jumlah_boro',
-            'jumlah_domisili',
-            'jumlah_kelahiran',
-            'jumlah_kematian',
-            'jumlah_sktm',
-            'jumlah_penghasilan',
-            'jumlah_usaha',
-            'jumlah_suket',
-            'jumlah_suket'
-        ));
+        $berita = $this->berita();
+        foreach ($berita as &$item) {
+            $item['deskripsi'] = strip_tags($item['deskripsi']);
+        }
+        $surat = JenisSurat::where(['is_active' => true])->get();
+        // dd($surat);
+        return view('warga', compact('berita', 'surat'));
     }
 
     public function activity()

@@ -9,6 +9,7 @@ use App\Http\Resources\Skpd_resource;
 use App\Http\Resources\User_resource;
 use App\Models\Agama;
 use App\Models\Gender;
+use App\Models\JenisSurat;
 use App\Models\Kabko;
 use App\Models\Kecamatan;
 use App\Models\Kelurahan;
@@ -96,7 +97,9 @@ class SuketController extends Controller
         };
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
         $nik = auth()->user()->nik;
-        return view('suket.warga', compact('title', 'nik'));
+        $surat = JenisSurat::where(['is_active' => true])->get();
+        $detail_surat = JenisSurat::where(['jenis' => 'skhsl', 'is_active' => true])->get();
+        return view('suket.warga', compact('title', 'nik', 'surat', 'detail_surat'));
     }
 
     public function add()

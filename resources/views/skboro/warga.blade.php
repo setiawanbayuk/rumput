@@ -1,4 +1,4 @@
-@extends('layouts.warga')
+@extends('layouts.page')
 
 @section('title', 'Surat Keterangan')
 
@@ -8,33 +8,49 @@
     @endpush
 
     <div class="container">
-        <h3>{{ $title }}</h3>
+        <ul class="nav nav-tabs" id="suketTabs">
+            <li class="nav-item">
+                <a class="nav-link active" id="detail-tab" data-bs-toggle="tab" href="#detail">DETAIL</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="pengajuan-tab" data-bs-toggle="tab" href="#pengajuan">RIWAYAT PENGAJUAN</a>
+            </li>
+        </ul>
 
-        <br>
-
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
-                <i class="ri-add-fill me-2"></i><span>Tambah</span>
-            </button>
-            <button class="btn btn-secondary" onclick="reload()">Reload</button>
-        </div>
-
-        <br>
-
-        <div class="card card-body">
-            <div class="table-responsive">
-                <table id="tableSurat" class="table table-hovered" style="width: 100%" style="width: 100%">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>No Surat</th>
-                            <th>Tanggal</th>
-                            <th>Peruntukan</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                </table>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="detail">
+                <x-detail-surat>
+                    <x-slot:title>{{ $title }}</x-slot:title>
+                    <x-slot:detail>{{ $detail_surat[0]->detail }}</x-slot:detail>
+                    <x-slot:persyaratan>{{ $detail_surat[0]->persyaratan }}</x-slot:persyaratan>
+                </x-detail-surat>
+            </div>
+            <div class="tab-pane fade" id="pengajuan">
+                <h3>{{ $title }}</h3>
+                <br>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
+                        <i class="ri-add-fill me-2"></i><span>Tambah</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="reload()">Reload</button>
+                </div>
+                <br>
+                <div class="card card-body">
+                    <div class="table-responsive">
+                        <table id="tableSurat" class="table table-hovered" style="width: 100%" style="width: 100%">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>No Surat</th>
+                                    <th>Tanggal</th>
+                                    <th>Peruntukan</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

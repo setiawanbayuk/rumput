@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Requests\AgamaController;
 use App\Http\Controllers\Requests\GenderController;
 use App\Http\Controllers\Requests\PekerjaanController;
@@ -182,6 +183,12 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skkematian')->group(function 
 Route::get('/sso', [LoginController::class, 'sso'])->name('sso.login');
 Route::get('/callback', [LoginController::class, 'callback'])->name('sso.callback');
 Route::get('/users/profile', [LoginController::class, 'profile'])->name('users.profile');
+
+Route::middleware(['auth'])->prefix('profile')->group(function () {
+    Route::get('/', [ProfileController::class, 'index'])->name('profile');
+    Route::post('/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/akun/{id}', [ProfileController::class, 'akun'])->name('profile.akun');
+});
 
 Route::get('phpmyinfo', function () {
     phpinfo();
