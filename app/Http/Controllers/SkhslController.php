@@ -93,7 +93,12 @@ class SkhslController extends Controller
         $nik = auth()->user()->nik;
         $surat = JenisSurat::where(['is_active' => true])->get();
         $detail_surat = JenisSurat::where(['jenis' => 'skhsl', 'is_active' => true])->get();
-        return view('skhsl.warga', compact('title', 'nik', 'surat', 'detail_surat'));
+        $resident = Resident::where('nik', $nik)->first();
+        if (isset($resident)) {
+            return view('skhsl.warga', compact('title', 'nik', 'surat', 'detail_surat'));
+        } else {
+            return redirect()->route('profile')->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
+        }
     }
 
     public function add()

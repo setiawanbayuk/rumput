@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\JenisController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Requests\AgamaController;
 use App\Http\Controllers\Requests\GenderController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SuketController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\WargaController;
+use App\Models\JenisSurat;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -43,7 +45,7 @@ Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->nam
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
 Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');
 
-Route::middleware(['auth', 'role:1'])->prefix('template')->group(function () {
+Route::middleware(['auth', 'role:1,7'])->prefix('template')->group(function () {
     Route::get('/', [TemplateController::class, 'index'])->name('template.index');
     Route::post('/', [TemplateController::class, 'store'])->name('template.store');
     Route::get('/download/{id}', [TemplateController::class, 'download'])->name('template.download');
@@ -51,7 +53,13 @@ Route::middleware(['auth', 'role:1'])->prefix('template')->group(function () {
     Route::get('/add', [TemplateController::class, 'add'])->name('template.add');
 });
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('skbn')->group(function () {
+Route::middleware(['auth', 'role:7'])->prefix('jenis')->group(function () {
+    Route::get('/', [JenisController::class, 'index'])->name('jenis.index');
+    Route::get('/edit/{id}', [JenisController::class, 'edit'])->name('jenis.edit');
+    Route::post('/update/{id}', [JenisController::class, 'update'])->name('jenis.update');
+});
+
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('skbn')->group(function () {
     Route::get('/', [SkbnController::class, 'index'])->name('skbn.index');
     Route::get('/add', [SkbnController::class, 'add'])->name('skbn.add');
     Route::post('/', [SkbnController::class, 'store'])->name('skbn.store');
@@ -63,7 +71,7 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skbn')->group(function () {
     Route::post('/tolak/{id}', [SkbnController::class, 'tolak'])->name('skbn.tolak');
 });
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('suket')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('suket')->group(function () {
     Route::get('/', [SuketController::class, 'index'])->name('suket.index');
     Route::get('/add', [SuketController::class, 'add'])->name('suket.add');
     Route::post('/', [SuketController::class, 'store'])->name('suket.store');
@@ -93,7 +101,7 @@ Route::prefix('warga')->group(function () {
     Route::post('/skboro', [SkboroController::class, 'save'])->name('skboro.save');
 });
 
-Route::middleware(['auth', 'role:1,3,4,5,6'])->prefix('sktm')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,5,6,7'])->prefix('sktm')->group(function () {
     Route::get('/', [SktmController::class, 'index'])->name('sktm.index');
     Route::get('/add/{id}', [SktmController::class, 'add'])->name('sktm.add');
     Route::post('/', [SktmController::class, 'store'])->name('sktm.store');
@@ -105,7 +113,7 @@ Route::middleware(['auth', 'role:1,3,4,5,6'])->prefix('sktm')->group(function ()
     Route::post('/tolak/{id}', [SktmController::class, 'tolak'])->name('sktm.tolak');
 });
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('skdom')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('skdom')->group(function () {
     Route::get('/', [SkdomController::class, 'index'])->name('skdom.index');
     Route::get('/add', [SkdomController::class, 'add'])->name('skdom.add');
     Route::post('/', [SkdomController::class, 'store'])->name('skdom.store');
@@ -117,7 +125,7 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skdom')->group(function () {
     Route::post('/tolak/{id}', [SkdomController::class, 'tolak'])->name('skdom.tolak');
 });
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('skhsl')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('skhsl')->group(function () {
     Route::get('/', [SkhslController::class, 'index'])->name('skhsl.index');
     Route::get('/add', [SkhslController::class, 'add'])->name('skhsl.add');
     Route::post('/', [SkhslController::class, 'store'])->name('skhsl.store');
@@ -130,7 +138,7 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skhsl')->group(function () {
 });
 
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('skusaha')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('skusaha')->group(function () {
     Route::get('/', [SkusahaController::class, 'index'])->name('skusaha.index');
     Route::get('/add', [SkusahaController::class, 'add'])->name('skusaha.add');
     Route::post('/', [SkusahaController::class, 'store'])->name('skusaha.store');
@@ -143,7 +151,7 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skusaha')->group(function () 
 });
 
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('skboro')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('skboro')->group(function () {
     Route::get('/', [SkboroController::class, 'index'])->name('skboro.index');
     Route::get('/add', [SkboroController::class, 'add'])->name('skboro.add');
     Route::post('/', [SkboroController::class, 'store'])->name('skboro.store');
@@ -155,7 +163,7 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skboro')->group(function () {
     Route::post('/tolak/{id}', [SkboroController::class, 'tolak'])->name('skboro.tolak');
 });
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('skkelahiran')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('skkelahiran')->group(function () {
     Route::get('/', [SkkelahiranController::class, 'index'])->name('skkelahiran.index');
     Route::get('/add', [SkkelahiranController::class, 'add'])->name('skkelahiran.add');
     Route::post('/', [SkkelahiranController::class, 'store'])->name('skkelahiran.store');
@@ -167,7 +175,7 @@ Route::middleware(['auth', 'role:1,3,4'])->prefix('skkelahiran')->group(function
     Route::post('/tolak/{id}', [SkkelahiranController::class, 'tolak'])->name('skkelahiran.tolak');
 });
 
-Route::middleware(['auth', 'role:1,3,4'])->prefix('skkematian')->group(function () {
+Route::middleware(['auth', 'role:1,3,4,7'])->prefix('skkematian')->group(function () {
     Route::get('/', [SkkematianController::class, 'index'])->name('skkematian.index');
     Route::get('/add', [SkkematianController::class, 'add'])->name('skkematian.add');
     Route::post('/', [SkkematianController::class, 'store'])->name('skkematian.store');

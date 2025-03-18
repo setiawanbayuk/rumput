@@ -26,30 +26,26 @@
     <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
         <div class="container">
 
+            <button class="btn btn-outline-secondary " id="toggleSidebar" data-bs-toggle="offcanvas"
+                data-bs-target="#offcanvasSuket" aria-controls="offcanvasSuket">
+                <i class="ri-menu-line"></i>
+            </button>
             <!-- Logo E-SUKET -->
             <a class="navbar-brand" href="{{ url('/warga') }}">
                 <img src="{{ asset('assets/esuket.png') }}" alt="E-SUKET Logo" height="30">
             </a>
 
-            {{-- <li class="nav-item dropdown" style="display: block">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                    href="{{ route('profile') }}">
-                    <span class="img-circle"><i class="ri-user-fill"></i>
-                    </span>
-                    <span class="d-none d-md-inline pl-2">{{ Auth::user()->name }}</span>
-                </a>
-            </li> --}}
             <li class="nav-item dropdown" style="display: block">
                 <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center" href="#"
                     role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                     <div class="user-info bg-success me-2"></div>
-                    <span>{{ Auth::user()->name }}</span>
+                    <i class="ri-user-fill me-2"></i>
                 </a>
 
                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     <a class="dropdown-item" href="{{ route('profile') }}">
                         <i class="ri-user-fill me-2"></i>
-                        <span>Profile</span>
+                        <span>{{ Auth::user()->name }}</span>
                     </a>
                     <a class="dropdown-item" href="{{ route('logout') }}"
                         onclick="event.preventDefault();document.getElementById('logout-form').submit();">
@@ -65,7 +61,26 @@
 
         </div>
     </nav>
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSuket" aria-labelledby="offcanvasSuketLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold ms-4" id="offcanvasSuketLabel">
+                <img src="{{ asset('assets/images/icon.png') }}" alt="Icon" class="me-2 small-icon">
+                Jenis Surat
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="list-group">
+                @foreach ($surat as $item)
+                    <a href="{{ route($item['jenis'] . '.warga') }}" class="list-group-item">
+                        <img src="{{ asset('assets/images/' . $item['assets']) }}" alt="Surat Keterangan Belum Nikah"
+                            class="img-fluid rounded me-2">
 
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </div>
     <main class="py-4 flex-fill">
         @yield('content')
     </main>

@@ -92,8 +92,13 @@ class SkusahaController extends Controller
         $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
         $nik = auth()->user()->nik;
         $surat = JenisSurat::where(['is_active' => true])->get();
-        $detail_surat = JenisSurat::where(['jenis' => 'skhsl', 'is_active' => true])->get();
-        return view('skusaha.warga', compact('title', 'nik', 'surat', 'detail_surat'));
+        $detail_surat = JenisSurat::where(['jenis' => 'skusaha', 'is_active' => true])->get();
+        $resident = Resident::where('nik', $nik)->first();
+        if (isset($resident)) {
+            return view('skusaha.warga', compact('title', 'nik', 'surat', 'detail_surat'));
+        } else {
+            return redirect()->route('profile')->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
+        }
     }
 
     public function add()

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Skpd_resource;
 use App\Models\JenisSurat;
+use App\Models\Skpd;
 use App\Models\SuratBoro;
 use App\Models\SuratDomisili;
 use App\Models\SuratKelahiran;
@@ -42,27 +44,22 @@ class HomeController extends Controller
         }
     }
 
-    public function berita()
+    public function warga()
     {
         $url = 'https://api-splp.layanan.go.id/t/kedirikota.go.id/web_kediri_kota/1.0/api/berita';
         $response = Http::withoutVerifying()->get($url);
-
         if ($response->status() !== 200) {
-            return response()->json(['error' => 'Something went wrong!'], $response->status());
-        }
-
-        return json_decode($response->json()['berita'], true);
-    }
-
-    public function warga()
-    {
-        $berita = $this->berita();
-        foreach ($berita as &$item) {
-            $item['deskripsi'] = strip_tags($item['deskripsi']);
+            $berita = [];
+        } else {
+            $berita = json_decode($response->json()['berita'], true);
+            foreach ($berita as &$item) {
+                $item['deskripsi'] = strip_tags($item['deskripsi']);
+            }
         }
         $surat = JenisSurat::where(['is_active' => true])->get();
-        // dd($surat);
-        return view('warga', compact('berita', 'surat'));
+        $skpd = new Skpd_resource(Skpd::find(auth()->user()->id_instansi));
+        // dd($skpd);
+        return view('warga', compact('berita', 'surat', 'skpd'));
     }
 
     public function activity()

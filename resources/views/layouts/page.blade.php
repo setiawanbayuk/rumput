@@ -28,24 +28,38 @@
                 data-bs-target="#offcanvasSuket" aria-controls="offcanvasSuket">
                 <i class="ri-menu-line"></i>
             </button>
+
+            <a class="btn">
+                {{-- <i class="ri-menu-line"></i> --}}
+            </a>
+            <!-- Logo E-SUKET -->
             <a class="navbar-brand" href="{{ url('/warga') }}">
                 <img src="{{ asset('assets/esuket.png') }}" alt="E-SUKET Logo" height="30">
             </a>
-            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                <a class="dropdown-item" href="{{ route('profile') }}">
+
+            <li class="nav-item dropdown" style="display: block">
+                <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center" href="#"
+                    role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                    <div class="user-info bg-success me-2"></div>
                     <i class="ri-user-fill me-2"></i>
-                    <span>Profile</span>
-                </a>
-                <a class="dropdown-item" href="{{ route('logout') }}"
-                    onclick="event.preventDefault();document.getElementById('logout-form').submit();">
-                    <i class="ri-logout-circle-r-line me-2"></i>
-                    <span>Logout</span>
                 </a>
 
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                    @csrf
-                </form>
-            </div>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="{{ route('profile') }}">
+                        <i class="ri-user-fill me-2"></i>
+                        <span>{{ Auth::user()->name }}</span>
+                    </a>
+                    <a class="dropdown-item" href="{{ route('logout') }}"
+                        onclick="event.preventDefault();document.getElementById('logout-form').submit();">
+                        <i class="ri-logout-circle-r-line me-2"></i>
+                        <span>Logout</span>
+                    </a>
+
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                        @csrf
+                    </form>
+                </div>
+            </li>
 
         </div>
     </nav>
@@ -104,23 +118,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    {{-- <script>
-        document.getElementById("toggleSidebar").addEventListener("click", function() {
-            let sidebar = document.querySelector(".sidebar");
-            let content = document.querySelector(".content");
 
-            sidebar.classList.toggle("show");
-
-            // Jika sidebar terbuka di layar besar, geser konten
-            if (window.innerWidth >= 768) {
-                if (sidebar.classList.contains("show")) {
-                    content.style.marginLeft = "250px"; // Sesuaikan dengan sidebar
-                } else {
-                    content.style.marginLeft = "0";
-                }
-            }
-        });
-    </script> --}}
     @stack('scripts')
 </body>
 

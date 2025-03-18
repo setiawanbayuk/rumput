@@ -18,7 +18,7 @@ class SkpdController extends Controller
         if (isset($request->id)) {
             $skpd = Skpd::where('id', $request->id)->paginate();
         } else {
-            $skpd = Skpd::where('nama', 'like', '%' . $request->q . '%')->paginate();
+            $skpd = Skpd::where('nama', 'like', '%' . $request->q . '%')->whereRaw('LENGTH(id_region) > 8')->paginate();
         }
         $data = Instansi_resource::collection($skpd);
         return response()->json($data, 200);

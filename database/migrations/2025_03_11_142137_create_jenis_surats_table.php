@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('jenis');
             $table->string('assets');
+            $table->text('detail');
+            $table->text('persyaratan');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

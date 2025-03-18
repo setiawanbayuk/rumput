@@ -21,21 +21,19 @@
             <div class="tab-pane fade show active" id="detail">
                 <x-detail-surat>
                     <x-slot:title>{{ $title }}</x-slot:title>
-                    <x-slot:detail>{{ $detail_surat[0]->detail }}</x-slot:detail>
-                    <x-slot:persyaratan>{{ $detail_surat[0]->persyaratan }}</x-slot:persyaratan>
+                    <x-slot:detail>{!! $detail_surat[0]->detail !!}</x-slot:detail>
+                    <x-slot:persyaratan>{!! $detail_surat[0]->persyaratan !!}</x-slot:persyaratan>
                 </x-detail-surat>
             </div>
             <div class="tab-pane fade" id="pengajuan">
                 <h3>{{ $title }}</h3>
-                <br>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 mt-3">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
                         <i class="ri-add-fill me-2"></i><span>Tambah</span>
                     </button>
                     <button class="btn btn-secondary" onclick="reload()">Reload</button>
                 </div>
-                <br>
-                <div class="card card-body">
+                <div class="card card-body mt-3">
                     <div class="table-responsive">
                         <table id="tableSurat" class="table table-hovered" style="width: 100%" style="width: 100%">
                             <thead>

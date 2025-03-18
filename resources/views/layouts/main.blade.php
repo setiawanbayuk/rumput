@@ -176,7 +176,7 @@
                         </a>
                         <ul id="tools" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
                             <li class="sidebar-item">
-                                <a href="{{ url('/') }}" class="sidebar-link">Profil</a>
+                                <a href="{{ url('/profile') }}" class="sidebar-link">Profil</a>
                             </li>
                             @if (auth()->user()->role_id != 2)
                                 <li class="sidebar-item">
@@ -189,6 +189,12 @@
                                     <a href="{{ url('/template') }}" class="sidebar-link">Template Surat</a>
                                 </li>
                             @endif
+                            @if (auth()->user()->role_id == 7)
+                                <li class="sidebar-item">
+                                    <a href="{{ url('/jenis') }}" class="sidebar-link">Jenis Surat</a>
+                                </li>
+                            @endif
+
                         </ul>
                     </li>
                     {{-- <li class="sidebar-item">

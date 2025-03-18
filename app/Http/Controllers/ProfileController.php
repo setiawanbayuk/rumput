@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Agama;
 use App\Models\Gender;
+use App\Models\JenisSurat;
 use App\Models\Kabko;
 use App\Models\Kecamatan;
 use App\Models\Kelurahan;
@@ -41,11 +42,12 @@ class ProfileController extends Controller
         $title = "Profile";
 
         $resident = Resident::where('nik', Auth::user()->nik)->first();
+        $surat = JenisSurat::where(['is_active' => true])->get();
         $penduduk = [];
         if (isset($resident)) {
             $penduduk = unserialize($resident->data);
         }
-        return view('profile.index', compact('title', 'resident', 'penduduk'));
+        return view('profile.index', compact('title', 'resident', 'penduduk', 'surat'));
     }
 
     public function update(Request $request)

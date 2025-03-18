@@ -9,10 +9,7 @@
 
     <div class="container">
         <h3>{{ $title }}</h3>
-
-        <br>
-
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 mt-3">
             @if (auth()->user()->role_id == 1)
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tambahModal">
                     Tambah
@@ -20,10 +17,7 @@
             @endif
             <button class="btn btn-secondary" onclick="reload()">Reload</button>
         </div>
-
-        <br>
-
-        <div class="card card-body">
+        <div class="card card-body mt-3">
             <div class="table-responsive">
                 <table id="tableSurat" class="table table-hovered" style="width: 100%">
                     <thead>
