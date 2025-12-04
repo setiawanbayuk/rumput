@@ -1,0 +1,46 @@
+/* Pagination E-SUKET */
+.pagination {
+    justify-content: center;
+    gap: .35rem;
+}
+
+.page-item .page-link {
+    border-radius: .25rem;
+    border-color: #E5E7EB;
+    padding: .5rem .75rem;
+    line-height: 1;
+    font-weight: 600;
+    color: #6B7280;
+    background: #fff;
+}
+
+.page-item .page-link i {
+    vertical-align: middle;
+    font-size: 1rem;
+}
+
+.page-item.active .page-link {
+    background: #AEA07A; /* nuansa emas-beige brand kamu */
+    border-color: #AEA07A;
+    color: #fff;
+}
+
+.page-item.disabled .page-link {
+    color: #B9BDC6;
+    background: #F5F6F8;
+    border-color: #E5E7EB;
+}
+
+.page-link:hover {
+    color: #4B5563;
+    background: #F8F9FB;
+}
+
+.page-link:focus {
+    box-shadow: 0 0 0 .2rem rgba(199,184,146,.25);
+}
+
+/* Kompak di mobile */
+@media (max-width: 480px) {
+    .page-item .page-link { padding: .45rem .6rem; }
+}

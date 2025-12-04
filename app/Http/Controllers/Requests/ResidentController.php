@@ -15,6 +15,7 @@ use App\Models\Pendidikan;
 use App\Models\Provinsi;
 use App\Models\Regional;
 use App\Models\Resident;
+use App\Models\RtRw;
 use App\Models\Status_kwn;
 use App\Models\StatusKwn;
 use Illuminate\Http\Request;
@@ -121,6 +122,10 @@ class ResidentController extends Controller
             'kecamatan_nm' => $kecamatan->nama,
             'kelurahan' => $request->kelurahan,
             'kelurahan_nm' => $kelurahan->nama,
+            'rw' => $request->rw,
+            'rw_nm' => 'RW ' . $request->rw,
+            'rt' => $request->rt,
+            'rt_nm' => 'RT ' . $request->rt,
             'alamat' => $request->alamat
         ]);
 

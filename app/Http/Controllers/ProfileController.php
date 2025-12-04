@@ -13,10 +13,13 @@ use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
 use App\Models\Provinsi;
 use App\Models\Resident;
+use App\Models\RtRw;
 use App\Models\StatusKwn;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
@@ -68,8 +71,23 @@ class ProfileController extends Controller
             'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
-            'alamat' => ['required', 'max:100']
+            'rw' => ['required', 'string'],
+            'rt' => ['required', 'string'],
+            'alamat' => ['required', 'max:100'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // avatar optional: image max 2MB
         ]);
+
+        // ====== 1) Simpan avatar ke storage (public/avatars) & update users.avatar ======
+        $user = $request->user(); // sama dengan Auth::user()
+        if ($request->hasFile('avatar')) {
+            // hapus file lama kalau ada
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            // simpan baru
+            $path = $request->file('avatar')->store('avatars', 'public'); // ex: avatars/abc.jpg
+            $user->forceFill(['avatar' => $path])->save();
+        }
 
         $gender = Gender::find($request->gender);
         $status_kwn = StatusKwn::find($request->status_kwn);
@@ -107,6 +125,10 @@ class ProfileController extends Controller
             'kecamatan_nm' => $kecamatan->nama,
             'kelurahan' => $request->kelurahan,
             'kelurahan_nm' => $kelurahan->nama,
+            'rw' => $request->rw,
+            'rw_nm' => 'RW ' . $request->rw,
+            'rt' => $request->rt,
+            'rt_nm' => 'RT ' . $request->rt,
             'alamat' => $request->alamat
         ]);
         $resident = Resident::where('nik', $request->nik)->first();
@@ -126,21 +148,26 @@ class ProfileController extends Controller
                 ]);
             }
         }
-
-
         return redirect()->route('profile')->with('status', 'Data pribadi berhasil di update!');
     }
 
     public function akun(Request $request, $id)
     {
-        $data = User::findOrFail($id);
-
-        $validated = $request->validate([
-            'password' => ['required', Password::min(8)->mixedCase()->numbers()->symbols()->uncompromised(), 'confirmed'],
+        $request->validate([
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(8)->mixedCase()->numbers()->symbols()->uncompromised(),
+            ],
         ]);
 
-        $data->update($validated);
+        $user = User::findOrFail($id);
 
-        return redirect()->route('profile')->with('status', 'Password berhasil di update!');
+        // Password harus di-hash sebelum disimpan
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return back()->with('status', 'Password berhasil di update!');
     }
 }

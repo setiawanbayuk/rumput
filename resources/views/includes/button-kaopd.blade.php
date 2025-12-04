@@ -6,9 +6,9 @@
         <x-slot:jenis>{{ $jenis }}</x-slot:jenis>
         <x-slot:role>{{ $role }}</x-slot:role>
     </x-btnsign>
-    @if ($status == 3 || $status == 5 || $status == 6)
+    @if (in_array($status, [4, 5, 8, 9]))
         <x-btncetak><x-slot:id>{{ $id }}</x-slot:id></x-btncetak>
-    @else
-        <x-btnpreview><x-slot:id>{{ $id }}</x-slot:id></x-btnpreview>
+    @else 
+        <x-btnpreview  :id="$id" :route="$route" />
     @endif
 </div>

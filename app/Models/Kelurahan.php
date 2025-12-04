@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -18,6 +19,7 @@ class Kelurahan extends Model
         'kode_kecamatan',
     ];
     protected $casts = ['id' => 'string'];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -27,5 +29,10 @@ class Kelurahan extends Model
     public function skpd(): HasOne
     {
         return $this->hasOne(Skpd::class, 'id_region', 'id');
+    }
+
+    public function rtrw(): HasMany
+    {
+        return $this->hasMany(RtRw::class, 'kode_kelurahan', 'id');
     }
 }

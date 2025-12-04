@@ -5,13 +5,16 @@ namespace App\Http\Controllers;
 use App\Http\Resources\Kelurahan_resource;
 use App\Http\Resources\Pejabat_resource;
 use App\Http\Resources\User_resource;
+use App\Http\Resources\Skpd_resource;
 use App\Models\Gender;
 use App\Models\Kelurahan;
+use App\Models\JenisSurat;
 use App\Models\Kewarganegaraan;
 use App\Models\Log_surat;
 use App\Models\Pejabat;
 use App\Models\Resident;
 use App\Models\SuratKematian;
+use App\Models\Skpd;
 use App\Models\User;
 use App\Traits\GetNoSurat;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,23 +29,43 @@ class SkkematianController extends Controller
     use GetNoSurat;
     public function index()
     {
+        $user = auth()->user();
+        $rt = $user->id_rt;
+        $rw = $user->id_rw;
+        $resident = Resident::where('nik', $user->nik)->first();
+        $penduduk = unserialize($resident->data);
+        $kelurahan = $penduduk['kelurahan_nm'];
         if (request()->ajax()) {
-            $data = SuratKematian::query();
-            return DataTables::of($data)
+            $query = SuratKematian::query();
+
+            // Kalau role RT → filter berdasarkan id_kel, id_rw, dan id_rt
+            if ($user->role_id == 8) { // contoh: RT
+                $query->where('id_kel', $user->id_instansi)
+                    ->where('id_rw', $user->id_rw)
+                    ->where('id_rt', $user->id_rt);
+            }
+            // Kalau role Sekkel, Lurah, Sekcam, atau Camat → filter berdasarkan id_kel
+            elseif (in_array($user->role_id, [3, 4, 5, 6])) { // sesuaikan ID role-mu
+                $query->where('id_kel', $user->id_instansi);
+            }
+            // Role lain (admin, warga, dll) → tanpa filter tambahan
+
+            return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($user) {
                     $nomorSurat = $this->getNoSrt($row);
                     $id = $row->id;
                     $route = 'skkematian.edit';
                     $status = $row->status;
                     $jenis = 'skkematian';
-                    $role = auth()->user()->role_id;
-                    if (auth()->user()->role_id == 1) {
+                    $role = $user->role_id;
+
+                    if (in_array($role, [1, 8, 9])) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
-                    } else if (auth()->user()->role_id == 3) {
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role'));
+                    } elseif (in_array($role, [3, 5])) {
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route'));
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status', 'role'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'role', 'route'));
                     }
                 })
                 ->addColumn('no_surat', function ($row) {
@@ -51,9 +74,102 @@ class SkkematianController extends Controller
                 ->rawColumns(['action', 'no_surat'])
                 ->make(true);
         };
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";
-        return view('skkematian.index', compact('title'));
+        $title = "Surat Keterangan Kematian";
+        return view('skkematian.index', compact('title', 'rt', 'rw', 'kelurahan'));
     }
+
+    public function warga()
+    {
+        // dd(auth()->user()->nik);
+        // Bagian halaman utama
+        $user  = auth()->user();
+        $nik   = $user->nik;
+        $q     = request('q'); // ← ambil keyword
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";
+        $nama  = "SURAT KETERANGAN KEMATIAN";
+        $jenis = 'skkematian';
+
+        // kartu pilihan surat & detail surat skbn
+        $surat        = JenisSurat::where('is_active', true)->get(['jenis', 'assets', 'name']);
+        $detail_surat = JenisSurat::where(['jenis' => 'skkematian', 'is_active' => true])->get();
+
+        // info SKPD untuk header
+        $skpd = new Skpd_resource(Skpd::find($user->id_instansi));
+
+        // validasi data resident
+        $resident = Resident::where('nik', $nik)->first();
+        if (!$resident) {
+            return redirect()
+                ->route('profile')
+                ->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
+        }
+
+        // ===== BASE QUERY: surat_skbn milik user + search OPTIONAL =====
+        $items = SuratKematian::query()
+            ->where('nik_pelapor', $nik)
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($w) use ($q) {
+                    $w->where('no_urut_surat', 'like', "%{$q}%")
+                        ->orWhere('nama',   'like', "%{$q}%");
+                });
+            })
+            ->orderByDesc('created_at');
+
+        // ===== TAB: Sedang Proses (0..4) =====
+        $sedangProses = (clone $items)
+            ->whereIn('status', [0, 1, 2, 3, 4])
+            ->paginate(10, ['*'], 'proses_page');
+
+        $sedangProses->getCollection()->transform(function ($surat) {
+            $surat->nomor_surat = $this->getNoSrt($surat);
+            return $surat;
+        });
+        
+        // ===== TAB: Riwayat (5) =====
+        $riwayat = (clone $items)
+            ->whereIn('status', [5, 6])
+            ->paginate(10, ['*'], 'riwayat_page');
+
+        $riwayat->getCollection()->transform(function ($surat) {
+            $surat->nomor_surat = $this->getNoSrt($surat);
+            return $surat;
+        });
+        return view('skkematian.warga', compact(
+            'title',
+            'nama',
+            'nik',
+            'surat',
+            'detail_surat',
+            'jenis',
+            'skpd',
+            'sedangProses',
+            'riwayat'
+        ));
+    }
+
+    public function addwarga()
+    {
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";
+        $nik   = auth()->user()->nik;
+
+        // konsisten dengan pengecekan di warga()
+        $resident = Resident::where('nik', $nik)->first();
+        if (!$resident) {
+            return redirect()->route('profile')
+                ->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
+        }
+
+        return view('skkematian.addwarga', compact('title', 'nik'));
+    }
+
+    public function show($id)
+    {
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";
+        $suratKeterangan = SuratKematian::findOrFail($id);
+
+        return view('skkematian.show', compact('suratKeterangan', 'title'));
+    }
+
     public function add()
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";
@@ -68,7 +184,7 @@ class SkkematianController extends Controller
         $request->validate([
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
-            'kd_instansi' => ['required', 'string'],
+            'id_instansi' => ['required', 'string'],
             'tahun' => ['required', 'string'],
             'tgl_surat' => ['required', 'date'],
             'nik_pelapor' => ['required', 'min:16'],
@@ -175,7 +291,7 @@ class SkkematianController extends Controller
     public function edit($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";
         $currentUser = new User_resource(User::with('skpd')->find(Auth::id()));
 
         $suratKeterangan = SuratKematian::find($id);
@@ -192,7 +308,7 @@ class SkkematianController extends Controller
         $request->validate([
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
-            'kd_instansi' => ['required', 'string'],
+            'id_instansi' => ['required', 'string'],
             'tahun' => ['required', 'string'],
             'tgl_surat' => ['required', 'date'],
             'nik_pelapor' => ['required', 'min:16'],
@@ -283,13 +399,32 @@ class SkkematianController extends Controller
                 'sebab_kematian' => $request->sebab_kematian,
                 'tempat_kematian' => $request->tempat_kematian,
                 'yang_menerangkan' => $request->yang_menerangkan,
-                'status' => 1,
                 'pengantar' => $request->file('pengantar') ? $fileLocation : '',
             ]);
 
             return redirect()->route('skkematian.index');
         } else {
             return redirect()->route('skkematian.index');
+        }
+    }
+
+    public function proses($id)
+    {
+        $suratKeterangan = SuratKematian::find($id);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 1]);
+
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik_pelapor,
+                'tabel_surat' => 'surat_kematians',
+                'nama_surat' => 'SURAT KETERANGAN KEMATIAN',
+                'id_surat' => $id,
+                'status_surat' => 1,
+            ]);
+
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
         }
     }
 
@@ -307,6 +442,24 @@ class SkkematianController extends Controller
                 'status_surat' => 2,
             ]);
 
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
+        }
+    }
+
+    public function naikLurah($id)
+    {
+        $suratKeterangan = SuratKematian::find($id);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 3]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_kematians',
+                'nama_surat' => 'SURAT KETERANGAN KEMATIAN',
+                'id_surat' => $id,
+                'status_surat' => 3,
+            ]);
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
             return response()->json(['message' => 'Data updated failed.']);
@@ -377,11 +530,33 @@ class SkkematianController extends Controller
     public function save(Request $request)
     {
         $request->validate([
+            'nik_pelapor' => ['required', 'min:16'],
+            'nik_saksi1' => ['required', 'min:16'],
+            'kk_saksi1' => ['required', 'min:16'],
+            'name_saksi1' => ['required', 'string'],
+            'kewarganegaraan_saksi2' => ['required', 'string'],
+            'nik_saksi2' => ['required', 'min:16'],
+            'kk_saksi2' => ['required', 'min:16'],
+            'name_saksi2' => ['required', 'string'],
+            'kewarganegaraan_saksi2' => ['required', 'string'],
+            'nik_ayah' => ['required', 'min:16'],
+            'name_ayah' => ['required', 'string'],
+            'tempat_lhr_ayah' => ['required', 'string'],
+            'tgl_lhr_ayah' =>  ['required', 'date'],
+            'kewarganegaraan_ayah' => ['required', 'string'],
+            'nik_ibu' => ['required', 'min:16'],
+            'name_ibu' => ['required', 'string'],
+            'tempat_lhr_ibu' => ['required', 'string'],
+            'tgl_lhr_ibu' =>  ['required', 'date'],
+            'kewarganegaraan_ibu' => ['required', 'string'],
             'nik' => ['required', 'min:16'],
-            'keterangan' => ['required', 'max:450'],
-            'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+            'name' => ['required', 'string'],
+            'tgl_kematian' =>  ['required', 'date'],
+            'jam_kematian' =>  ['required'],
+            'sebab_kematian' => ['required', 'string'],
+            'tempat_kematian' => ['required', 'string'],
+            'yang_menerangkan' => ['required', 'string'],
+            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
         ]);
 
         //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skkematian', 0755);
@@ -390,36 +565,93 @@ class SkkematianController extends Controller
         $fileLocation = '/storage/pengantar/' . date('Y') . '/skkematian/' . $fileName;
         $request->file('pengantar')->storeAs($path, $fileName);
 
-        $resident = Resident::where('nik', $request->nik)->first();
+        // ✅ Ambil data pelapor (bukan jenazah)
+        $nik_pelapor = $request->nik_pelapor ?? auth()->user()->nik;
+        $resident   = Resident::where('nik', $nik_pelapor)->first();
+
+        if (!$resident) {
+            return back()->with('error', 'Data pelapor tidak ditemukan di tabel Resident.');
+        }
+
+        // $resident = Resident::where('nik', $request->nik)->first();
         $penduduk = unserialize($resident->data);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
 
+        $kk_pelapor = $resident->kk;
+        $nama_pelapor = $penduduk['name'] ?? '';
+        $kewarganegaraan_pelapor = $penduduk['kewarganegaraan'] ?? null;
+        $kewarganegaraan_pelapor_nm = $penduduk['kewarganegaraan_nm'] ?? '';
+
+        $kewarganegaraan_saksi1 = Kewarganegaraan::find($request->kewarganegaraan_saksi1);
+        $kewarganegaraan_saksi2 = Kewarganegaraan::find($request->kewarganegaraan_saksi2);
+        $kewarganegaraan_ayah = Kewarganegaraan::find($request->kewarganegaraan_ayah);
+        $kewarganegaraan_ibu = Kewarganegaraan::find($request->kewarganegaraan_ibu);
+
+        // dd($penduduk);
+
         $suket = SuratKematian::create([
             'id_kel'    => auth()->user()->id_instansi,
+            'id_rw'    => auth()->user()->id_rw,
+            'id_rt'    => auth()->user()->id_rt,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
-            'kd_instansi' => $regional['skpd']->instansi_kode,
+            'id_instansi' => $regional['skpd']->instansi_kode,
             'tahun' => date('Y'),
             'tgl_surat' => date('Y-m-d'),
+            'nama_pelapor' => $nama_pelapor,
+            'nik_pelapor' => $nik_pelapor,
+            'kk_pelapor' => $kk_pelapor,
+            'kewarganegaraan_pelapor' => $kewarganegaraan_pelapor,
+            'kewarganegaraan_pelapor_nm' => $kewarganegaraan_pelapor_nm,
+            'no_dokumen_perjalanan' => 0,
+            'nama_saksi1' => $request->name_saksi1,
+            'nik_saksi1' => $request->nik_saksi1,
+            'kk_saksi1' => $request->kk_saksi1,
+            'kewarganegaraan_saksi1' => $request->kewarganegaraan_saksi1,
+            'kewarganegaraan_saksi1_nm' => $kewarganegaraan_saksi1->nama,
+            'nama_saksi2' => $request->name_saksi2,
+            'nik_saksi2' => $request->nik_saksi2,
+            'kk_saksi2' => $request->kk_saksi2,
+            'kewarganegaraan_saksi2' => $request->kewarganegaraan_saksi2,
+            'kewarganegaraan_saksi2_nm' => $kewarganegaraan_saksi2->nama,
+            'nama_ayah' => $request->name_ayah,
+            'nik_ayah' => $request->nik_ayah,
+            'tempat_lhr_ayah' => $request->tempat_lhr_ayah,
+            'tgl_lhr_ayah' => $request->tgl_lhr_ayah,
+            'kewarganegaraan_ayah' => $request->kewarganegaraan_ayah,
+            'kewarganegaraan_ayah_nm' => $kewarganegaraan_ayah->nama,
+            'nama_ibu' => $request->name_ibu,
+            'nik_ibu' => $request->nik_ibu,
+            'tempat_lhr_ibu' => $request->tempat_lhr_ibu,
+            'tgl_lhr_ibu' => $request->tgl_lhr_ibu,
+            'kewarganegaraan_ibu' => $request->kewarganegaraan_ibu,
+            'kewarganegaraan_ibu_nm' => $kewarganegaraan_ibu->nama,
             'nik' => $request->nik,
-            'keterangan' => $request->keterangan,
-            'peruntukan' => $request->peruntukan,
-            'kepada' => $request->kepada,
+            'nama' => $request->name,
+            'tgl_kematian' => $request->tgl_kematian,
+            'jam_kematian' => $request->jam_kematian,
+            'sebab_kematian' => $request->sebab_kematian,
+            'tempat_kematian' => $request->tempat_kematian,
+            'yang_menerangkan' => $request->yang_menerangkan,
             'status' => 0,
             'pengantar' => $fileLocation
         ]);
 
         Log_surat::create([
-            'nik' => $request->nik,
+            'nik' => $nik_pelapor,
             'tabel_surat' => 'surat_kematians',
             'nama_surat' => 'SURAT KETERANGAN KEMATIAN',
             'id_surat' => $suket->id,
             'status_surat' => 0,
         ]);
 
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+        } else {
 
-        return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
+            return redirect()->route('skkematian.warga');
+        }
     }
 
     public function get(Request $request)
@@ -430,24 +662,102 @@ class SkkematianController extends Controller
         return response()->json($surat);
     }
 
+    public function nilai(Request $request, $id)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'komentar' => 'nullable|string',
+        ]);
+
+        $surat = SuratKematian::find($id);
+
+        if (!$surat) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        // simpan rating & komentar
+        $surat->update([
+            'status'   => 5,
+            'rating'   => $request->rating,
+            'komentar' => $request->komentar,
+        ]);
+
+        // log status
+        Log_surat::create([
+            'nik'          => $surat->nik,
+            'tabel_surat'  => 'surat_kematians',
+            'nama_surat'   => 'SURAT KETERANGAN KEMATIAN',
+            'id_surat'     => $id,
+            'status_surat' => 5,
+        ]);
+
+        return response()->json([
+            'message' => 'Penilaian berhasil disimpan.',
+            'data' => $id
+        ]);
+    }
+
+    public function lihatNilai($id)
+    {
+        // Ambil data surat
+        $surat = SuratKematian::find($id);
+
+        if (!$surat || $surat->rating === null) {
+            return response()->json(['message' => 'Belum ada penilaian'], 404);
+        }
+
+        // Ambil waktu nilai dari log_surat (status_surat = 5)
+        $log = Log_surat::where('tabel_surat', 'surat_kematians')
+                    ->where('id_surat', $id)
+                    ->where('status_surat', 5)
+                    ->orderBy('id', 'DESC')
+                    ->first();
+
+        return response()->json([
+            'rating'   => $surat->rating,
+            'komentar' => $surat->komentar ?? '-',
+            'tanggal'  => optional($log?->created_at)->timezone('Asia/Jakarta')->format('d-m-Y H:i'),
+        ]);
+    }
 
     public function tolak($id)
     {
         $suratKeterangan = SuratKematian::find($id);
         if ($suratKeterangan) {
-            $suratKeterangan->update(['status' => 4]);
-
+            $suratKeterangan->update(['status' => 6]);
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
                 'tabel_surat' => 'surat_kematians',
                 'nama_surat' => 'SURAT KETERANGAN KEMATIAN',
                 'id_surat' => $id,
-                'status_surat' => 4,
+                'status_surat' => 6,
             ]);
-
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
             return response()->json(['message' => 'Data updated failed.']);
+        }
+    }
+
+    public function hapus($id)
+    {
+        $suratKeterangan = SuratKematian::find($id);
+        if (!$suratKeterangan) return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+
+        if (in_array($suratKeterangan->status, ['1', '2', '3', '4', '5'])) {
+            return response()->json(['message' => 'Surat sudah selesai atau dinilai, tidak bisa dihapus.'], 422);
+        }
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 7]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_kematians',
+                'nama_surat' => 'SURAT KETERANGAN KEMATIAN',
+                'id_surat' => $id,
+                'status_surat' => 7,
+            ]);
+            return response()->json(['message' => 'Pengajuan berhasil dihapus.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Gagal menghapus.']);
         }
     }
 }

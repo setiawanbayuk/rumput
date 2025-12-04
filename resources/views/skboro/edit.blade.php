@@ -3,240 +3,314 @@
 @section('title', '{{ $title }}')
 
 @section('content')
-    <div class="container-fluid">
+    <div class="container mt-2">
         <div class="row justify-content-center">
             <div class="col-md-12">
-                <div class="card border-0 shadow">
-                    <div class="card-header bg-transparent py-3 text-center fw-bold">{{ $title }}</div>
+                <div class="card shadow-sm border-0 rounded-4">
+                    <div class="card-header border-0 pt-3 pb-2" style="background: #AEA07A; border-radius: 1rem 1rem 0 0">
+                        <h5 class="my-3 fw-bold text-white text-center" style="letter-spacing: .5px">{{ $title }}</h5>
+                    </div>
 
                     <div class="card-body">
-                        <form method="POST" enctype="multipart/form-data" action="{{ route('skboro.update', ['id' => $suratKeterangan->id]) }}">
+                        <form method="POST" enctype="multipart/form-data"
+                            action="{{ route('skboro.update', ['id' => $suratKeterangan->id]) }}">
                             @csrf
-                            <div class="row justify-content-center">
-                                <div class="col-md-6">
-                                    <x-nosrt>
-                                        <x-slot:kd_jenis_surat>{{ $suratKeterangan->kd_jenis_surat }}</x-slot:kd_jenis_surat>
-                                        <x-slot:no_urut_surat>{{ $suratKeterangan->no_urut_surat }}</x-slot:no_urut_surat>
-                                        <x-slot:instansi_kode>{{ $currentUser->skpd->instansi_kode }}</x-slot:instansi_kode>
-                                        <x-slot:tgl_surat>{{ $suratKeterangan->tgl_surat }}</x-slot:tgl_surat>
-                                    </x-nosrt>
-                                    <x-pribadi></x-pribadi>
+                            <div class="row" style="min-height: 500px;">
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100 border-1 shadow-sm rounded-4" style="background: #fff; border-color: #AEA07A">
+                                        <div class="card-body">
+                                            <div>
+                                                <x-nosrt>
+                                                    <x-slot:kd_jenis_surat>{{ $suratKeterangan->kd_jenis_surat }}</x-slot:kd_jenis_surat>
+                                                    <x-slot:no_urut_surat>{{ $suratKeterangan->no_urut_surat }}</x-slot:no_urut_surat>
+                                                    <x-slot:instansi_kode>{{ $currentUser->skpd->instansi_kode }}</x-slot:instansi_kode>
+                                                    <x-slot:tgl_surat>{{ $suratKeterangan->tgl_surat }}</x-slot:tgl_surat>
+                                                </x-nosrt>
+                                                <x-pribadi></x-pribadi>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 border-start">
-                                    <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Pengikut</div>
-                                    <div id="data_pengikut" name="data_pengikut">
-                                        <div class="row mb-3">
-                                            <label for="pengikut_nik"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('NIK') }}</label>
-                                            <div class="col-md-8">
-                                                <div class="input-group">
-                                                    <input type="number"
-                                                        class="form-control @error('pengikut_nik') is-invalid @enderror"
-                                                        id="pengikut_nik" name="pengikut_nik"
-                                                        placeholder="Masukkan 16 digit NIK" aria-label="NIK"
-                                                        aria-describedby="basic-addon2">
-                                                    {{-- <button type="button" class="input-group-text btn btn-subtle-primary"
-                                                        onclick="checkNIK()">CARI</button> --}}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100 border-1 shadow-sm rounded-4"
+                                        style="background: #fff; border-color: #AEA07A">
+                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Pengikut</div>
+                                        <div class="card-body">
+                                            <div id="data_pengikut" name="data_pengikut">
+                                                <div class="row mb-3">
+                                                    <label for="pengikut_nik"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
+                                                    <div class="col-md-8">
+                                                        <div class="input-group">
+                                                            <input type="number"
+                                                                class="form-control @error('pengikut_nik') is-invalid @enderror"
+                                                                id="pengikut_nik" name="pengikut_nik"
+                                                                placeholder="Masukkan 16 digit NIK" aria-label="NIK"
+                                                                aria-describedby="basic-addon2">
+                                                            {{-- <button type="button" class="input-group-text btn btn-subtle-primary"
+                                                                onclick="checkNIK()">CARI</button> --}}
 
-                                                    @error('pengikut_nik')
-                                                        <span class="invalid-feedback" role="alert">
-                                                            <strong>{{ $message }}</strong>
-                                                        </span>
-                                                    @enderror
+                                                            @error('pengikut_nik')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                            @enderror
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <label for="pengikut"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <input id="pengikut" type="text"
+                                                            class="form-control @error('pengikut') is-invalid @enderror"
+                                                            name="pengikut" value="{{ old('pengikut') }}"
+                                                            autocomplete="pengikut">
+
+                                                        @error('pengikut')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <label for="pengikut_gender"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Jenis Kelamin') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <select
+                                                            class="form-control @error('pengikut_gender') is-invalid @enderror"
+                                                            id="pengikut_gender" name="pengikut_gender"
+                                                            data-placeholder="Jenis Kelamin">
+                                                        </select>
+                                                        @error('pengikut_gender')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <label for="pengikut_umur"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Umur') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <input id="pengikut_umur" type="number"
+                                                            class="form-control @error('pengikut_umur') is-invalid @enderror"
+                                                            name="pengikut_umur" value="{{ old('pengikut_umur') }}"
+                                                            autocomplete="pengikut_umur">
+
+                                                        @error('pengikut')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <label for="pengikut_status_kwn"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Status Perkawinan') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <select
+                                                            class="form-control @error('pengikut_status_kwn') is-invalid @enderror"
+                                                            id="pengikut_status_kwn" name="pengikut_status_kwn"
+                                                            data-placeholder="Status Perkawinan">
+                                                        </select>
+                                                        @error('pengikut_status_kwn')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <label for="pengikut_hubungan"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Hubungan Keluarga') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <select
+                                                            class="form-control select2-hubungan @error('pengikut_hubungan') is-invalid @enderror"
+                                                            id="pengikut_hubungan" name="pengikut_hubungan"
+                                                            data-placeholder="Hubungan">
+                                                            <option value=""></option>
+                                                            <option value="KEPALA KELUARGA">KEPALA KELUARGA</option>
+                                                            <option value="SUAMI">SUAMI</option>
+                                                            <option value="ISTERI">ISTERI</option>
+                                                            <option value="ANAK">ANAK</option>
+                                                            <option value="MENANTU">MENANTU</option>
+                                                            <option value="CUCU">CUCU</option>
+                                                            <option value="ORANG TUA">ORANG TUA</option>
+                                                            <option value="MERTUA">MERTUA</option>
+                                                            <option value="FAMILI LAIN">FAMILI LAIN</option>
+                                                            <option value="PEMBANTU">PEMBANTU</option>
+                                                            <option value="LAINNYA">LAINNYA</option>
+                                                        </select>
+                                                        @error('pengikut_hubungan')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-8 offset-md-4">
+                                                        <button type="button" class="btn btn-success py-2 px-4" style="border-radius: 8px" name="tambah_pengikut"
+                                                            id ="tambah_pengikut"><i class="ri-user-add-fill me-2"></i>
+                                                            <span>Tambah</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="pengikut"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Nama') }}</label>
 
-                                            <div class="col-md-8">
-                                                <input id="pengikut" type="text"
-                                                    class="form-control @error('pengikut') is-invalid @enderror"
-                                                    name="pengikut" value="{{ old('pengikut') }}" autocomplete="pengikut">
+                                            <div class="card-header bg-transparent mb-3 text-center fw-bold">Bepergian /Boro Ke</div>
+                                            <x-boro>
+                                                <x-slot:alamat_boro>{{ $suratKeterangan->alamat_boro }}</x-slot:alamat_boro>
+                                                <x-slot:tgl_awal>{{ $suratKeterangan->tgl_awal }}</x-slot:tgl_awal>
+                                                <x-slot:tgl_akhir>{{ $suratKeterangan->tgl_akhir }}</x-slot:tgl_akhir>
+                                            </x-boro>
 
-                                                @error('pengikut')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="pengikut_gender"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Jenis Kelamin') }}</label>
+                                            {{-- @isset($var)
+                                                @foreach ($var as $item)
+                                                    <div class="row mb-3">
+                                                        <label for="{{ $item }}"
+                                                            class="col-md-3 col-form-label text-md-start ms-2">{{ $item }}</label>
 
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('pengikut_gender') is-invalid @enderror"
-                                                    id="pengikut_gender" name="pengikut_gender"
-                                                    data-placeholder="Jenis Kelamin">
-                                                </select>
-                                                @error('pengikut_gender')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
+                                                        <div class="col-md-8">
+                                                            <input type="text"
+                                                                class="form-control @error('{{ $item }}') is-invalid @enderror"
+                                                                name="<?= $item ?>" id="<?= $item ?>" placeholder=""
+                                                            {{--    value="{{ $var_value[$item] }}" --}}
+                                            {{--                value="{{ $var_value[$item] ?? '' }}" />
 
-                                        <div class="row mb-3">
-                                            <label for="pengikut_umur"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Umur') }}</label>
-
-                                            <div class="col-md-8">
-                                                <input id="pengikut_umur" type="number"
-                                                    class="form-control @error('pengikut_umur') is-invalid @enderror"
-                                                    name="pengikut_umur" value="{{ old('pengikut_umur') }}"
-                                                    autocomplete="pengikut_umur">
-
-                                                @error('pengikut')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="pengikut_status_kwn"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Status Perkawinan') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select
-                                                    class="form-control @error('pengikut_status_kwn') is-invalid @enderror"
-                                                    id="pengikut_status_kwn" name="pengikut_status_kwn"
-                                                    data-placeholder="Status Perkawinan">
-                                                </select>
-                                                @error('pengikut_status_kwn')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="pengikut_hubungan"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Hubungan Keluarga') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select
-                                                    class="form-control select2-hubungan @error('pengikut_hubungan') is-invalid @enderror"
-                                                    id="pengikut_hubungan" name="pengikut_hubungan"
-                                                    data-placeholder="Hubungan">
-                                                    <option value=""></option>
-                                                    <option value="KEPALA KELUARGA">KEPALA KELUARGA</option>
-                                                    <option value="SUAMI">SUAMI</option>
-                                                    <option value="ISTERI">ISTERI</option>
-                                                    <option value="ANAK">ANAK</option>
-                                                    <option value="MENANTU">MENANTU</option>
-                                                    <option value="CUCU">CUCU</option>
-                                                    <option value="ORANG TUA">ORANG TUA</option>
-                                                    <option value="MERTUA">MERTUA</option>
-                                                    <option value="FAMILI LAIN">FAMILI LAIN</option>
-                                                    <option value="PEMBANTU">PEMBANTU</option>
-                                                    <option value="LAINNYA">LAINNYA</option>
-                                                </select>
-                                                @error('pengikut_hubungan')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <div class="col-md-8 offset-md-3">
-                                            <button type="button" class="btn btn-success" name="tambah_pengikut"
-                                                id ="tambah_pengikut"><i class="ri-user-add-fill"></i>
-                                                <span>Tambah</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-striped table-condensed">
-                                                <thead>
-                                                    <tr>
-                                                        <th>NIK</th>
-                                                        <th>Nama</th>
-                                                        <th>Jenis Kelamin</th>
-                                                        <th>Umur</th>
-                                                        <th>Status</th>
-                                                        <th>Hubungan</th>
-                                                        <th>Aksi</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="tabelbody">
-                                                    @foreach ($pengikut as $p)
-                                                        <tr>
-                                                            <input type="hidden" name="id_pengikut[]"
-                                                                value="<?= $p->id ?>" readonly>
-                                                            <td><input type="text" name="add_nik[]"
-                                                                    value="<?= $p->nik ?>" readonly></td>
-                                                            <td><input type="text" name="add_nama[]"
-                                                                    value="<?= $p->nama ?>" readonly></td>
-                                                            <td><input type="text" name="add_jk[]"
-                                                                    value="<?= $p->gender ?>" readonly></td>
-                                                            <td width="5%"><input type="text" name="add_umr[]"
-                                                                    value="<?= $p->umur ?>" readonly></td>
-                                                            <td><input type="text" name="add_stat[]"
-                                                                    value="<?= $p->status_kwn ?>" readonly></td>
-                                                            <td><input type="text" name="add_hub[]"
-                                                                value="<?= $p->hubungan ?>" readonly></td>
-                                                            <td><button class="btn btn-sm btn-danger"
-                                                                    onclick="$(this).parent().parent().remove();"><i
-                                                                        class="fa fa-times-circle"></i></button></td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <div class="card-header bg-transparent mb-3 text-center fw-bold">Bepergian / Boro Ke
-                                    </div>
-                                    <x-boro>
-                                        <x-slot:alamat_boro>{{ $suratKeterangan->alamat_boro }}</x-slot:alamat_boro>
-                                        <x-slot:tgl_awal>{{ $suratKeterangan->tgl_awal }}</x-slot:tgl_awal>
-                                        <x-slot:tgl_akhir>{{ $suratKeterangan->tgl_akhir }}</x-slot:tgl_akhir>
-                                    </x-boro>
-
-                                    @isset($var)
-                                        @foreach ($var as $item)
+                                            {{--            @error('{{ $item }}')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                            @enderror
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            @endisset --}}
+                                            <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
+                                            <x-pengantar></x-pengantar>
                                             <div class="row mb-3">
-                                                <label for="{{ $item }}"
-                                                    class="col-md-3 col-form-label text-md-end">{{ $item }}</label>
-
+                                                <label class="col-md-3 col-form-label text-md-start ms-2"></label>
                                                 <div class="col-md-8">
-                                                    <input type="text"
-                                                        class="form-control @error('{{ $item }}') is-invalid @enderror"
-                                                        name="<?= $item ?>" id="<?= $item ?>" placeholder="" value="{{$var_value[$item] }}"/>
-
-                                                    @error('{{ $item }}')
-                                                        <span class="invalid-feedback" role="alert">
-                                                            <strong>{{ $message }}</strong>
-                                                        </span>
-                                                    @enderror
+                                                    <x-viewer src="{{ $suratKeterangan->pengantar }}" height="150px" />
                                                 </div>
                                             </div>
-                                        @endforeach
-                                    @endisset
-                                    <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
-                                    <x-pengantar></x-pengantar>
-                                    <div class="row mb-3">
-                                        <label class="col-md-3 col-form-label text-md-end"></label>
-                                        <div class="col-md-8">
-                                            <img src="{{ asset($suratKeterangan->pengantar) }}" alt=""
-                                                height="100%" style="max-height: 300px">
+                                            <div class="row mb-0 g-2">
+                                                <div class="col-md-8 offset-md-3">
+                                                    <a href="{{ url()->previous() ?? route('skboro.index')}}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
+                                                        <i class="ri-close-line me-1"></i>
+                                                        <span>Batal</span>
+                                                    </a>
+                                                    <button type="submit" class="btn text-white py-2 px-4"
+                                                        style="background: #7896B2; border-radius: 8px;">
+                                                        <i class="ri-save-3-fill me-1"></i>
+                                                        <span>Update</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="row mb-0">
-                                        <div class="col-md-8 offset-md-3">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="ri-save-3-fill"></i>
-                                                <span>Simpan</span>
-                                            </button>
+                                </div>
+                                {{-- <div class="row mt-4">
+                                    <div class="col-md-12">
+                                        <div class="card border-1 shadow-sm rounded-4" style="background:#fff; border-color: #AEA07A">
+                                            <div class="card-body p-3">
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-striped table-condensed">
+                                                        <thead class="text-center small">
+                                                            <tr>
+                                                                <th>NIK</th>
+                                                                <th>Nama</th>
+                                                                <th>Jenis Kelamin</th>
+                                                                <th>Umur</th>
+                                                                <th>Status</th>
+                                                                <th>Hubungan</th>
+                                                                <th style="width: 80px;">Aksi</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="tabelbody">
+                                                            @foreach ($pengikut as $p)
+                                                                <tr>
+                                                                    <input type="hidden" name="id_pengikut[]"
+                                                                        value="<?= $p->id ?>" readonly>
+                                                                    <td><input type="text" name="add_nik[]"
+                                                                            value="<?= $p->nik ?>" readonly></td>
+                                                                    <td><input type="text" name="add_nama[]"
+                                                                            value="<?= $p->nama ?>" readonly></td>
+                                                                    <td><input type="text" name="add_jk[]"
+                                                                            value="<?= $p->gender ?>" readonly></td>
+                                                                    <td class="text-center"><input type="text" name="add_umr[]"
+                                                                            value="<?= $p->umur ?>" readonly></td>
+                                                                    <td><input type="text" name="add_stat[]"
+                                                                            value="<?= $p->status_kwn ?>" readonly></td>
+                                                                    <td><input type="text" name="add_hub[]"
+                                                                            value="<?= $p->hubungan ?>" readonly></td>
+                                                                    <td class="text-center">
+                                                                        <button class="btn btn-danger btn-sm"
+                                                                            onclick="$(this).closest('tr').remove()">
+                                                                            <i class="ri-delete-bin-6-line"></i>
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>   
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> --}}
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <div class="card shadow-sm rounded-4 border-1" style="border-color: #AEA07A;">
+                                            <div class="card-header bg-transparent text-center fw-bold">
+                                                Daftar Pengikut
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-striped table-hover align-middle">
+                                                        <thead class="text-center small">
+                                                            <tr>
+                                                                <th>NIK</th>
+                                                                <th>Nama</th>
+                                                                <th>Jenis Kelamin</th>
+                                                                <th>Umur</th>
+                                                                <th>Status</th>
+                                                                <th>Hubungan</th>
+                                                                <th style="width: 80px;">Aksi</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="tabelbody">
+                                                            @foreach ($pengikut as $p)
+                                                                <tr>
+                                                                    <input type="hidden" name="id_pengikut[]" value="{{ $p->id }}">
+                                                                    <td>{{ $p->nik }}</td>
+                                                                    <td>{{ $p->nama }}</td>
+                                                                    <td>{{ $p->gender }}</td>
+                                                                    <td class="text-center">{{ $p->umur }}</td>
+                                                                    <td>{{ $p->status_kwn }}</td>
+                                                                    <td>{{ $p->hubungan }}</td>
+                                                                    <td class="text-center">
+                                                                        <button class="btn btn-danger btn-sm"
+                                                                            onclick="$(this).closest('tr').remove()">
+                                                                            <i class="ri-delete-bin-6-line"></i>
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

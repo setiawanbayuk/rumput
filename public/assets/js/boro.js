@@ -1,4 +1,4 @@
-$(document).ready(function () {
+$(function () {
     let provinsi_id = "";
     let kabko_id = "";
     let kecamatan_id = "";
@@ -10,7 +10,7 @@ $(document).ready(function () {
             ? "100%"
             : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInpuLength: 2,
         ajax: {
             url: route("provinsi.index"),
             dataType: "json",
@@ -21,7 +21,7 @@ $(document).ready(function () {
             },
         },
     });
-    $("#provinsi_boro").change(function () {
+    $("#provinsi_boro").on("change", function () {
         provinsi_id = $(this).val();
         $("#kabko_boro").select2({
             theme: "bootstrap-5",
@@ -31,7 +31,7 @@ $(document).ready(function () {
                 ? "100%"
                 : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInputLenght: 2,
+            minimumInpuLength: 2,
             ajax: {
                 url:
                     window.location.origin +
@@ -46,7 +46,7 @@ $(document).ready(function () {
             },
         });
     });
-    $("#kabko_boro").change(function () {
+    $("#kabko_boro").on("change", function () {
         kabko_id = $(this).val();
         $("#kecamatan_boro").select2({
             theme: "bootstrap-5",
@@ -56,7 +56,7 @@ $(document).ready(function () {
                 ? "100%"
                 : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInputLenght: 2,
+            minimumInpuLength: 2,
             ajax: {
                 url:
                     window.location.origin +
@@ -72,7 +72,7 @@ $(document).ready(function () {
         });
     });
 
-    $("#kecamatan_boro").change(function () {
+    $("#kecamatan_boro").on("change", function () {
         kecamatan_id = $(this).val();
         $("#kelurahan_boro").select2({
             theme: "bootstrap-5",
@@ -82,7 +82,7 @@ $(document).ready(function () {
                 ? "100%"
                 : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInputLenght: 2,
+            minimumInpuLength: 2,
             ajax: {
                 url:
                     window.location.origin +
@@ -96,5 +96,33 @@ $(document).ready(function () {
                 },
             },
         });
+    });
+    // ---------- RESET CHAIN ----------
+    function resetSelect(id) {
+        $(id).empty().trigger("change");
+    }
+
+    // PROVINSI → reset kabko, kecamatan, kelurahan, rw, rt
+    $("#provinsi").on("change", function () {
+        resetSelect("#kabko");
+        resetSelect("#kecamatan");
+        resetSelect("#kelurahan");
+        resetSelect("#rw");
+        resetSelect("#rt");
+    });
+
+    // KAB/KOTA → reset kecamatan, kelurahan, rw, rt
+    $("#kabko").on("change", function () {
+        resetSelect("#kecamatan");
+        resetSelect("#kelurahan");
+        resetSelect("#rw");
+        resetSelect("#rt");
+    });
+
+    // KECAMATAN → reset kelurahan, rw, rt
+    $("#kecamatan").on("change", function () {
+        resetSelect("#kelurahan");
+        resetSelect("#rw");
+        resetSelect("#rt");
     });
 });

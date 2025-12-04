@@ -24,8 +24,11 @@ class User extends Authenticatable
         'name',
         'email',
         'nik',
+        'phone',
         'role_id',
         'id_instansi',
+        'id_rw',
+        'id_rt',
         'password',
     ];
 
@@ -63,5 +66,11 @@ class User extends Authenticatable
     }
     public function user_role(): BelongsTo {
         return $this->belongsTo(User_role::class,'role_id','id');
+    }
+    public function rw(): BelongsTo {
+        return $this->belongsTo(RtRw::class, 'id_rw', 'rw');
+    }
+    public function rt(): BelongsTo {
+        return $this->belongsTo(RtRw::class, 'id_rt', 'rt');
     }
 }

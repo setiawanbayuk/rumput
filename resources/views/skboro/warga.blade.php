@@ -5,263 +5,350 @@
 @section('content')
     @push('styles')
         <link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.css" rel="stylesheet">
+        <style>
+            /* kartu status seperti di mockup */
+            .suket-card {
+                border-radius: .75rem;
+                background: #fff;
+                border: 1px solid #E5E7EB;
+            }
+
+            .suket-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 18px;
+                background: #fff;
+                border-radius: .75rem .75rem 0 0;
+            }
+
+            .suket-card .card-body {
+                padding: 1rem 1.25rem
+            }
+
+            .suket-meta {
+                font-size: .8rem;
+                color: #6B7280
+            }
+
+            .suket-card .card-footer {
+                background: #fff;
+                border-top: 0;
+                border-radius: 0 0 .75rem .75rem;
+            }
+
+            .divider-card-line {
+                border-top: 1px solid #E0E0E0;
+                margin: 0 1.25rem;
+            }
+
+            /* efek hover body */
+            .card-click {
+                cursor: pointer;
+                transition: background .15s ease, box-shadow .15s ease;
+            }
+
+            .card-click:hover {
+                background: #F8F9FB;
+                box-shadow: inset 0 2px 14px rgba(0, 0, 0, .04);
+            }
+
+            .bar {
+                display: inline-block;
+                font-weight: 700;
+                font-size: .78rem;
+                letter-spacing: .4px;
+                padding: .35rem .65rem;
+                border-radius: .45rem
+            }
+
+            .bar--diajukan {
+                background: #e0e0e0;
+                color: #6C757D
+            }
+
+            .bar--diproses {
+                background: #e8f2ff;
+                color: #1e63ff
+            }
+
+            .bar--ditolak {
+                background: #fde4e6;
+                color: #d2353c
+            }
+
+            .bar--selesai {
+                background: #e6f6ee;
+                color: #0e8a5f
+            }
+
+            .bar--dinilai {
+                background: #f6f1dd;
+                color: #8b6f1d
+            }
+
+            /* tombol kecil bundar */
+            .btn-chip {
+                border-radius: 2rem;
+                padding: .35rem 2rem;
+            }
+        </style>
     @endpush
 
-    <div class="container">
-        <ul class="nav nav-tabs" id="suketTabs">
-            <li class="nav-item">
-                <a class="nav-link active" id="detail-tab" data-bs-toggle="tab" href="#detail">DETAIL</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="pengajuan-tab" data-bs-toggle="tab" href="#pengajuan">RIWAYAT PENGAJUAN</a>
-            </li>
-        </ul>
+    <div class="container py-3">
+        {{-- Search --}}
+        <form class="mb-3" method="get">
+            <div class="fi fi--s">
+                <input id="search-box" type="text" class="fi-input" name="q" value="{{ request('q') }}"
+                    placeholder=" ">
+                <label for="search-box" class="fi-label">Cari Surat yang Telah Anda Ajukan</label>
+                <button class="fi-btn" type="submit"><i class="ri-search-line"></i></button>
+            </div>
+        </form>
+
+        {{-- Tabs --}}
+        <div class="seg seg-3">
+            <!-- radio disembunyikan -->
+            <input type="radio" name="seg" id="seg-detail" checked>
+            <input type="radio" name="seg" id="seg-proses">
+            <input type="radio" name="seg" id="seg-riwayat">
+
+            <div class="seg-wrap">
+                <label for="seg-detail" class="seg-btn">Detail</label>
+                <label for="seg-proses" class="seg-btn">Sedang Proses</label>
+                <label for="seg-riwayat" class="seg-btn">Riwayat</label>
+                <span class="seg-indicator"></span>
+            </div>
+        </div>
 
         <div class="tab-content mt-3">
-            <div class="tab-pane fade show active" id="detail">
+            <div class="tab-pane fade show active" id="tab-detail" role="tabpanel">
                 <x-detail-surat>
                     <x-slot:title>{{ $title }}</x-slot:title>
                     <x-slot:detail>{!! $detail_surat[0]->detail !!}</x-slot:detail>
                     <x-slot:persyaratan>{!! $detail_surat[0]->persyaratan !!}</x-slot:persyaratan>
                 </x-detail-surat>
-            </div>
-            <div class="tab-pane fade" id="pengajuan">
-                <h3>{{ $title }}</h3>
-                <div class="d-flex gap-2 mt-3">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
-                        <i class="ri-add-fill me-2"></i><span>Tambah</span>
-                    </button>
-                    <button class="btn btn-secondary" onclick="reload()">Reload</button>
+                <div class="text-center">
+                    <a href="{{ route('skboro.create') }}" class="btn-ajukan">
+                        Ajukan
+                    </a>
                 </div>
-                <div class="card card-body mt-3">
-                    <div class="table-responsive">
-                        <table id="tableSurat" class="table table-hovered" style="width: 100%" style="width: 100%">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>No Surat</th>
-                                    <th>Tanggal</th>
-                                    <th>Peruntukan</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                        </table>
+            </div>
+            <div class="tab-pane fade" id="tab-proses" role="tabpanel">
+                <div class="container rounded-3 px-4 py-2" style="background:rgba(174,160,122,.25)">
+                    @forelse($sedangProses as $pengajuan)
+                        @php
+                            $ui = $pengajuan->ui_status;
+                            $step = $ui['step'];
+                            $bar = $ui['color_class'];
+                            $label = $ui['label'];
+                            $nosrt  = $pengajuan->nomor_surat ?? '—';
+                            $tgl = optional($pengajuan->created_at)->translatedFormat('d F Y');
+                            $alias  = $pengajuan->jenisSurat ?? 'skboro';
+                            $id     = $pengajuan->id_surat ?? $pengajuan->id;
+                        @endphp
+
+                        {{-- strip header + body persis seperti mockup "Sedang Proses" --}}
+                        <div class="card suket-card mb-3 border-0 shadow-sm mt-3">
+                            {{-- HEAD: pill status + no surat --}}
+                            <div class="suket-head">
+                                <span class="bar {{ $ui['color_class'] }}">{{ $ui['label'] }}</span>
+                            </div>
+
+                            <div class="divider-card-line"></div>
+
+                            {{-- BODY: bisa diklik (stretched-link di dalamnya) --}}
+                            <div class="card-body position-relative p-4 card-click">
+                                <h5 class="fw-bold mb-1 text-uppercase">{{ $nama }}</h5>
+                                <div class="text-muted small mb-2">No. Surat : {{ $nosrt }}</div>
+
+                                {{-- link tak terlihat yang membentang di area body --}}
+                                <a class="stretched-link"
+                                    href="{{ route('tracking', ['jenisSurat' => $alias, 'id' => $id]) }}"
+                                    aria-label="">
+                                </a>
+                            </div>
+
+                            <div class="divider-card-line"></div>
+
+                            {{-- FOOTER: tanggal kiri, tombol kanan, tidak ikut klik --}}
+                            <div class="card-footer d-flex justify-content-between align-items-center px-4 py-3">
+                                <div class="text-muted small">
+                                    <i class="ri-calendar-2-line me-1"></i>{{ $tgl }}
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    {{-- STEP 1 & 2: Tombol PREVIEW --}}
+                                    @if ($step == 1 || $step == 2)
+                                        <a href="{{ route($alias.'.show', ['id' => $id]) }}"
+                                        class="btn btn-chip text-white" style="background: #7896B2">
+                                            Lihat
+                                        </a>
+                                    @endif
+                                    {{-- Tombol Cetak Surat - Tampil jika STEP 3 (SELESAI) atau STEP 4 (DINILAI) --}}
+                                    @if ($step == 3)
+                                        <a href="{{-- route('pengajuan.cetak', [$jenis, $id]) --}}"
+                                        class="btn btn-success btn-chip">
+                                            Cetak Surat
+                                        </a>
+
+                                        <x-btnnilai :alias="$alias" :id="$id" :nosrt="$nosrt" :nama="$nama" />
+                                    @endif
+
+                                    {{-- STEP 1 → tombol hapus --}}
+                                    @if (($step == 1 || $step == 2) && $alias && Route::has($alias.'.hapus'))
+                                        <button type="button"
+                                            @if ($step == 2) disabled @endif
+                                            class="btn btn-danger btn-chip btn-open-hapus"
+                                            data-id="{{ $id }}"
+                                            data-action="{{ route($alias.'.hapus', ['id' => '__ID__']) }}">
+                                            Hapus
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-5">Belum ada pengajuan.</div>
+                    @endforelse
+                    <div class="mt-3 d-flex justify-content-center">
+                    {{ $sedangProses
+                        ->withQueryString()       // pertahankan ?q=...
+                        ->fragment('tab-proses')  // balik ke tab-proses saat paging
+                        ->onEachSide(1)
+                        ->links('vendor.pagination.e-suket') }}
                     </div>
                 </div>
             </div>
+            <div class="tab-pane fade" id="tab-riwayat" role="tabpanel">
+                <div class="container rounded-3 px-4 py-2" style="background:rgba(174,160,122,.25)">
+                    @forelse($riwayat as $pengajuan)
+                        @php
+                            $ui = $pengajuan->ui_status;
+                            $step = $ui['step'];
+                            $bar = $ui['color_class'];
+                            $label = $ui['label'];
+                            $nosrt  = $pengajuan->nomor_surat ?? '—';
+                            $tgl = optional($pengajuan->created_at)->translatedFormat('d F Y');
+                            $alias  = $pengajuan->jenisSurat ?? 'skboro';
+                            $id     = $pengajuan->id_surat ?? $pengajuan->id;
+                        @endphp
+
+                        <div class="card suket-card mb-3 border-0 shadow-sm mt-3">
+                            {{-- HEAD: pill status + no surat --}}
+                            <div class="suket-head">
+                                <span class="bar {{ $ui['color_class'] }}">{{ $ui['label'] }}</span>
+                            </div>
+
+                            <div class="divider-card-line"></div>
+
+                            {{-- BODY: bisa diklik --}}
+                            <div class="card-body position-relative p-4 card-click">
+                                <h5 class="fw-bold mb-1 text-uppercase">{{ $nama }}</h5>
+                                <div class="text-muted small mb-2">No. Surat : {{ $nosrt }}</div>
+
+                                {{-- link tak terlihat yang membentang di area body --}}
+                                <a class="stretched-link"
+                                    href="{{ route('tracking', ['jenisSurat' => $alias, 'id' => $id]) }}"
+                                    aria-label="Lihat tracking">
+                                </a>
+                            </div>
+
+                            <div class="divider-card-line"></div>
+
+                            {{-- FOOTER --}}
+                            <div class="card-footer d-flex justify-content-between align-items-center px-4 py-3">
+                                <div class="text-muted small">
+                                    <i class="ri-calendar-2-line me-1"></i>{{ $tgl }}
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    {{-- Tombol Cetak Surat - Tampil jika STEP 3 (SELESAI) atau STEP 4 (DINILAI) --}}
+                                    <a href="{{-- route('pengajuan.cetak', [$jenis, $id]) --}}"
+                                    class="btn btn-success btn-chip">
+                                        Cetak Surat
+                                    </a>
+
+                                    <x-btnlihatnilai 
+                                        :alias="$alias" 
+                                        :id="$id"
+                                        :nosrt="$nosrt"
+                                        :nama="$nama"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-5">Riwayat masih kosong.</div>
+                    @endforelse
+                    <div class="mt-3 d-flex justify-content-center">
+                    {{ $riwayat
+                        ->withQueryString()
+                        ->fragment('tab-riwayat')
+                        ->onEachSide(1)
+                        ->links('vendor.pagination.e-suket') }}
+                    </div>
+                </div>
+            </div>
+            {{-- Form global untuk hapus Skboro (akan diisi otomatis oleh komponen) --}}
+            <form id="formHapusSkboro"
+                method="POST"
+                data-action-template="{{ route('skboro.hapus', ['id' => '__ID__']) }}">
+                @csrf
+                {{-- hidden "id" akan dibuat/diisi otomatis oleh komponen saat modal dibuka --}}
+            </form>
+            <x-btn-hapus
+                modalId="modalHapusSkboro"
+                formId="formHapusSkboro"
+                title="Anda yakin ingin membatalkan dan menghapus pengajuan surat?"
+                message="Tindakan ini akan menghapus data pengajuan Anda. Surat ini tidak akan diproses dan akan hilang dari riwayat pengajuan Anda."
+                cancelText="Batal"
+                confirmText="Hapus"
+            />
         </div>
     </div>
 
-    @include('modals.skboro-add-modal')
     {{-- <x-esign></x-esign> --}}
     @push('scripts')
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
-        <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
-        <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        <script type="text/javascript" src="{{ asset('assets/js/boro.js') }}"></script>
-        <script type="text/javascript">
-            $(document).ready(function() {
-                // $(".select2-hubungan").select2();
-                $(".select2-hubungan").select2({
-                    theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
-                    placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
-                });
-            });
-
-            $("#pengikut_gender").select2({
-                theme: "bootstrap-5",
-                width: $(this).data("width") ?
-                    $(this).data("width") : $(this).hasClass("w-100") ?
-                    "100%" : "style",
-                placeholder: $(this).data("placeholder"),
-                minimumInputLenght: 2,
-                ajax: {
-                    url: route("gender.index"),
-                    dataType: "json",
-                    processResults: function(response) {
-                        return {
-                            results: response,
-                        };
-                    },
-                },
-            });
-
-            $("#pengikut_status_kwn").select2({
-                theme: "bootstrap-5",
-                width: $(this).data("width") ?
-                    $(this).data("width") : $(this).hasClass("w-100") ?
-                    "100%" : "style",
-                placeholder: $(this).data("placeholder"),
-                minimumInputLenght: 2,
-                ajax: {
-                    url: route("status_kwn.index"),
-                    dataType: "json",
-                    processResults: function(response) {
-                        return {
-                            results: response,
-                        };
-                    },
-                },
-            });
-
-
-
-
-            $("#pengikut_nik").keyup(function() {
-                if ($(this).val().length == 16) {
-                    let nik = this.value;
-                    let web = '{{ env('APP_URL') }}';
-                    $.ajax({
-                        url: web + "/api/personal?nik=" + nik,
-                        success: function(response) {
-                            $("#pengikut").val(response.name);
-                            $("#pengikut_gender").select2("trigger", "select", {
-                                data: {
-                                    id: response.gender,
-                                    text: response.gender_nm,
-                                },
-                            });
-                            $("#pengikut_status_kwn").select2("trigger", "select", {
-                                data: {
-                                    id: response.status_kwn,
-                                    text: response.status_kwn_nm,
-                                },
-                            });
-
-                            Toastify({
-                                text: "Data ditemukan!",
-                                duration: 1000,
-                                close: true,
-                                gravity: "top", // `top` or `bottom`
-                                position: "center", // `left`, `center` or `right`
-                                stopOnFocus: true, // Prevents dismissing of toast on hover
-                                style: {
-                                    background: "rgba(25, 135, 84, 1)",
-                                },
-                            }).showToast();
-                        },
-                        error: function(xhr) {
-                            Toastify({
-                                text: "Data tidak ditemukan!",
-                                duration: 1000,
-                                close: true,
-                                gravity: "top", // `top` or `bottom`
-                                position: "center", // `left`, `center` or `right`
-                                stopOnFocus: true, // Prevents dismissing of toast on hover
-                                style: {
-                                    background: "rgba(255, 0, 0, 1)",
-                                },
-                            }).showToast();
-                        },
-                    });
-
-                }
-            });
-
-            $("#tambah_pengikut").click(function() {
-                var nik_p = $("#pengikut_nik").val();
-                var nm_p = $("#pengikut").val();
-                var jk = $("#pengikut_gender").val();
-                var umr = $("#pengikut_umur").val();
-                var stat = $("#pengikut_status_kwn").val();
-                var hub = $("#pengikut_hubungan").val();
-                if (nik_p != "" || nm_p != "") {
-                    var add =
-                        "<tr><td><input type=\"text\" name=\"add_nik[]\" value='" +
-                        nik_p + "' readonly></td><td><input type=\"text\" name=\"add_nama[]\" value='" + nm_p +
-                        "' readonly></td><td><input type=\"text\" name=\"add_jk[]\" value='" + jk +
-                        "' readonly></td><td><input type=\"text\" name=\"add_umr[]\" value='" + umr +
-                        "' readonly></td><td><input type=\"text\" name=\"add_stat[]\" value='" + stat +
-                        "' readonly></td><td><input type=\"text\" name=\"add_hub[]\" value='" + hub +
-                        "' readonly><td><button type=\"button\" class=\"btn btn-danger btn-sm\" onClick=\"return hapus_temp(this)\"><i class=\"ri-delete-bin-6-line\"></i> </td></button></tr>";
-                    $("#tabelbody").append(add);
-
-                    $("#pengikut_nik").val('');
-                    $("#pengikut").val('');
-                    // $("#pengikut_gender").val('');
-                    $("#pengikut_umur").val('');
-                    // $("#pengikut_status_kwn").val('');
-                    // $("#pengikut_hubungan").val('');
-                } else {
-                    alert("NIK atau Nama Harus Diisi");
-                }
-            });
-
-            function hapus_temp(e) {
-                $(e).parent().parent().remove();
-            }
-            $(function() {
-                var table = $('#tableSurat').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    ordering: true,
-                    scrollX: true,
-                    ajax: "{{ route('skboro.warga') }}",
-                    columns: [{
-                            data: 'no_urut_surat',
-                            name: 'no_urut_surat'
-                        },
-                        {
-                            data: 'no_surat',
-                            name: 'no_surat',
-                            orderable: false,
-                            searchable: false
-                        },
-                        {
-                            data: 'tgl_surat',
-                            name: 'tgl_surat',
-                            width: '10%',
-                        },
-                        {
-                            data: 'peruntukan',
-                            name: 'peruntukan'
-                        },
-                        {
-                            data: 'st',
-                            // name: 'st',
-                            render: function(data, type) {
-                                return `<span style="color:${data.color}">${data.name}</span>`;
-                            },
-                            orderable: false,
-                            searchable: false
-                        },
-                        {
-                            data: 'action',
-                            name: 'action',
-                            orderable: false,
-                            searchable: false
-                        },
-                    ],
-                    order: [
-                        [2, "desc"],
-                        [0, "desc"]
-                    ],
-                    pageLength: 10,
-                });
-            });
-
-            function reload() {
-                $('#tableSurat').DataTable().ajax.reload();
-            }
-        </script>
         <script>
-            function handleCetak(e) {
-                $.ajax({
-                    type: "GET",
-                    dataType: "json",
-                    url: "{{ env('APP_URL', 'http://rumput.test') }}" + "/skboro/cetak/" + e,
-                    success: function(response) {
-                        window.open(response.file, 'preview',
-                            'width=600,height=1000');
-                    }
+            document.addEventListener('DOMContentLoaded', () => {
+                const panes = document.querySelectorAll('.tab-pane');
+                const STORAGE_KEY = 'lastOpenedTabSkboro';
+
+                const map = {
+                    'seg-detail': 'tab-detail',
+                    'seg-proses': 'tab-proses',
+                    'seg-riwayat': 'tab-riwayat'
+                };
+
+                function showPane(id) {
+                    panes.forEach(p => p.classList.remove('show', 'active'));
+                    document.getElementById(id)?.classList.add('show', 'active');
+                    sessionStorage.setItem(STORAGE_KEY, id);
+                }
+
+                // pasang listener singkat
+                Object.keys(map).forEach(segId => {
+                    document.getElementById(segId)?.addEventListener('change', e => {
+                        if (e.target.checked) showPane(map[segId]);
+                    });
                 });
-            }
+
+                // restore: tentukan segmen dari lastTab
+                const lastTab = sessionStorage.getItem(STORAGE_KEY);
+                const segIdFromLast = Object.keys(map).find(k => map[k] === lastTab);
+
+                // fallback ke 'proses' jika null/invalid
+                const segToCheck = segIdFromLast || 'seg-detail';
+                const tabToShow = map[segToCheck];
+
+                // PENTING: tandai radio dulu, baru tampilkan pane
+                const segEl = document.getElementById(segToCheck);
+                if (segEl) segEl.checked = true;
+                showPane(tabToShow);
+            });
         </script>
     @endpush
 @endsection
+<x-nilai />
+<x-lihatnilai />

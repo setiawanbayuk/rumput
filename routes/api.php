@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Requests\AgamaController;
 use App\Http\Controllers\Requests\EsignController;
@@ -16,12 +17,16 @@ use App\Http\Controllers\Requests\RegionalController;
 use App\Http\Controllers\Requests\ResidentController;
 use App\Http\Controllers\Requests\SkpdController;
 use App\Http\Controllers\Requests\StatusPerkawinanController;
+use App\Http\Controllers\Requests\RwController;
+use App\Http\Controllers\Requests\RtController;
 use App\Http\Controllers\SkbnController;
 use App\Http\Controllers\SkboroController;
 use App\Http\Controllers\SkdomController;
 use App\Http\Controllers\SkhslController;
 use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SkusahaController;
+use App\Http\Controllers\SkkelahiranController;
+use App\Http\Controllers\SkkematianController;
 use App\Http\Controllers\SuketController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +43,8 @@ Route::prefix('auth')->group(function(){
     Route::get('/profile', [AuthController::class, 'profile'])->middleware('auth:sanctum');
 });
 
+Route::post('/resident/simpan', [ResidentController::class, 'simpan']);
+Route::post('/registermobile',[RegisterController::class, 'registermobile']);
 Route::get('/agama/splp',[AgamaController::class, 'splp']);
 Route::get('/gender/splp',[GenderController::class, 'splp']);
 Route::get('/provinsi/splp',[ProvinsiController::class, 'splp']);
@@ -49,6 +56,8 @@ Route::post('/esign/sign',[EsignController::class, 'sign']);
 Route::post('/register',[SktmController::class, 'register']);
 Route::get('/regional/kelurahan',[RegionalController::class, 'kelurahan'])->name('regional.kelurahan');
 Route::get('/regional/kecamatan',[RegionalController::class, 'kecamatan'])->name('regional.kecamatan');
+Route::get('/regional/rw/{idKel}', [RegionalController::class, 'rw'])->name('regional.rw');
+Route::get('/regional/rt/{idKel}/{rw}', [RegionalController::class, 'rt'])->name('regional.rt');
 
 Route::middleware('auth:sanctum')->prefix('suket')->group(function(){
     Route::get('/', [SuketController::class, 'get']);
@@ -82,6 +91,16 @@ Route::middleware('auth:sanctum')->prefix('skboro')->group(function(){
     Route::post('/', [SkboroController::class, 'save']);
 });
 
+Route::middleware('auth:sanctum')->prefix('skelahiran')->group(function(){
+    Route::get('/', [SkkelahiranController::class, 'get']);
+    Route::post('/', [SkkelahiranController::class, 'save']);
+});
+
+Route::middleware('auth:sanctum')->prefix('skkematian')->group(function(){
+    Route::get('/', [SkkematianController::class, 'get']);
+    Route::post('/', [SkkematianController::class, 'save']);
+});
+
 Route::middleware('auth:sanctum')->prefix('resident')->group(function(){
     Route::post('/simpan', [ResidentController::class, 'simpan']);
 });
@@ -101,4 +120,5 @@ Route::resource('kabko', KabkoController::class);
 Route::resource('kecamatan', KecamatanController::class);
 Route::resource('kelurahan', KelurahanController::class);
 Route::resource('skpd', SkpdController::class);
-
+Route::resource('rw', RwController::class);
+Route::resource('rt', RtController::class);

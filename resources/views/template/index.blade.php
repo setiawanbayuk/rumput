@@ -10,7 +10,7 @@
     <div class="container">
         <h3>{{ $title }}</h3>
         <div class="d-flex gap-2 mt-3">
-            @if (auth()->user()->role_id == 1)
+            @if (auth()->user()->role_id == 1 || auth()->user()->role_id == 8 || auth()->user()->role_id == 9)
                 <a class="btn btn-primary" href="{{ route('template.add') }}">
                     <i class="ri-add-fill me-2"></i>
                     <span>Tambah</span></a>
@@ -34,7 +34,7 @@
     </div>
 
     @push('scripts')
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.js"></script>
         <script type="text/javascript">

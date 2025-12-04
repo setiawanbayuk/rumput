@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pendidikan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Models\Resident;
 
 class PersonalController extends Controller
 {
@@ -14,43 +15,88 @@ class PersonalController extends Controller
      */
     public function index(Request $request)
     {
-        $response = Http::withoutVerifying()->withToken(env('API_TOKEN'))
-        ->get(env('APP_URL', 'http://rumput.test') . '/api/resident?nik=' . $request->nik);
-        $hasil = $response->json();
-        // dd($hasil);
-        if (isset($hasil['data'])) {
-            $dt = unserialize($hasil['data']);
-            $data = [
-                'nik' => $hasil['nik'],
-                'kk' => $dt['kk'],
-                'name' => $dt['name'],
-                'gender' => $dt['gender'],
-                'gender_nm' => $dt['gender_nm'],
-                'status_kwn' => $dt['status_kwn'],
-                'status_kwn_nm' => $dt['status_kwn_nm'],
-                'kewarganegaraan' => $dt['kewarganegaraan'],
-                'kewarganegaraan_nm' => $dt['kewarganegaraan_nm'],
-                'tempat_lhr' => $dt['tempat_lhr'],
-                'tgl_lhr' =>  $dt['tgl_lhr'],
-                'agama' => $dt['agama'],
-                'agama_nm' => $dt['agama_nm'],
-                'pendidikan' => $dt['pendidikan'],
-                'pendidikan_nm' => $dt['pendidikan_nm'],
-                'pekerjaan' => $dt['pekerjaan'],
-                'pekerjaan_nm' => $dt['pekerjaan_nm'],
-                'provinsi' => $dt['provinsi'],
-                'provinsi_nm' => $dt['provinsi_nm'],
-                'kabko' => $dt['kabko'],
-                'kabko_nm' => $dt['kabko_nm'],
-                'kecamatan' => $dt['kecamatan'],
-                'kecamatan_nm' => $dt['kecamatan_nm'],
-                'kelurahan' => $dt['kelurahan'],
-                'kelurahan_nm' => $dt['kelurahan_nm'],
-                'alamat' => $dt['alamat']
-            ];
-            return response()->json($data, 200);
+        // $response = Http::withoutVerifying()->withToken(env('API_TOKEN'))
+        //     ->get(env('APP_URL', 'http://rumput.test') . '/api/resident?nik=' . $request->nik);
+        // $hasil = $response->json();
+        // // dd($hasil);
+        // if (isset($hasil['data'])) {
+        //     $dt = unserialize($hasil['data']);
+        //     $data = [
+        //         'nik' => $hasil['nik'],
+        //         'kk' => $dt['kk'],
+        //         'name' => $dt['name'],
+        //         'gender' => $dt['gender'],
+        //         'gender_nm' => $dt['gender_nm'],
+        //         'status_kwn' => $dt['status_kwn'],
+        //         'status_kwn_nm' => $dt['status_kwn_nm'],
+        //         'kewarganegaraan' => $dt['kewarganegaraan'],
+        //         'kewarganegaraan_nm' => $dt['kewarganegaraan_nm'],
+        //         'tempat_lhr' => $dt['tempat_lhr'],
+        //         'tgl_lhr' =>  $dt['tgl_lhr'],
+        //         'agama' => $dt['agama'],
+        //         'agama_nm' => $dt['agama_nm'],
+        //         'pendidikan' => $dt['pendidikan'],
+        //         'pendidikan_nm' => $dt['pendidikan_nm'],
+        //         'pekerjaan' => $dt['pekerjaan'],
+        //         'pekerjaan_nm' => $dt['pekerjaan_nm'],
+        //         'provinsi' => $dt['provinsi'],
+        //         'provinsi_nm' => $dt['provinsi_nm'],
+        //         'kabko' => $dt['kabko'],
+        //         'kabko_nm' => $dt['kabko_nm'],
+        //         'kecamatan' => $dt['kecamatan'],
+        //         'kecamatan_nm' => $dt['kecamatan_nm'],
+        //         'kelurahan' => $dt['kelurahan'],
+        //         'kelurahan_nm' => $dt['kelurahan_nm'],
+        //         'rw' => $dt['rw'],
+        //         'rw_nm' => $dt['rw_nm'],
+        //         'rt' => $dt['rt'],
+        //         'rt_nm' => $dt['rt_nm'],
+        //         'alamat' => $dt['alamat']
+        //     ];
+        //     return response()->json($data, 200);
+        // }
+        // return response()->json(['message' => 'Data Not Found!'], 404);
+
+        $resident = Resident::where('nik', $request->nik)->first();
+
+        if (!$resident) {
+            return response()->json(['message' => 'Data Not Found!'], 404);
         }
-        return response()->json(['message' => 'Data Not Found!'], 404);
+
+        $dt = unserialize($resident->data);
+
+        return response()->json([
+            'nik'               => $resident->nik,
+            'kk'                => $resident->kk,
+            'name'              => $dt['name'],
+            'gender'            => $dt['gender'],
+            'gender_nm'         => $dt['gender_nm'],
+            'status_kwn'        => $dt['status_kwn'],
+            'status_kwn_nm'     => $dt['status_kwn_nm'],
+            'kewarganegaraan'   => $dt['kewarganegaraan'],
+            'kewarganegaraan_nm'=> $dt['kewarganegaraan_nm'],
+            'tempat_lhr'        => $dt['tempat_lhr'],
+            'tgl_lhr'           => $dt['tgl_lhr'],
+            'agama'             => $dt['agama'],
+            'agama_nm'          => $dt['agama_nm'],
+            'pendidikan'        => $dt['pendidikan'],
+            'pendidikan_nm'     => $dt['pendidikan_nm'],
+            'pekerjaan'         => $dt['pekerjaan'],
+            'pekerjaan_nm'      => $dt['pekerjaan_nm'],
+            'provinsi'          => $dt['provinsi'],
+            'provinsi_nm'       => $dt['provinsi_nm'],
+            'kabko'             => $dt['kabko'],
+            'kabko_nm'          => $dt['kabko_nm'],
+            'kecamatan'         => $dt['kecamatan'],
+            'kecamatan_nm'      => $dt['kecamatan_nm'],
+            'kelurahan'         => $dt['kelurahan'],
+            'kelurahan_nm'      => $dt['kelurahan_nm'],
+            'rw'                => $dt['rw'],
+            'rw_nm'             => $dt['rw_nm'],
+            'rt'                => $dt['rt'],
+            'rt_nm'             => $dt['rt_nm'],
+            'alamat'            => $dt['alamat'],
+        ], 200);
     }
 
     /**

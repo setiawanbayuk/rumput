@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\GetNoSurat;
+use App\Traits\HasUiStatus;
 use Awobaz\Compoships\Compoships;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,17 +13,17 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class SuratPenghasilan extends Model
 {
-    use HasFactory, LogsActivity, Compoships, GetNoSurat;
+    use HasFactory, LogsActivity, Compoships, GetNoSurat, HasUiStatus;
 
     protected $fillable = [
         'id_kel',
+        'id_rw',
+        'id_rt',
         'kd_jenis_surat',
         'no_urut_surat',
         'tgl_surat',
         'nik',
         'peruntukan',
-        'penghasilan',
-        'terbilang',
         'kepada',
         'kepada_tempat_lhr',
         'kepada_tgl_lhr',
@@ -32,9 +33,13 @@ class SuratPenghasilan extends Model
         'kepada_sekolah',
         'kepada_kelas',
         'kepada_alamat_sekolah',
+        'penghasilan',
+        'terbilang',
         'jenis',
         'variable',
         'status',
+        'rating',
+        'komentar',
         'file',
         'pengantar'
     ];
@@ -62,11 +67,17 @@ class SuratPenghasilan extends Model
         if ($this->status == 1) {
             return ['name' => 'Proses', 'color' => 'blue'];
         } else if ($this->status == 2) {
-            return ['name' => 'Dinaikan', 'color' => 'orange'];
+            return ['name' => 'Dinaikkan ke Sekkel', 'color' => 'orange'];
         } else if ($this->status == 3) {
-            return ['name' => 'Disetujui', 'color' => 'green'];
+            return ['name' => 'Dinaikkan ke Lurah', 'color' => 'orange'];
         } else if ($this->status == 4) {
+            return ['name' => 'Disetujui', 'color' => 'green'];
+        } else if ($this->status == 5) {
+            return ['name' => 'Dinilai', 'color' => '#EFBF04'];
+        } else if ($this->status == 6) {
             return ['name' => 'Ditolak', 'color' => 'red'];
+        } else if ($this->status == 7) {
+            return ['name' => 'Dihapus', 'color' => 'red'];
         } else {
             return ['name' => 'Pengajuan', 'color' => 'black'];
         }

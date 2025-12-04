@@ -9,7 +9,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="{{ asset('assets/favicon.ico') }}" type="image/x-icon">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'E-SUKET') }}</title>
 
     <!-- Fonts -->
     {{-- <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -23,6 +23,22 @@
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     @stack('styles')
+
+    <style>
+        .nav-link {
+            border: 1px solid #fff;
+            border-radius: 8px;
+            padding: .4rem .4rem;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .nav-link.active,
+        .nav-link:hover {
+            border: 1px solid #fff;
+            color: #fff;
+        }
+    </style>
     @routes
 </head>
 
@@ -87,186 +103,303 @@
         </main> --}}
 
         <div class="wrapper">
-            <aside id="sidebar">
-                <div class="d-flex">
-                    <button class="toggle-btn" type="button">
-                        <i class="ri-grid-fill"></i>
-                    </button>
-                    <div class="sidebar-logo">
-                        <a href="{{ url('/') }}">
-                            {{ config('app.name', 'Laravel') }}
-                        </a>
-                    </div>
-                </div>
-                <ul class="sidebar-nav">
-                    {{-- <li class="sidebar-item">
-                        <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
-                            data-bs-target="#warga" aria-expanded="false" aria-controls="warga">
-                            <i class="ri-article-line"></i>
-                            <span>Pengajuan Surat Warga</span>
-                        </a>
-                        <ul id="warga" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
-                            <li class="sidebar-item">
-                                <a href="{{ route('suket.warga') }}" class="sidebar-link">Surat Keterangan</a>
-                            </li>
-                        </ul>
+            <aside id="sidebar" class="expand">
+                {{-- HEADER SIDEBAR --}}
+                {{-- <div class="sidebar-header"></div> --}}
 
-                    </li> --}}
-                    @if (auth()->user()->role_id != 2)
+                <div class="sidebar-body">
+                    <ul class="sidebar-nav">
+                        {{-- BERANDA --}}
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ url('home') }}">
+                                <i class="ri-home-2-line"></i>
+                                <span class="sidebar-text">Beranda</span>
+                            </a>
+                        </li>
+                        {{-- SECTION: MENU LAYANAN --}}
+                        @if (auth()->user()->role_id != 2)
+                            <li class="sidebar-item">
+                                <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
+                                    data-bs-target="#pelayanan" aria-expanded="false" aria-controls="pelayanan">
+                                    <i class="ri-file-edit-line"></i>
+                                    <span class="sidebar-text">Pelayanan Warga</span>
+                                </a>
+
+                                <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse"
+                                    data-bs-parent="#sidebar">
+                                    @if (auth()->user()->role_id == 5 || auth()->user()->role_id == 6)
+                                        {{-- SKTM KHUSUS ROLE 5 & 6 --}}
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('sktm.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/sktm.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKTM">
+                                                    <img src="{{ asset('assets/icons/sktm-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Miskin</span>
+                                            </a>
+                                        </li>
+                                    @else
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('skbn.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/skbn.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKBN">
+                                                    <img src="{{ asset('assets/icons/skbn-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Ket. Belum Menikah</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('skboro.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/skboro.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKBORO">
+                                                    <img src="{{ asset('assets/icons/skboro-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Boro</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('skdom.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/skdom.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKDOM">
+                                                    <img src="{{ asset('assets/icons/skdom-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Domisili</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('skkelahiran.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/skkelahiran.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKKELAHIRAN">
+                                                    <img src="{{ asset('assets/icons/skkelahiran-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Kelahiran</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('skkematian.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/skkematian.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKKEMATIAN">
+                                                    <img src="{{ asset('assets/icons/skkematian-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Kematian</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('sktm.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/sktm.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKTM">
+                                                    <img src="{{ asset('assets/icons/sktm-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Miskin</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('skhsl.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/skhsl.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKHSL">
+                                                    <img src="{{ asset('assets/icons/skhsl-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Penghasilan</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('skusaha.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/skusaha.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SKUASAHA">
+                                                    <img src="{{ asset('assets/icons/skusaha-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan Usaha</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('suket.index') }}" class="sidebar-link">
+                                                <span class="nav-icon-wrapper">
+                                                    <img src="{{ asset('assets/icons/suket.svg') }}"
+                                                        class="nav-icon nav-icon-default" alt="SUKET">
+                                                    <img src="{{ asset('assets/icons/suket-hover.svg') }}"
+                                                        class="nav-icon nav-icon-hover" alt="">
+                                                </span>
+                                                <span class="sidebar-text">Surat Keterangan</span>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
+
+                        {{-- SECTION: PENGATURAN / TOOLS --}}
                         <li class="sidebar-item">
                             <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
-                                data-bs-target="#pelayanan" aria-expanded="false" aria-controls="pelayanan">
-                                <i class="ri-file-edit-line"></i>
-                                <span>Pelayanan Warga</span>
+                                data-bs-target="#tools" aria-expanded="false" aria-controls="tools">
+                                <i class="ri-tools-fill"></i>
+                                <span class="sidebar-text">Tools</span>
                             </a>
-
-                            <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse"
+                            <ul id="tools" class="sidebar-dropdown list-unstyled collapse"
                                 data-bs-parent="#sidebar">
-                                @if (auth()->user()->role_id == 5 || auth()->user()->role_id == 6)
+                                <li class="sidebar-item">
+                                    <a href="{{ url('/profile') }}" class="sidebar-link">
+                                        <i class="ri-profile-fill"></i>
+                                        <span class="sidebar-text">Profil</span>
+                                    </a>
+                                </li>
+                                @if (auth()->user()->role_id != 2)
                                     <li class="sidebar-item">
-                                        <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan
-                                            Miskin</a>
-                                    </li>
-                                @else
-                                    <li class="sidebar-item">
-                                        <a href="{{ route('skbn.index') }}" class="sidebar-link">Surat Ket. Belum
-                                            Menikah</a>
-                                    </li>
-                                    <li class="sidebar-item">
-                                        <a href="{{ route('skboro.index') }}" class="sidebar-link">Surat Keterangan
-                                            Boro</a>
-                                    </li>
-                                    <li class="sidebar-item">
-                                        <a href="{{ route('skdom.index') }}" class="sidebar-link">Surat Keterangan
-                                            Domisili</a>
+                                        <a href="{{ url('/') }}" class="sidebar-link">
+                                            <i class="ri-file-list-line"></i>
+                                            <span class="sidebar-text">Rekap</span>
+                                        </a>
                                     </li>
                                     <li class="sidebar-item">
-                                        <a href="{{ route('skkelahiran.index') }}" class="sidebar-link">Surat
-                                            Keterangan
-                                            Kelahiran</a>
+                                        <a href="{{ url('/') }}" class="sidebar-link">
+                                            <i class="ri-building-fill"></i>
+                                            <span class="sidebar-text">Profil Instansi</span>
+                                        </a>
                                     </li>
                                     <li class="sidebar-item">
-                                        <a href="{{ route('skkematian.index') }}" class="sidebar-link">Surat Keterangan
-                                            Kematian</a>
+                                        <a href="{{ url('/template') }}" class="sidebar-link">
+                                            <i class="ri-file-2-line"></i>
+                                            <span class="sidebar-text">Template Surat</span>
+                                        </a>
                                     </li>
+                                @endif
+                                @if (auth()->user()->role_id == 7)
                                     <li class="sidebar-item">
-                                        <a href="{{ route('sktm.index') }}" class="sidebar-link">Surat Keterangan
-                                            Miskin</a>
-                                    </li>
-                                    <li class="sidebar-item">
-                                        <a href="{{ route('skhsl.index') }}" class="sidebar-link">Surat Keterangan
-                                            Penghasilan</a>
-                                    </li>
-                                    <li class="sidebar-item">
-                                        <a href="{{ route('skusaha.index') }}" class="sidebar-link">Surat Keterangan
-                                            Usaha</a>
-                                    </li>
-                                    <li class="sidebar-item">
-                                        <a href="{{ route('suket.index') }}" class="sidebar-link">Surat Keterangan</a>
+                                        <a href="{{ url('/jenis') }}" class="sidebar-link">
+                                            <i class="ri-folder-2-line"></i>
+                                            <span class="sidebar-text">Jenis Surat</span>
+                                        </a>
                                     </li>
                                 @endif
                             </ul>
                         </li>
-                    @endif
-                    <li class="sidebar-item">
-                        <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
-                            data-bs-target="#tools" aria-expanded="false" aria-controls="tools">
-                            <i class="ri-tools-fill"></i>
-                            <span>Tools</span>
-                        </a>
-                        <ul id="tools" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
-                            <li class="sidebar-item">
-                                <a href="{{ url('/profile') }}" class="sidebar-link">Profil</a>
-                            </li>
-                            @if (auth()->user()->role_id != 2)
-                                <li class="sidebar-item">
-                                    <a href="{{ url('/') }}" class="sidebar-link">Rekap</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ url('/') }}" class="sidebar-link">Profil Instansi</a>
-                                </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ url('/template') }}" class="sidebar-link">Template Surat</a>
-                                </li>
-                            @endif
-                            @if (auth()->user()->role_id == 7)
-                                <li class="sidebar-item">
-                                    <a href="{{ url('/jenis') }}" class="sidebar-link">Jenis Surat</a>
-                                </li>
-                            @endif
 
-                        </ul>
-                    </li>
-                    {{-- <li class="sidebar-item">
-                        <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
-                            data-bs-target="#multi" aria-expanded="false" aria-controls="multi">
-                            <i class="lni lni-layout"></i>
-                            <span>Multi Level</span>
-                        </a>
-                        <ul id="multi" class="sidebar-dropdown list-unstyled collapse" data-bs-parent="#sidebar">
-                            <li class="sidebar-item">
-                                <a href="#" class="sidebar-link collapsed" data-bs-toggle="collapse"
-                                    data-bs-target="#multi-two" aria-expanded="false" aria-controls="multi-two">
-                                    Two Links
-                                </a>
-                                <ul id="multi-two" class="sidebar-dropdown list-unstyled collapse">
-                                    <li class="sidebar-item">
-                                        <a href="#" class="sidebar-link">Link 1</a>
-                                    </li>
-                                    <li class="sidebar-item">
-                                        <a href="#" class="sidebar-link">Link 2</a>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="#" class="sidebar-link">
-                            <i class="lni lni-popup"></i>
-                            <span>Notification</span>
-                        </a>
-                    </li> --}}
-                </ul>
-
-                <li class="sidebar-item">
-                    <a href="{{ route('warga') }}" class="sidebar-link">
-                        <i class="ri-user-shared-fill"></i>
-                        <span>Masuk Sebagai Warga</span>
-                    </a>
-                </li>
+                        <li class="sidebar-item">
+                            <a href="{{ route('warga') }}" class="sidebar-link">
+                                <i class="ri-user-shared-fill"></i>
+                                <span class="sidebar-text">Masuk Sebagai Warga</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {{-- FOOTER SIDEBAR --}}
                 <div class="sidebar-footer">
-                    <a class="sidebar-link" data-bs-toggle="tooltip" data-bs-title="Logout"
-                        href="{{ route('logout') }}"
-                        onclick="event.preventDefault();
-                                     document.getElementById('logout-form').submit();">
+                    <a class="sidebar-link" href="{{ route('logout') }}"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                         <i class="ri-logout-box-line"></i>
-                        <span>
-                            {{ auth()->user()->name }}
-                        </span>
+                        <span class="sidebar-text">{{ auth()->user()->name }}</span>
                     </a>
-
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                         @csrf
                     </form>
                 </div>
             </aside>
-            <main class="main py-4">
-                @yield('content')
-            </main>
+
+            {{-- KONTEN UTAMA (TOPBAR + MAIN) --}}
+            <div class="content-wrapper">
+                {{-- NAVBAR ATAS --}}
+                <header class="topbar shadow-sm">
+                    <div class="topbar-left">
+                        <button class="toggle-btn" type="button">
+                            <i class="ri-menu-line"></i>
+                        </button>
+                        <a href="{{ route('home') }}" class="sidebar-brand">
+                            <img src="{{ asset('assets/esuket-white.png') }}" class="object-fit-contain"
+                                style="height: 20px" alt="">
+                        </a>
+                    </div>
+
+                    <div class="topbar-right">
+                        <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center text-white"
+                            href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
+                            aria-expanded="false">
+                            <i class="ri-user-fill me-2"></i>
+                        </a>
+
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="{{ route('profile') }}">
+                                <i class="ri-user-fill me-2"></i> {{ Auth::user()->name }}
+                            </a>
+                            <a class="dropdown-item" href="{{ route('logout') }}"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="ri-logout-circle-r-line me-2"></i> Logout
+                            </a>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                @csrf</form>
+                        </div>
+                    </div>
+                </header>
+
+                <main class="main py-4" style="background-color: #f9f9f9">
+                    @yield('content')
+                </main>
+            </div>
         </div>
     </div>
     <script>
+        const sidebar = document.querySelector("#sidebar");
         const hamBurger = document.querySelector(".toggle-btn");
 
-        hamBurger.addEventListener("click", function() {
-            document.querySelector("#sidebar").classList.toggle("expand");
+        hamBurger.addEventListener("click", function () {
+            sidebar.classList.toggle("expand");
+
+            const chartContainer = document.getElementById("chartSuratDrill");
+            if (chartContainer) chartContainer.classList.add("animating");
+        });
+
+        sidebar.addEventListener("transitionend", (e) => {
+            if (e.propertyName === "width") {
+
+                // Resize chart setelah sidebar selesai animasi
+                if (window.chartSurat) {
+                    window.chartSurat.reflow();
+                }
+
+                const chartContainer = document.getElementById("chartSuratDrill");
+                if (chartContainer) chartContainer.classList.remove("animating");
+            }
         });
     </script>
 
+
+    <script>
+        document.querySelectorAll("#sidebar .sidebar-item").forEach(item => {
+            item.addEventListener("mouseenter", function() {
+                const rect = this.getBoundingClientRect();
+                this.style.setProperty("--item-top", `${rect.top}px`);
+            });
+        });
+    </script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     @stack('scripts')
+    @stack('modals')
 </body>
 
 </html>

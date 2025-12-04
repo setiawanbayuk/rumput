@@ -5,54 +5,94 @@
 @section('content')
     @push('styles')
         <link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.css" rel="stylesheet">
+        <style>
+            .card input:focus,
+            .card select:focus  {
+                box-shadow: none !important;
+                outline: none !important;
+                border-color: #AEA07A;
+            }
+        </style>
     @endpush
 
-    <div class="container">
-        <h3>{{ $title }}</h3>
-        <div class="d-flex gap-2 mt-3">
-            @if (auth()->user()->role_id == 1)
-                <a class="btn btn-primary" href="{{ route('skdom.add') }}">
-                    <i class="ri-add-fill me-2"></i>
-                    <span>Tambah</span></a>
-            @endif
-            <button class="btn btn-secondary" onclick="reload()">Reload</button>
+    <div class="container-fluid">
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <h3 class="mb-0 fw-bold">{{ $title }}</h3>
+            </div>
+            <div class="col-md-12 d-flex align-items-center justify-content-between">
+                @if (auth()->user()->role_id == 8)
+                    <h6 class="text-muted mb-0">
+                        Daftar pengajuan surat keterangan domisili warga <b>RT {{ $rt }}/RW {{ $rw }}, Kelurahan {{ $kelurahan }}.</b>
+                    </h6>
+                @elseif (auth()->user()->role_id == 1 ||  auth()->user()->role_id == 9)
+                    <h6 class="text-muted mb-0">
+                        Daftar seluruh pengajuan surat keterangan domisili warga <b>Kota Kediri.</b>
+                    </h6>
+                @else
+                    <h6 class="text-muted mb-0">
+                        Daftar pengajuan surat keterangan domisili warga <b>Kelurahan {{ $kelurahan }}.</b>
+                    </h6>
+                @endif
+                <div class="d-flex gap-2">
+                    @if (auth()->user()->role_id == 1 || auth()->user()->role_id == 8 || auth()->user()->role_id == 9)
+                        <a class="btn btn-primary btn-sm shadow-sm" style="border-radius: 6px" href="{{ route('skdom.add') }}">
+                            <i class="ri-add-fill me-2"></i>
+                            <span>Tambah</span>
+                        </a>
+                    @endif
+                    <button class="btn btn-secondary btn-sm shadow-sm" style="border-radius: 6px" onclick="reload()">
+                        <i class="ri-loop-right-fill me-2"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="card card-body mt-3">
-            <div class="table-responsive">
-                <table id="tableSurat" class="table table-hovered" style="width: 100%">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>No Surat</th>
-                            <th>NIK</th>
-                            <th>Tanggal</th>
-                            <th>Peruntukan</th>
-                            <th>Jenis</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                </table>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow-sm rounded-4" style="border-color: #AEA07A">
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table id="tableSurat" class="table table-hover align-middle mb-0" style="width: 100%">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>No Surat</th>
+                                        <th>NIK</th>
+                                        <th>Tanggal</th>
+                                        <th>Peruntukan</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <x-esign></x-esign>
     @push('scripts')
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.js"></script>
+        <script src="{{ asset('assets/js/actions.js') }}"></script>
         <script type="text/javascript">
             $(function() {
                 var table = $('#tableSurat').DataTable({
                     processing: true,
                     serverSide: true,
                     ordering: true,
-                    scrollX: true,
+                    scrollX: false,
+                    autoWidth: false,
                     ajax: "{{ route('skdom.index') }}",
                     columns: [{
-                            data: 'no_urut_surat',
-                            name: 'no_urut_surat'
+                            data: 'DT_RowIndex',
+                            name: 'DT_RowIndex',
+                            orderable: false,
+                            searchable: false
                         },
                         {
                             data: 'no_surat',
@@ -74,24 +114,14 @@
                             name: 'peruntukan'
                         },
                         {
-                            data: 'jenis',
-                            // name: 'jenis'
-                            render: function(data, type) {
-                                var str = data;
-                                str = str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
-                                    return letter.toUpperCase();
-                                });
-                                return `<span>${str}</span> `;
-                            },
-                        },
-                        {
                             data: 'st',
-                            // name: 'st',
                             render: function(data, type) {
-                                return `<span style="color:${data.color}">${data.name}</span>`;
+                                if (!data) return '-';
+                                return `<span class="fw-semibold" style="color:${data.color}">${data.name}</span>`;
                             },
                             orderable: false,
-                            searchable: false
+                            searchable: false,
+                            className: 'dt-status'
                         },
                         {
                             data: 'action',
@@ -105,6 +135,7 @@
                         [0, "desc"]
                     ],
                     pageLength: 10,
+                    responsive: true,
                 });
             });
 
@@ -113,10 +144,10 @@
             }
         </script>
         <script>
-            function handlePreview(e) {
-                window.open("{{ env('APP_URL', 'http://rumput.test') }}" + "/skdom/preview/" + e, 'preview',
-                    'width=600,height=1000');
-            }
+            // function handlePreview(e) {
+            //     window.open("{{ env('APP_URL', 'http://rumput.test') }}" + "/skdom/preview/" + e, 'preview',
+            //         'width=600,height=1000');
+            // }
 
             function handleCetak(e) {
                 $.ajax({
@@ -130,104 +161,153 @@
                 });
             }
 
+            // function handleProses(e) {
+            //     console.log(e);
+            //     let url = "{{ route('skdom.proses', ':id') }}"
+            //     url = url.replace(':id', e);
 
-            function handleTolak(e) {
-                console.log(e);
-                let url = "{{ route('skdom.tolak', ':id') }}"
-                url = url.replace(':id', e);
+            //     $.ajax({
+            //         type: 'POST',
+            //         url: url,
+            //         headers: {
+            //             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            //         },
+            //         success: function(response) {
+            //             Toastify({
+            //                 text: response.message,
+            //                 duration: 3000,
+            //                 close: true,
+            //                 gravity: "top", // `top` or `bottom`
+            //                 position: "center", // `left`, `center` or `right`
+            //                 stopOnFocus: true, // Prevents dismissing of toast on hover
+            //                 style: {
+            //                     background: "rgba(25, 135, 84, 1)",
+            //                 },
+            //             }).showToast();
+            //             $('#tableSurat').DataTable().ajax.reload();
+            //         },
+            //         error: function(xhr) {
+            //             const response = JSON.parse(xhr.responseText);
+            //             // console.log('hey error', response.message);
+            //             Swal.fire({
+            //                 title: 'Ooopppsss...',
+            //                 text: response.message,
+            //                 icon: 'error',
+            //                 confirmButtonText: 'OK'
+            //             });
+            //         }
+            //     });
+            // }
 
-                Swal.fire({
-                    title: 'Apakah Anda Yakin?',
-                    text: "Aapakah yakin akan menolak pengajuan dokumen ini?!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Ya',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.value) {
-                        $.ajax({
-                            type: 'POST',
-                            url: url,
-                            headers: {
-                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                            },
-                            success: function(response) {
-                                Swal.fire({
-                                    title: 'Pengajuan berhasil ditolak!',
-                                    text: response.message,
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
-                                });
-                                $('#tableSurat').DataTable().ajax.reload();
-                            },
-                            error: function(xhr) {
-                                const response = JSON.parse(xhr.responseText);
-                                Swal.fire({
-                                    title: 'Ooopppsss...',
-                                    text: response.message,
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        });
-                    }
-                });
-            }
+            // function handleTolak(e) {
+            //     console.log(e);
+            //     let url = "{{ route('skdom.tolak', ':id') }}"
+            //     url = url.replace(':id', e);
 
-            function handleNaik(e) {
-                console.log(e);
-                let url = "{{ route('skdom.naik', ':id') }}"
-                url = url.replace(':id', e);
+            //     Swal.fire({
+            //         title: 'Apakah Anda Yakin?',
+            //         text: "Aapakah yakin akan menolak pengajuan dokumen ini?!",
+            //         icon: 'warning',
+            //         showCancelButton: true,
+            //         confirmButtonColor: '#3085d6',
+            //         cancelButtonColor: '#d33',
+            //         confirmButtonText: 'Ya',
+            //         cancelButtonText: 'Batal'
+            //     }).then((result) => {
+            //         if (result.value) {
+            //             $.ajax({
+            //                 type: 'POST',
+            //                 url: url,
+            //                 headers: {
+            //                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            //                 },
+            //                 success: function(response) {
+            //                     Swal.fire({
+            //                         title: 'Pengajuan berhasil ditolak!',
+            //                         text: response.message,
+            //                         icon: 'error',
+            //                         confirmButtonText: 'OK'
+            //                     });
+            //                     $('#tableSurat').DataTable().ajax.reload();
+            //                 },
+            //                 error: function(xhr) {
+            //                     const response = JSON.parse(xhr.responseText);
+            //                     Swal.fire({
+            //                         title: 'Ooopppsss...',
+            //                         text: response.message,
+            //                         icon: 'error',
+            //                         confirmButtonText: 'OK'
+            //                     });
+            //                 }
+            //             });
+            //         }
+            //     });
+            // }
 
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(response) {
-                        Toastify({
-                            text: response.message,
-                            duration: 3000,
-                            close: true,
-                            gravity: "top", // `top` or `bottom`
-                            position: "center", // `left`, `center` or `right`
-                            stopOnFocus: true, // Prevents dismissing of toast on hover
-                            style: {
-                                background: "rgba(25, 135, 84, 1)",
-                            },
-                        }).showToast();
-                        $('#tableSurat').DataTable().ajax.reload();
-                    },
-                    error: function(xhr) {
-                        const response = JSON.parse(xhr.responseText);
-                        // console.log('hey error', response.message);
-                        Swal.fire({
-                            title: 'Ooopppsss...',
-                            text: response.message,
-                            icon: 'error',
-                            confirmButtonText: 'OK'
-                        });
-                    }
-                });
-            }
+            // function handleNaik(e) {
+            //     console.log(e);
+            //     let url = "{{ route('skdom.naik', ':id') }}"
+            //     url = url.replace(':id', e);
 
-            $(function() {
-                $('#esignModal').on('show.bs.modal', function(e) {
+            //     $.ajax({
+            //         type: 'POST',
+            //         url: url,
+            //         headers: {
+            //             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            //         },
+            //         success: function(response) {
+            //             Toastify({
+            //                 text: response.message,
+            //                 duration: 3000,
+            //                 close: true,
+            //                 gravity: "top", // `top` or `bottom`
+            //                 position: "center", // `left`, `center` or `right`
+            //                 stopOnFocus: true, // Prevents dismissing of toast on hover
+            //                 style: {
+            //                     background: "rgba(25, 135, 84, 1)",
+            //                 },
+            //             }).showToast();
+            //             $('#tableSurat').DataTable().ajax.reload();
+            //         },
+            //         error: function(xhr) {
+            //             const response = JSON.parse(xhr.responseText);
+            //             // console.log('hey error', response.message);
+            //             Swal.fire({
+            //                 title: 'Ooopppsss...',
+            //                 text: response.message,
+            //                 icon: 'error',
+            //                 confirmButtonText: 'OK'
+            //             });
+            //         }
+            //     });
+            // }
+
+            // script esign tetap
+            $(function () {
+                // Saat modal dibuka → isi hidden field dari tombol pemicu
+                $('#esignModal').on('show.bs.modal', function (e) {
+
                     let btn = $(e.relatedTarget);
                     let id = btn.data('id');
                     let jenis = btn.data('jenis');
-                    let form = $(this).find('form#esignModal');
+                    let no_surat = btn.data('no_surat');
+
                     $(this).find('[name="_id"]').val(id);
                     $(this).find('[name="jenis"]').val(jenis);
-                    $(this).find('.modal-title').text("Tanda Tangan No Surat : " + btn.data('no_surat'));
+                    $(this).find('.modal-title').text("Tanda Tangan No Surat : " + no_surat);
+
+                    $("#btn-ttd").prop("disabled", true);
+                    $("#status").html('');
                 });
 
-                $('#esignModal').on('hidden.bs.modal', function() {
-                    $(this).find('form#esignModal').trigger('reset');
-                })
+                // Saat modal ditutup → reset form
+                $('#esignModal').on('hidden.bs.modal', function () {
+
+                    $('#clientsForm')[0].reset();
+                    $("#status").empty();
+                    $("#btn-ttd").prop("disabled", true);
+                });
+
             });
         </script>
     @endpush

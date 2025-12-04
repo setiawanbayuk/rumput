@@ -1,7 +1,7 @@
 <div id="nomor_surat" nama="nomor_surat">
     <div class="row mb-3">
         <label for="no_surat"
-            class="col-md-3 col-form-label text-md-end">{{ __('No Surat') }}</label>
+            class="col-md-3 col-form-label text-md-start ms-2">{{ __('No Surat') }}</label>
 
         <div class="col-md-2">
             <input id="kd_jenis_surat" type="text"
@@ -28,12 +28,12 @@
             @enderror
         </div>
         <div class="col-md-2">
-            <input id="kd_instansi" type="text"
-                class="form-control @error('kd_instansi') is-invalid @enderror"
-                name="kd_instansi" value="{{ $instansi_kode }}" readonly
-                autocomplete="kd_instansi" autofocus>
+            <input id="id_instansi" type="text"
+                class="form-control @error('id_instansi') is-invalid @enderror"
+                name="id_instansi" value="{{ $instansi_kode }}" readonly
+                autocomplete="id_instansi" autofocus>
 
-            @error('kd_instansi')
+            @error('id_instansi')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
                 </span>
@@ -53,7 +53,7 @@
     </div>
     <div class="row mb-3">
         <label for="tgl_surat"
-            class="col-md-3 col-form-label text-md-end">{{ __('Tgl. Surat') }}</label>
+            class="col-md-3 col-form-label text-md-start ms-2">{{ __('Tgl. Surat') }}</label>
         <div class="col-md-8">
             <input id="tgl_surat" type="date"
                 class="form-control @error('tgl_surat') is-invalid @enderror"

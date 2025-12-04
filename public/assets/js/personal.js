@@ -70,6 +70,18 @@ function checkNIK() {
                     text: response.kelurahan_nm,
                 },
             });
+            $("#rw").select2("trigger", "select", {
+                data: {
+                    id: response.rw,
+                    text: response.rw_nm,
+                },
+            });
+            $("#rt").select2("trigger", "select", {
+                data: {
+                    id: response.rt,
+                    text: response.rt_nm,
+                },
+            });
 
             Toastify({
                 text: "Data ditemukan!",
@@ -95,19 +107,21 @@ function checkNIK() {
         },
     });
 }
-$(document).ready(function () {
+
+$(function () {
     let provinsi_id = "";
     let kabko_id = "";
     let kecamatan_id = "";
+    let rw_id ="";
     $("#gender").select2({
         theme: "bootstrap-5",
         width: $(this).data("width")
             ? $(this).data("width")
             : $(this).hasClass("w-100")
-            ? "100%"
-            : "style",
+                ? "100%"
+                : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("gender.index"),
             dataType: "json",
@@ -123,10 +137,10 @@ $(document).ready(function () {
         width: $(this).data("width")
             ? $(this).data("width")
             : $(this).hasClass("w-100")
-            ? "100%"
-            : "style",
+                ? "100%"
+                : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("pekerjaan.index"),
             dataType: "json",
@@ -152,10 +166,10 @@ $(document).ready(function () {
         width: $(this).data("width")
             ? $(this).data("width")
             : $(this).hasClass("w-100")
-            ? "100%"
-            : "style",
+                ? "100%"
+                : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("pendidikan.index"),
             dataType: "json",
@@ -182,10 +196,10 @@ $(document).ready(function () {
         width: $(this).data("width")
             ? $(this).data("width")
             : $(this).hasClass("w-100")
-            ? "100%"
-            : "style",
+                ? "100%"
+                : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("agama.index"),
             dataType: "json",
@@ -202,10 +216,10 @@ $(document).ready(function () {
         width: $(this).data("width")
             ? $(this).data("width")
             : $(this).hasClass("w-100")
-            ? "100%"
-            : "style",
+                ? "100%"
+                : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("kewarganegaraan.index"),
             dataType: "json",
@@ -222,10 +236,10 @@ $(document).ready(function () {
         width: $(this).data("width")
             ? $(this).data("width")
             : $(this).hasClass("w-100")
-            ? "100%"
-            : "style",
+                ? "100%"
+                : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("status_kwn.index"),
             dataType: "json",
@@ -241,10 +255,10 @@ $(document).ready(function () {
         width: $(this).data("width")
             ? $(this).data("width")
             : $(this).hasClass("w-100")
-            ? "100%"
-            : "style",
+                ? "100%"
+                : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInputLenght: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("provinsi.index"),
             dataType: "json",
@@ -255,17 +269,17 @@ $(document).ready(function () {
             },
         },
     });
-    $("#provinsi").change(function () {
+    $("#provinsi").on("change", function () {
         provinsi_id = $(this).val();
         $("#kabko").select2({
             theme: "bootstrap-5",
             width: $(this).data("width")
                 ? $(this).data("width")
                 : $(this).hasClass("w-100")
-                ? "100%"
-                : "style",
+                    ? "100%"
+                    : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInputLenght: 2,
+            minimumInputLength: 2,
             ajax: {
                 url:
                     window.location.origin + "/api/kabko?kode_provinsi=" + provinsi_id,
@@ -278,17 +292,17 @@ $(document).ready(function () {
             },
         });
     });
-    $("#kabko").change(function () {
+    $("#kabko").on("change", function () {
         kabko_id = $(this).val();
         $("#kecamatan").select2({
             theme: "bootstrap-5",
             width: $(this).data("width")
                 ? $(this).data("width")
                 : $(this).hasClass("w-100")
-                ? "100%"
-                : "style",
+                    ? "100%"
+                    : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInputLenght: 2,
+            minimumInputLength: 2,
             ajax: {
                 url:
                     window.location.origin + "/api/kecamatan?kode_kabkota=" + kabko_id, //route('regional.kecamatan'),
@@ -302,17 +316,17 @@ $(document).ready(function () {
         });
     });
 
-    $("#kecamatan").change(function () {
+    $("#kecamatan").on("change", function () {
         kecamatan_id = $(this).val();
         $("#kelurahan").select2({
             theme: "bootstrap-5",
             width: $(this).data("width")
                 ? $(this).data("width")
                 : $(this).hasClass("w-100")
-                ? "100%"
-                : "style",
+                    ? "100%"
+                    : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInputLenght: 2,
+            minimumInputLength: 2,
             ajax: {
                 url:
                     window.location.origin + "/api/kelurahan?kode_kecamatan=" +
@@ -325,5 +339,99 @@ $(document).ready(function () {
                 },
             },
         });
+    });
+    // KELURAHAN -> RW
+    $("#kelurahan").on("change", function () {
+        kelurahan_id = $(this).val();
+        $("#rw").select2({
+            theme: "bootstrap-5",
+            width: $(this).data("width")
+                ? $(this).data("width")
+                : $(this).hasClass("w-100")
+                    ? "100%"
+                    : "style",
+            placeholder: $(this).data("placeholder"),
+            ajax: {
+                url:
+                    window.location.origin +
+                    "/api/rw?kode_kelurahan=" +
+                    kelurahan_id,
+                dataType: "json",
+                processResults: function (response) {
+                    return {
+                        results: response,
+                    };
+                },
+            },
+        });
+    });
+
+    // RW -> RT
+    $("#rw").on("change", function () {
+        kelurahan_id = $("#kelurahan").val();
+        rw_id = $(this).val();
+        $("#rt").select2({
+            theme: "bootstrap-5",
+            width: $(this).data("width")
+                ? $(this).data("width")
+                : $(this).hasClass("w-100")
+                    ? "100%"
+                    : "style",
+            placeholder: $(this).data("placeholder"),
+            ajax: {
+                url:
+                    window.location.origin +
+                    "/api/rt?kode_kelurahan=" +
+                    kelurahan_id +
+                    "&rw=" +
+                    rw_id,
+                dataType: "json",
+                processResults: function (response) {
+                    return {
+                        results: response,
+                    };
+                },
+            },
+        });
+    });
+
+    // ---------- RESET CHAIN ----------
+    function resetSelect(id) {
+        $(id).empty().trigger("change");
+    }
+
+    // PROVINSI → reset kabko, kecamatan, kelurahan, rw, rt
+    $("#provinsi").on("change", function () {
+        resetSelect("#kabko");
+        resetSelect("#kecamatan");
+        resetSelect("#kelurahan");
+        resetSelect("#rw");
+        resetSelect("#rt");
+    });
+
+    // KAB/KOTA → reset kecamatan, kelurahan, rw, rt
+    $("#kabko").on("change", function () {
+        resetSelect("#kecamatan");
+        resetSelect("#kelurahan");
+        resetSelect("#rw");
+        resetSelect("#rt");
+    });
+
+    // KECAMATAN → reset kelurahan, rw, rt
+    $("#kecamatan").on("change", function () {
+        resetSelect("#kelurahan");
+        resetSelect("#rw");
+        resetSelect("#rt");
+    });
+
+    // KELURAHAN → reset rw, rt
+    $("#kelurahan").on("change", function () {
+        resetSelect("#rw");
+        resetSelect("#rt");
+    });
+
+    // RW → reset rt
+    $("#rw").on("change", function () {
+        resetSelect("#rt");
     });
 });

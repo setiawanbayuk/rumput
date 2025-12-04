@@ -61,16 +61,12 @@ class LoginController extends Controller
 
             if (auth()->user()->role_id == 2) {
                 return redirect()->intended(route('warga'));
-            }
-            else{
+            } else {
                 return redirect()->intended(route('home'));
             }
-
         }
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
+        return back()->with('error', 'Email atau Password anda salah!');
     }
 
     public function sso(Request $request)

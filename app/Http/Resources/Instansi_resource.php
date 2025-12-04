@@ -16,7 +16,7 @@ class Instansi_resource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'text' => $this->nama
+            'text' => $this->nama,
         ];
     }
 }

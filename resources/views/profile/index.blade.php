@@ -1,411 +1,417 @@
-@extends('layouts.warga')
+@extends('layouts.create')
 
 @section('title', 'Profile')
 
 @section('content')
     @push('styles')
         <link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.css" rel="stylesheet">
+        <style>
+            /* kotak foto dengan pola checker transparan */
+            .avatar-frame {
+                width: clamp(180px, 28vw, 280px);
+                aspect-ratio: 1 / 1;
+                background:
+                    conic-gradient(#0000 90deg, rgba(0, 0, 0, .06) 0) 0 0/20px 20px,
+                    conic-gradient(#0000 90deg, rgba(0, 0, 0, .06) 0) 10px 10px/20px 20px,
+                    #f8f9fa;
+                border: 1px solid #AEA07A;
+                /* seirama gold-beige */
+            }
+
+            .btn-ganti {
+                background: white;
+                color: black;
+                border-radius: 8px;
+                box-shadow: 0 0px 8px rgba(0, 0, 0, .2);
+            }
+
+            .btn-ganti:hover {
+                background: #AEA07A;
+                color: white;
+            }
+
+            .select2-container--bootstrap-5 .select2-selection--single {
+                border: 1px solid #AEA07A;
+                border-radius: 8px;
+            }
+        </style>
     @endpush
 
-    <div class="container mt-4">
-        @if (session('status'))
-            <div class="alert alert-success">
-                {{ session('status') }}
-            </div>
-        @endif
-        <div class="card profile-card" style="background-color: rgba(174,160,122,.25)">
-            <div class="card-body">
-                <!-- Judul Profil -->
-                <h2 class="text-center profile-title" style="color: rgb(174,160,122)">PROFIL PENGGUNA</h2>
+    <div class="d-flex align-items-center justify-content-center min-vh-100"
+        style="background: url('{{ asset('assets/profile.png') }}') no-repeat center center; background-size: cover; margin-top: -75px;">
+        <div class="container" style="margin-top: 125px; margin-bottom: 50px;">
+            @if (session('status'))
+                <div class="alert alert-success">
+                    {{ session('status') }}
+                </div>
+            @endif
+            <div class="card profile-card border-0 shadow-sm px-2"
+                style="background-color: rgba(255, 255, 255, .50); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                <div class="card-body">
+                    <!-- Judul Profil -->
+                    <h4 class="text-center profile-title fw-bold py-3" style="letter-spacing: 1px;">
+                        PROFIL PENGGUNA</h4>
 
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title" style="color: rgb(174,160,122)">Data Pribadi</h5>
-                                <form method="POST" action="{{ route('profile.update') }}">
-                                    @csrf
-                                    <div id="pribadi" name="pribadi">
-                                        <div class="row mb-3">
-                                            <label for="nik"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('NIK') }}</label>
-                                            <div class="col-md-8">
-                                                <div class="input-group">
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card shadow-sm p-4 mb-4 rounded-3">
+                                <div class="row g-4 align-items-start py-4">
+
+                                    {{-- KIRI: FOTO + GANTI FOTO --}}
+                                    <div class="col-lg-4">
+                                        <div class="text-center">
+                                            <div
+                                                class="avatar-frame mx-auto rounded-3 d-flex align-items-center justify-content-center overflow-hidden">
+                                                <img id="avatarPreview"
+                                                    src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : asset('assets/default-avatar.png') }}"
+                                                    alt="Foto profil" style="width:100%; height:100%; object-fit:cover;">
+                                            </div>
+
+                                            {{-- input file DIPINDAHKAN ke dalam form (lihat di bawah) --}}
+                                            {{-- Tombol trigger tetap label atau button --}}
+                                            <label for="avatar" class="btn-ganti mt-3 px-4 py-2">Ganti Foto</label>
+                                        </div>
+                                    </div>
+
+                                    {{-- KANAN: FORM DATA PRIBADI --}}
+                                    <div class="col-lg-7">
+                                        <form id="profileForm" method="POST" action="{{ route('profile.update') }}"
+                                            enctype="multipart/form-data">
+                                            @csrf
+
+                                            {{-- TARUH DI SINI (bisa di bagian atas form) --}}
+                                            <input type="file" id="avatar" name="avatar" accept="image/*"
+                                                class="d-none">
+                                            @error('avatar')
+                                                <div class="text-danger small mt-1">{{ $message }}</div>
+                                            @enderror
+
+                                            {{-- NIK --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="nik"
+                                                    class="col-md-4 col-form-label text-start">{{ __('NIK') }}</label>
+                                                <div class="col-md-8">
                                                     <input type="number"
-                                                        class="form-control @error('nik') is-invalid @enderror"
-                                                        id="nik" name="nik" placeholder="Masukkan 16 digit NIK"
-                                                        value="{{ Auth::user()->nik, old('nik') }}" aria-label="NIK"
-                                                        autofocus>
-
+                                                        class="form-control  @error('nik') is-invalid @enderror "
+                                                        style="border: 1px solid #AEA07A" id="nik" name="nik"
+                                                        placeholder="Masukkan 16 digit NIK"
+                                                        value="{{ old('nik', Auth::user()->nik) }}" aria-label="NIK"
+                                                        autofocus readonly>
                                                     @error('nik')
-                                                        <span class="invalid-feedback" role="alert">
-                                                            <strong>{{ $message }}</strong>
-                                                        </span>
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
                                                     @enderror
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="kk"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('No. KK') }}</label>
 
-                                            <div class="col-md-8">
-                                                <input id="kk" type="number"
-                                                    class="form-control @error('kk') is-invalid @enderror" name="kk"
-                                                    value="{{ isset($penduduk['kk']) ? $penduduk['kk'] : '', old('kk') }}"
-                                                    autocomplete="kk" autofocus>
-
-                                                @error('kk')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="name"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Nama') }}</label>
-
-                                            <div class="col-md-8">
-                                                <input id="name" type="text"
-                                                    class="form-control @error('name') is-invalid @enderror" name="name"
-                                                    value="{{ isset($penduduk['name']) ? $penduduk['name'] : '', old('name') }}"
-                                                    autocomplete="name" autofocus>
-
-                                                @error('name')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="gender"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Jenis Kelamin') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('gender') is-invalid @enderror"
-                                                    id="gender" name="gender" data-placeholder="Jenis Kelamin">
-                                                </select>
-                                                @error('gender')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="status_kwn"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Status Perkawinan') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('status_kwn') is-invalid @enderror"
-                                                    id="status_kwn" name="status_kwn" data-placeholder="Status Perkawinan">
-                                                </select>
-                                                @error('status_kwn')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="kewarganegaraan"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Kewarganegaraan') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('kewarganegaraan') is-invalid @enderror"
-                                                    id="kewarganegaraan" name="kewarganegaraan"
-                                                    data-placeholder="Kewarganegaraan">
-                                                </select>
-                                                @error('kewarganegaraan')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="ttl"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Tempat/Tgl. Lahir') }}</label>
-
-                                            <div class="col-md-4">
-                                                <input id="tempat_lhr" type="text"
-                                                    class="form-control @error('tempat_lhr') is-invalid @enderror"
-                                                    name="tempat_lhr"
-                                                    value="{{ isset($penduduk['tempat_lhr']) ? $penduduk['tempat_lhr'] : '', old('tempat_lhr') }}"
-                                                    autocomplete="tempat_lhr" autofocus>
-
-                                                @error('tempat_lhr')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                            <div class="col-md-4">
-                                                <input id="tgl_lhr" type="date"
-                                                    class="form-control @error('tgl_lhr') is-invalid @enderror"
-                                                    name="tgl_lhr"
-                                                    value="{{ isset($penduduk['tgl_lhr']) ? $penduduk['tgl_lhr'] : '', old('tgl_lhr') }}"
-                                                    autocomplete="tgl_lhr" autofocus>
-
-                                                @error('tgl_lhr')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="agama"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Agama') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('agama') is-invalid @enderror"
-                                                    id="agama" name="agama" data-placeholder="Agama">
-                                                </select>
-                                                @error('agama')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="pendidikan"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Pendidikan Terakhir') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('pendidikan') is-invalid @enderror"
-                                                    id="pendidikan" name="pendidikan"
-                                                    data-placeholder="Pendidikan Terakhir">
-                                                </select>
-                                                @error('pendidikan')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="pekerjaan"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Pekerjaan') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('pekerjaan') is-invalid @enderror"
-                                                    id="pekerjaan" name="pekerjaan" data-placeholder="Pekerjaan">
-                                                </select>
-                                                @error('pekerjaan')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="provinsi"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Provinsi') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('provinsi') is-invalid @enderror"
-                                                    id="provinsi" name="provinsi" data-placeholder="Provinsi">
-                                                </select>
-                                                @error('provinsi')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
-                                            <label for="kabko"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Kabupaten/Kota') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('kabko') is-invalid @enderror"
-                                                    id="kabko" name="kabko" data-placeholder="Kabupaten/Kota">
-                                                </select>
-                                                @error('kabko')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="kecamatan"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Kecamatan') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('kecamatan') is-invalid @enderror"
-                                                    id="kecamatan" name="kecamatan" data-placeholder="Kecamatan">
-                                                </select>
-                                                @error('kecamatan')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="kelurahan"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Kelurahan') }}</label>
-
-                                            <div class="col-md-8">
-                                                <select class="form-control @error('kelurahan') is-invalid @enderror"
-                                                    id="kelurahan" name="kelurahan" data-placeholder="Kelurahan">
-                                                </select>
-                                                @error('kelurahan')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <div class="row mb-3">
-                                            <label for="alamat"
-                                                class="col-md-3 col-form-label text-md-end">{{ __('Alamat') }}</label>
-
-                                            <div class="col-md-8">
-                                                <textarea class="form-control @error('alamat') is-invalid @enderror" id="alamat" name="alamat"
-                                                    autocomplete="alamat" autofocus>{{ isset($penduduk['alamat']) ? $penduduk['alamat'] : '', old('alamat') }}</textarea>
-                                                @error('alamat')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="text-start">
-                                        <button type="submit" class="btn text-white mb-3 py-2 w-50"
-                                            style="background: linear-gradient(to right, #c19a6b, #b08d57); font-size: 14px; border-radius: 6px;">
-                                            Update Data Pribadi
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Kolom Formulir Profil -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title" style="color: rgb(174,160,122)">Akun</h5>
-                                <form method="POST" action="{{ route('profile.akun', Auth::user()->id) }}">
-                                    @csrf
-                                    <div class="mb-3">
-                                        <div class="input-group has-validation">
-                                            <div class="form-floating @error('password') is-invalid @enderror">
-                                                <input type="password" name="password"
-                                                    class="form-control border-end-0 @error('password') is-invalid @enderror"
-                                                    placeholder="">
-                                                <label>New Password <span class="text-danger">*</span></label>
-
-                                            </div>
-                                            <span class="input-group-text border-start-0 cursor-pointer bg-transparent"
-                                                onclick="toggleSecureInput('password', this)">
-                                                <i class="ri-eye-fill text-secondary"></i>
-                                            </span>
-                                            @error('password')
-                                                <div class="invalid-feedback">
-                                                    {{ $message }}
+                                            {{-- KK --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="kk"
+                                                    class="col-md-4 col-form-label text-start">{{ __('No. KK') }}</label>
+                                                <div class="col-md-8">
+                                                    <input id="kk" type="number"
+                                                        class="form-control @error('kk') is-invalid @enderror"
+                                                        style="border: 1px solid #AEA07A" name="kk"
+                                                        value="{{ old('kk', $penduduk['kk'] ?? '') }}" autocomplete="kk">
+                                                    @error('kk')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
                                                 </div>
-                                            @enderror
-                                        </div>
-
-                                        <small class="password-rules">
-                                            • Panjang minimal 8 karakter <br>
-                                            • Harus mengandung huruf besar & kecil (A-a) <br>
-                                            • Harus menyertakan angka (1,2,3, dst.) <br>
-                                            • Harus menyertakan simbol (!@#$%^&*, dst.)
-                                        </small>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <div class="input-group has-validation">
-                                            <div class="form-floating">
-                                                <input type="password" name="password_confirmation"
-                                                    class="form-control border-end-0" placeholder="">
-                                                <label>Confirm new Password <span class="text-danger">*</span></label>
                                             </div>
-                                            <span class="input-group-text border-start-0 cursor-pointer bg-transparent"
-                                                onclick="toggleSecureInput('password_confirmation', this)">
-                                                <i class="ri-eye-fill text-secondary"></i>
-                                            </span>
-                                        </div>
 
-                                    </div>
+                                            {{-- Nama --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="name"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Nama') }}</label>
+                                                <div class="col-md-8">
+                                                    <input id="name" type="text"
+                                                        class="form-control @error('name') is-invalid @enderror"
+                                                        style="border: 1px solid #AEA07A" name="name"
+                                                        value="{{ old('name', $penduduk['name'] ?? '') }}"
+                                                        autocomplete="name">
+                                                    @error('name')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
 
-                                    <div class="text-start">
-                                        <button type="submit" class="btn text-white mb-3 py-2 w-50"
-                                            style="background: linear-gradient(to right, #c19a6b, #b08d57); font-size: 14px; border-radius: 6px;">
-                                            Update Password
-                                        </button>
-                                        {{-- <style>
-                                            .btn-icon {
-                                                background: none;
-                                                border: none;
-                                                cursor: pointer;
-                                                padding: 5px;
-                                                transition: transform 0.2s ease-in-out;
-                                            }
+                                            {{-- Jenis Kelamin --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="gender"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Jenis Kelamin') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('gender') is-invalid @enderror"
+                                                        id="gender" name="gender"
+                                                        data-placeholder="Jenis Kelamin"></select>
+                                                    @error('gender')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
 
-                                            .btn-icon:hover {
-                                                transform: scale(1.1);
-                                            }
+                                            {{-- Status Perkawinan --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="status_kwn"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Status Perkawinan') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('status_kwn') is-invalid @enderror"
+                                                        id="status_kwn" name="status_kwn"
+                                                        data-placeholder="Status Perkawinan"></select>
+                                                    @error('status_kwn')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
 
-                                            .icon-size {
-                                                width: 150px;
-                                                /* Sesuaikan ukuran ikon */
-                                                height: auto;
-                                            }
-                                        </style> --}}
+                                            {{-- Kewarganegaraan --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="kewarganegaraan"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Kewarganegaraan') }}</label>
+                                                <div class="col-md-8">
+                                                    <select
+                                                        class="form-control @error('kewarganegaraan') is-invalid @enderror"
+                                                        id="kewarganegaraan" name="kewarganegaraan"
+                                                        data-placeholder="Kewarganegaraan"></select>
+                                                    @error('kewarganegaraan')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
 
-                                        <!-- Form Logout dengan Ikon dan Teks -->
-                                        {{-- <form method="POST" action="{{ route('logout') }}"
-                                            class="d-flex justify-content-end mt-2">
-                                            @csrf
-                                            <button type="submit" class="btn btn-light d-flex align-items-center gap-2">
-                                                <img src="{{ asset('images/logout.png') }}" alt="Logout"
-                                                    style="width: 40px; height: 40px;">
-                                                <span class="text-danger fw-bold">Log out</span>
+                                            {{-- Tempat/Tgl. Lahir --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="ttl"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Tempat/Tgl. Lahir') }}</label>
+                                                <div class="col-md-4">
+                                                    <input id="tempat_lhr" type="text"
+                                                        class="form-control @error('tempat_lhr') is-invalid @enderror"
+                                                        style="border: 1px solid #AEA07A" name="tempat_lhr"
+                                                        value="{{ old('tempat_lhr', $penduduk['tempat_lhr'] ?? '') }}"
+                                                        autocomplete="tempat_lhr">
+                                                    @error('tempat_lhr')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-md-4 mt-3 mt-md-0">
+                                                    <input id="tgl_lhr" type="date"
+                                                        class="form-control @error('tgl_lhr') is-invalid @enderror"
+                                                        style="border: 1px solid #AEA07A" name="tgl_lhr"
+                                                        value="{{ old('tgl_lhr', $penduduk['tgl_lhr'] ?? '') }}"
+                                                        autocomplete="tgl_lhr">
+                                                    @error('tgl_lhr')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Agama --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="agama"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Agama') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('agama') is-invalid @enderror"
+                                                        id="agama" name="agama" data-placeholder="Agama"></select>
+                                                    @error('agama')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Pendidikan --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="pendidikan"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Pendidikan Terakhir') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('pendidikan') is-invalid @enderror"
+                                                        id="pendidikan" name="pendidikan"
+                                                        data-placeholder="Pendidikan Terakhir"></select>
+                                                    @error('pendidikan')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Pekerjaan --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="pekerjaan"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Pekerjaan') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('pekerjaan') is-invalid @enderror"
+                                                        id="pekerjaan" name="pekerjaan"
+                                                        data-placeholder="Pekerjaan"></select>
+                                                    @error('pekerjaan')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Provinsi --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="provinsi"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Provinsi') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('provinsi') is-invalid @enderror"
+                                                        id="provinsi" name="provinsi"
+                                                        data-placeholder="Provinsi"></select>
+                                                    @error('provinsi')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Kabupaten/Kota --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="kabko"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Kabupaten/Kota') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('kabko') is-invalid @enderror"
+                                                        id="kabko" name="kabko"
+                                                        data-placeholder="Kabupaten/Kota"></select>
+                                                    @error('kabko')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Kecamatan --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="kecamatan"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Kecamatan') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('kecamatan') is-invalid @enderror"
+                                                        id="kecamatan" name="kecamatan"
+                                                        data-placeholder="Kecamatan"></select>
+                                                    @error('kecamatan')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Kelurahan --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="kelurahan"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Kelurahan') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('kelurahan') is-invalid @enderror"
+                                                        id="kelurahan" name="kelurahan"
+                                                        data-placeholder="Kelurahan"></select>
+                                                    @error('kelurahan')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- RW --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="rw"
+                                                    class="col-md-4 col-form-label text-start">{{ __('RW') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('rw') is-invalid @enderror"
+                                                        id="rw" name="rw"
+                                                        data-placeholder="Pilih RW"></select>
+                                                    @error('rw')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- RT --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="rt"
+                                                    class="col-md-4 col-form-label text-start">{{ __('RT') }}</label>
+                                                <div class="col-md-8">
+                                                    <select class="form-control @error('rt') is-invalid @enderror"
+                                                        id="rt" name="rt"
+                                                        data-placeholder="Pilih RT"></select>
+                                                    @error('rt')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- Alamat --}}
+                                            <div class="row mb-3 justify-content-end">
+                                                <label for="alamat"
+                                                    class="col-md-4 col-form-label text-start">{{ __('Alamat') }}</label>
+                                                <div class="col-md-8 mb-4">
+                                                    <textarea class="form-control @error('alamat') is-invalid @enderror" style="border: 1px solid #AEA07A"
+                                                        id="alamat" name="alamat" autocomplete="alamat">{{ old('alamat', $penduduk['alamat'] ?? '') }}</textarea>
+                                                    @error('alamat')
+                                                        <span class="invalid-feedback"
+                                                            role="alert"><strong>{{ $message }}</strong></span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+
+                                            {{-- tombol submit disembunyikan agar Enter tetap bekerja walau tombol utama di luar --}}
+                                            <button type="submit" class="d-none"></button>
+                                        </form>
+
+                                        {{-- AKSI BAWAH KANAN: EDIT & SIMPAN --}}
+                                        <div class="d-flex justify-content-end gap-4">
+                                            <button type="button" class="btn text-white py-2 px-4"
+                                                style="background: #AEA07A; border-radius: 8px;" data-bs-toggle="modal"
+                                                data-bs-target="#modalPassword">
+                                                <i class="ri-edit-line me-1"></i>Ubah Password
                                             </button>
-                                        </form> --}}
+                                            <button type="submit" form="profileForm" class="btn text-white py-2 px-4"
+                                                style="background: #7896B2; border-radius: 8px;">
+                                                <i class="ri-save-3-line me-1"></i> Simpan
+                                            </button>
+                                        </div>
                                     </div>
-                                </form>
+
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
+                </div>
             </div>
         </div>
     </div>
 
     @push('scripts')
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script type="text/javascript">
             $(document).ready(function() {
                 let provinsi_id = "";
                 let kabko_id = "";
                 let kecamatan_id = "";
+                let rw_id ="";
                 $("#gender").select2({
                     theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
+                    width: $(this).data("width")
+                        ? $(this).data("width")
+                        : $(this).hasClass("w-100")
+                            ? "100%"
+                            : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
+                    minimumInputLength: 2,
                     ajax: {
                         url: route("gender.index"),
                         dataType: "json",
-                        processResults: function(response) {
+                        processResults: function (response) {
                             return {
                                 results: response,
                             };
@@ -414,11 +420,13 @@
                 });
                 $("#pekerjaan").select2({
                     theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
+                    width: $(this).data("width")
+                        ? $(this).data("width")
+                        : $(this).hasClass("w-100")
+                            ? "100%"
+                            : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
+                    minimumInputLength: 2,
                     ajax: {
                         url: route("pekerjaan.index"),
                         dataType: "json",
@@ -429,7 +437,7 @@
                             };
                             return query;
                         },
-                        processResults: function(response) {
+                        processResults: function (response) {
                             return {
                                 results: response,
                                 pagination: {
@@ -441,11 +449,13 @@
                 });
                 $("#pendidikan").select2({
                     theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
+                    width: $(this).data("width")
+                        ? $(this).data("width")
+                        : $(this).hasClass("w-100")
+                            ? "100%"
+                            : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
+                    minimumInputLength: 2,
                     ajax: {
                         url: route("pendidikan.index"),
                         dataType: "json",
@@ -456,7 +466,7 @@
                             };
                             return query;
                         },
-                        processResults: function(response) {
+                        processResults: function (response) {
                             console.log("bawah");
                             return {
                                 results: response,
@@ -469,15 +479,17 @@
                 });
                 $("#agama").select2({
                     theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
+                    width: $(this).data("width")
+                        ? $(this).data("width")
+                        : $(this).hasClass("w-100")
+                            ? "100%"
+                            : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
+                    minimumInputLength: 2,
                     ajax: {
                         url: route("agama.index"),
                         dataType: "json",
-                        processResults: function(response) {
+                        processResults: function (response) {
                             return {
                                 results: response,
                             };
@@ -487,15 +499,17 @@
 
                 $("#kewarganegaraan").select2({
                     theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
+                    width: $(this).data("width")
+                        ? $(this).data("width")
+                        : $(this).hasClass("w-100")
+                            ? "100%"
+                            : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
+                    minimumInputLength: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
-                        processResults: function(response) {
+                        processResults: function (response) {
                             return {
                                 results: response,
                             };
@@ -505,15 +519,17 @@
 
                 $("#status_kwn").select2({
                     theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
+                    width: $(this).data("width")
+                        ? $(this).data("width")
+                        : $(this).hasClass("w-100")
+                            ? "100%"
+                            : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
+                    minimumInputLength: 2,
                     ajax: {
                         url: route("status_kwn.index"),
                         dataType: "json",
-                        processResults: function(response) {
+                        processResults: function (response) {
                             return {
                                 results: response,
                             };
@@ -522,34 +538,39 @@
                 });
                 $("#provinsi").select2({
                     theme: "bootstrap-5",
-                    width: $(this).data("width") ?
-                        $(this).data("width") : $(this).hasClass("w-100") ?
-                        "100%" : "style",
+                    width: $(this).data("width")
+                        ? $(this).data("width")
+                        : $(this).hasClass("w-100")
+                            ? "100%"
+                            : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
+                    minimumInputLength: 2,
                     ajax: {
                         url: route("provinsi.index"),
                         dataType: "json",
-                        processResults: function(response) {
+                        processResults: function (response) {
                             return {
                                 results: response,
                             };
                         },
                     },
                 });
-                $("#provinsi").change(function() {
+                $("#provinsi").on("change", function () {
                     provinsi_id = $(this).val();
                     $("#kabko").select2({
                         theme: "bootstrap-5",
-                        width: $(this).data("width") ?
-                            $(this).data("width") : $(this).hasClass("w-100") ?
-                            "100%" : "style",
+                        width: $(this).data("width")
+                            ? $(this).data("width")
+                            : $(this).hasClass("w-100")
+                                ? "100%"
+                                : "style",
                         placeholder: $(this).data("placeholder"),
-                        minimumInputLenght: 2,
+                        minimumInputLength: 2,
                         ajax: {
-                            url: window.location.origin + "/api/kabko?kode_provinsi=" + provinsi_id,
+                            url:
+                                window.location.origin + "/api/kabko?kode_provinsi=" + provinsi_id,
                             dataType: "json",
-                            processResults: function(response) {
+                            processResults: function (response) {
                                 return {
                                     results: response,
                                 };
@@ -557,20 +578,22 @@
                         },
                     });
                 });
-                $("#kabko").change(function() {
+                $("#kabko").on("change", function () {
                     kabko_id = $(this).val();
                     $("#kecamatan").select2({
                         theme: "bootstrap-5",
-                        width: $(this).data("width") ?
-                            $(this).data("width") : $(this).hasClass("w-100") ?
-                            "100%" : "style",
+                        width: $(this).data("width")
+                            ? $(this).data("width")
+                            : $(this).hasClass("w-100")
+                                ? "100%"
+                                : "style",
                         placeholder: $(this).data("placeholder"),
-                        minimumInputLenght: 2,
+                        minimumInputLength: 2,
                         ajax: {
-                            url: window.location.origin + "/api/kecamatan?kode_kabkota=" +
-                                kabko_id, //route('regional.kecamatan'),
+                            url:
+                                window.location.origin + "/api/kecamatan?kode_kabkota=" + kabko_id, //route('regional.kecamatan'),
                             dataType: "json",
-                            processResults: function(response) {
+                            processResults: function (response) {
                                 return {
                                     results: response,
                                 };
@@ -579,26 +602,123 @@
                     });
                 });
 
-                $("#kecamatan").change(function() {
+                $("#kecamatan").on("change", function () {
                     kecamatan_id = $(this).val();
                     $("#kelurahan").select2({
                         theme: "bootstrap-5",
-                        width: $(this).data("width") ?
-                            $(this).data("width") : $(this).hasClass("w-100") ?
-                            "100%" : "style",
+                        width: $(this).data("width")
+                            ? $(this).data("width")
+                            : $(this).hasClass("w-100")
+                                ? "100%"
+                                : "style",
                         placeholder: $(this).data("placeholder"),
-                        minimumInputLenght: 2,
+                        minimumInputLength: 2,
                         ajax: {
-                            url: window.location.origin + "/api/kelurahan?kode_kecamatan=" +
+                            url:
+                                window.location.origin + "/api/kelurahan?kode_kecamatan=" +
                                 kecamatan_id, //route('regional.kelurahan'),
                             dataType: "json",
-                            processResults: function(response) {
+                            processResults: function (response) {
                                 return {
                                     results: response,
                                 };
                             },
                         },
                     });
+                });
+                // KELURAHAN -> RW
+                $("#kelurahan").on("change", function () {
+                    kelurahan_id = $(this).val();
+                    $("#rw").select2({
+                        theme: "bootstrap-5",
+                        width: $(this).data("width")
+                            ? $(this).data("width")
+                            : $(this).hasClass("w-100")
+                                ? "100%"
+                                : "style",
+                        placeholder: $(this).data("placeholder"),
+                        ajax: {
+                            url:
+                                window.location.origin +
+                                "/api/rw?kode_kelurahan=" +
+                                kelurahan_id,
+                            dataType: "json",
+                            processResults: function (response) {
+                                return {
+                                    results: response,
+                                };
+                            },
+                        },
+                    });
+                });
+
+                // RW -> RT
+                $("#rw").on("change", function () {
+                    kelurahan_id = $("#kelurahan").val();
+                    rw_id = $(this).val();
+                    $("#rt").select2({
+                        theme: "bootstrap-5",
+                        width: $(this).data("width")
+                            ? $(this).data("width")
+                            : $(this).hasClass("w-100")
+                                ? "100%"
+                                : "style",
+                        placeholder: $(this).data("placeholder"),
+                        ajax: {
+                            url:
+                                window.location.origin +
+                                "/api/rt?kode_kelurahan=" +
+                                kelurahan_id +
+                                "&rw=" +
+                                rw_id,
+                            dataType: "json",
+                            processResults: function (response) {
+                                return {
+                                    results: response,
+                                };
+                            },
+                        },
+                    });
+                });
+
+                // ---------- RESET CHAIN ----------
+                function resetSelect(id) {
+                    $(id).empty().trigger("change");
+                }
+
+                // PROVINSI → reset kabko, kecamatan, kelurahan, rw, rt
+                $("#provinsi").on("change", function () {
+                    resetSelect("#kabko");
+                    resetSelect("#kecamatan");
+                    resetSelect("#kelurahan");
+                    resetSelect("#rw");
+                    resetSelect("#rt");
+                });
+
+                // KAB/KOTA → reset kecamatan, kelurahan, rw, rt
+                $("#kabko").on("change", function () {
+                    resetSelect("#kecamatan");
+                    resetSelect("#kelurahan");
+                    resetSelect("#rw");
+                    resetSelect("#rt");
+                });
+
+                // KECAMATAN → reset kelurahan, rw, rt
+                $("#kecamatan").on("change", function () {
+                    resetSelect("#kelurahan");
+                    resetSelect("#rw");
+                    resetSelect("#rt");
+                });
+
+                // KELURAHAN → reset rw, rt
+                $("#kelurahan").on("change", function () {
+                    resetSelect("#rw");
+                    resetSelect("#rt");
+                });
+
+                // RW → reset rt
+                $("#rw").on("change", function () {
+                    resetSelect("#rt");
                 });
 
                 $("#gender").select2("trigger", "select", {
@@ -661,6 +781,19 @@
                         text: '{!! isset($penduduk['kelurahan_nm']) ? $penduduk['kelurahan_nm'] : '' !!}',
                     },
                 });
+                $("#rw").select2("trigger", "select", {
+                    data: {
+                        id: '{!! isset($penduduk['rw']) ? $penduduk['rw'] : '' !!}',
+                        text: '{!! isset($penduduk['rw_nm']) ? $penduduk['rw_nm'] : '' !!}',
+                    },
+                });
+                $("#rt").select2("trigger", "select", {
+                    data: {
+                        id: '{!! isset($penduduk['rt']) ? $penduduk['rt'] : '' !!}',
+                        text: '{!! isset($penduduk['rt_nm']) ? $penduduk['rt_nm'] : '' !!}',
+                    },
+                });
+
             });
             const toggleSecureInput = (fieldName, e) => {
                 const type = $(`[name="${fieldName}"]`).attr('type');
@@ -674,5 +807,37 @@
                 }
             }
         </script>
+        <script>
+            // Preview avatar saat file dipilih
+            document.addEventListener('DOMContentLoaded', function() {
+                const input = document.getElementById('avatar');
+                const preview = document.getElementById('avatarPreview');
+                if (!input || !preview) return;
+
+                input.addEventListener('change', function() {
+                    const file = this.files && this.files[0];
+                    if (!file) return;
+
+                    // Validasi cepat di sisi client (opsional)
+                    if (!file.type.match(/^image\//)) {
+                        alert('File harus berupa gambar.');
+                        this.value = '';
+                        return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) { // 2MB
+                        alert('Ukuran gambar maksimal 2MB.');
+                        this.value = '';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        preview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+        </script>
     @endpush
+    @include('profile.edit-password')
 @endsection

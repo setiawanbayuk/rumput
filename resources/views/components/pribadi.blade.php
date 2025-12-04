@@ -1,12 +1,12 @@
 <div id="pribadi" name="pribadi">
     <div class="row mb-3">
-        <label for="nik" class="col-md-3 col-form-label text-md-end">{{ __('NIK') }}</label>
+        <label for="nik" class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
         <div class="col-md-8">
             <div class="input-group">
-                <input type="number" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik"
+                <input type="text" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik"
                     placeholder="Masukkan 16 digit NIK" aria-label="NIK" aria-describedby="basic-addon2">
-                <button type="button" class="input-group-text btn btn-subtle-primary"
-                    onclick="checkNIK()">CARI</button>
+                {{-- <button type="button" class="input-group-text btn btn-subtle-primary"
+                    onclick="checkNIK()">CARI</button> --}}
 
                 @error('nik')
                     <span class="invalid-feedback" role="alert">
@@ -17,10 +17,10 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="kk" class="col-md-3 col-form-label text-md-end">{{ __('No. KK') }}</label>
+        <label for="kk" class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK') }}</label>
 
         <div class="col-md-8">
-            <input id="kk" type="number" class="form-control @error('kk') is-invalid @enderror" name="kk"
+            <input id="kk" type="text" class="form-control @error('kk') is-invalid @enderror" name="kk"
                 value="{{ old('kk') }}" autocomplete="kk" autofocus>
 
             @error('kk')
@@ -31,7 +31,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="name" class="col-md-3 col-form-label text-md-end">{{ __('Nama') }}</label>
+        <label for="name" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama') }}</label>
 
         <div class="col-md-8">
             <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name"
@@ -45,7 +45,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="gender" class="col-md-3 col-form-label text-md-end">{{ __('Jenis Kelamin') }}</label>
+        <label for="gender" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Jenis Kelamin') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('gender') is-invalid @enderror" id="gender" name="gender"
@@ -59,7 +59,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="status_kwn" class="col-md-3 col-form-label text-md-end">{{ __('Status Perkawinan') }}</label>
+        <label for="status_kwn" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Status Perkawinan') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('status_kwn') is-invalid @enderror" id="status_kwn" name="status_kwn"
@@ -73,7 +73,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="kewarganegaraan" class="col-md-3 col-form-label text-md-end">{{ __('Kewarganegaraan') }}</label>
+        <label for="kewarganegaraan" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('kewarganegaraan') is-invalid @enderror" id="kewarganegaraan"
@@ -87,7 +87,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="ttl" class="col-md-3 col-form-label text-md-end">{{ __('Tempat/Tgl. Lahir') }}</label>
+        <label for="ttl" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Tempat/Tgl. Lahir') }}</label>
 
         <div class="col-md-5">
             <input id="tempat_lhr" type="text" class="form-control @error('tempat_lhr') is-invalid @enderror"
@@ -111,7 +111,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="agama" class="col-md-3 col-form-label text-md-end">{{ __('Agama') }}</label>
+        <label for="agama" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Agama') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('agama') is-invalid @enderror" id="agama" name="agama"
@@ -125,7 +125,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="pendidikan" class="col-md-3 col-form-label text-md-end">{{ __('Pendidikan Terakhir') }}</label>
+        <label for="pendidikan" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Pendidikan Terakhir') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('pendidikan') is-invalid @enderror" id="pendidikan" name="pendidikan"
@@ -139,7 +139,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="pekerjaan" class="col-md-3 col-form-label text-md-end">{{ __('Pekerjaan') }}</label>
+        <label for="pekerjaan" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Pekerjaan') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('pekerjaan') is-invalid @enderror" id="pekerjaan" name="pekerjaan"
@@ -154,7 +154,7 @@
     </div>
 
     <div class="row mb-3">
-        <label for="provinsi" class="col-md-3 col-form-label text-md-end">{{ __('Provinsi') }}</label>
+        <label for="provinsi" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Provinsi') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('provinsi') is-invalid @enderror" id="provinsi" name="provinsi"
@@ -169,7 +169,7 @@
     </div>
 
     <div class="row mb-3">
-        <label for="kabko" class="col-md-3 col-form-label text-md-end">{{ __('Kabupaten/Kota') }}</label>
+        <label for="kabko" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kabupaten/Kota') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('kabko') is-invalid @enderror" id="kabko" name="kabko"
@@ -183,7 +183,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="kecamatan" class="col-md-3 col-form-label text-md-end">{{ __('Kecamatan') }}</label>
+        <label for="kecamatan" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kecamatan') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('kecamatan') is-invalid @enderror" id="kecamatan" name="kecamatan"
@@ -197,7 +197,7 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="kelurahan" class="col-md-3 col-form-label text-md-end">{{ __('Kelurahan') }}</label>
+        <label for="kelurahan" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kelurahan') }}</label>
 
         <div class="col-md-8">
             <select class="form-control @error('kelurahan') is-invalid @enderror" id="kelurahan" name="kelurahan"
@@ -211,7 +211,35 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="alamat" class="col-md-3 col-form-label text-md-end">{{ __('Alamat') }}</label>
+        <label for="rw" class="col-md-3 col-form-label text-md-start ms-2">{{ __('RW') }}</label>
+
+        <div class="col-md-8">
+            <select class="form-control @error('rw') is-invalid @enderror" id="rw" name="rw"
+                data-placeholder="RW">
+            </select>
+            @error('rw')
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+            @enderror
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="rt" class="col-md-3 col-form-label text-md-start ms-2">{{ __('RT') }}</label>
+
+        <div class="col-md-8">
+            <select class="form-control @error('rt') is-invalid @enderror" id="rt" name="rt"
+                data-placeholder="RT">
+            </select>
+            @error('rt')
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+            @enderror
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="alamat" class="col-md-3 col-form-label text-md-start ms-2">{{ __('Alamat') }}</label>
 
         <div class="col-md-8">
             <textarea class="form-control @error('alamat') is-invalid @enderror" id="alamat" name="alamat"

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\Kelurahan_resource;
 use App\Http\Resources\Pejabat_resource;
 use App\Http\Resources\User_resource;
+use App\Http\Resources\Skpd_resource;
 use App\Models\Agama;
 use App\Models\Gender;
 use App\Models\JenisSurat;
@@ -21,6 +22,8 @@ use App\Models\StatusKwn;
 use App\Models\SuratUsaha;
 use App\Models\User;
 use App\Models\Pejabat;
+use App\Models\SuratKeterangan;
+use App\Models\Skpd;
 use App\Models\SuratTemplate;
 use App\Traits\GetNoSurat;
 use App\Traits\GeneratePDF;
@@ -38,23 +41,43 @@ class SkusahaController extends Controller
 
     public function index()
     {
+        $user = auth()->user();
+        $rt = $user->id_rt;
+        $rw = $user->id_rw;
+        $resident = Resident::where('nik', $user->nik)->first();
+        $penduduk = unserialize($resident->data);
+        $kelurahan = $penduduk['kelurahan_nm'];
         if (request()->ajax()) {
-            $data = SuratUsaha::query();
-            return DataTables::of($data)
+            $query = SuratUsaha::query();
+
+            // Kalau role RT → filter berdasarkan id_kel, id_rw, dan id_rt
+            if ($user->role_id == 8) { // contoh: RT
+                $query->where('id_kel', $user->id_instansi)
+                    ->where('id_rw', $user->id_rw)
+                    ->where('id_rt', $user->id_rt);
+            }
+            // Kalau role Sekkel, Lurah, Sekcam, atau Camat → filter berdasarkan id_kel
+            elseif (in_array($user->role_id, [3, 4, 5, 6])) { // sesuaikan ID role-mu
+                $query->where('id_kel', $user->id_instansi);
+            }
+            // Role lain (admin, warga, dll) → tanpa filter tambahan
+
+            return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('action', function ($row) {
+                ->addColumn('action', function ($row) use ($user) {
                     $nomorSurat = $this->getNoSrt($row);
                     $id = $row->id;
                     $route = 'skusaha.edit';
                     $status = $row->status;
                     $jenis = 'skusaha';
-                    $role = auth()->user()->role_id;
-                    if (auth()->user()->role_id == 1) {
+                    $role = $user->role_id;
+
+                    if (in_array($role, [1, 8, 9])) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
-                    } else if (auth()->user()->role_id == 3) {
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role'));
+                    } elseif (in_array($role, [3, 5])) {
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route'));
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status', 'role'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'role', 'route'));
                     }
                 })
                 ->addColumn('no_surat', function ($row) {
@@ -63,42 +86,103 @@ class SkusahaController extends Controller
                 ->rawColumns(['action', 'no_surat'])
                 ->make(true);
         };
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
-        return view('skusaha.index', compact('title'));
+        $title = "Surat Keterangan Usaha";
+        return view('skusaha.index', compact('title', 'rt', 'rw', 'kelurahan'));
     }
 
     public function warga()
     {
         // dd(auth()->user()->nik);
-        if (request()->ajax()) {
-            $data = SuratUsaha::query();
-            $data->where('nik', auth()->user()->nik);
-            return DataTables::of($data)
-                ->addIndexColumn()
-                ->addColumn('action', function ($row) {
-                    $nomorSurat = $this->getNoSrt($row);
-                    $id = $row->id;
-                    $status = $row->status;
-                    $jenis = 'skusaha';
-
-                    return view('includes.button-warga', compact('id', 'status'));
-                })
-                ->addColumn('no_surat', function ($row) {
-                    return $this->getNoSrt($row);
-                })
-                ->rawColumns(['action', 'no_surat'])
-                ->make(true);
-        };
+        // Bagian halaman utama
+        $user  = auth()->user();
+        $nik   = $user->nik;
+        $q     = request('q'); // ← ambil keyword
         $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
-        $nik = auth()->user()->nik;
-        $surat = JenisSurat::where(['is_active' => true])->get();
+        $nama  = "SURAT KETERANGAN USAHA";
+        $jenis = 'skusaha';
+
+        // kartu pilihan surat & detail surat skbn
+        $surat        = JenisSurat::where('is_active', true)->get(['jenis', 'assets', 'name']);
         $detail_surat = JenisSurat::where(['jenis' => 'skusaha', 'is_active' => true])->get();
+
+        // info SKPD untuk header
+        $skpd = new Skpd_resource(Skpd::find($user->id_instansi));
+
+        // validasi data resident
         $resident = Resident::where('nik', $nik)->first();
-        if (isset($resident)) {
-            return view('skusaha.warga', compact('title', 'nik', 'surat', 'detail_surat'));
-        } else {
-            return redirect()->route('profile')->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
+        if (!$resident) {
+            return redirect()
+                ->route('profile')
+                ->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
         }
+
+        // ===== BASE QUERY: surat_skbn milik user + search OPTIONAL =====
+        $items = SuratUsaha::query()
+            ->where('nik', $nik)
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($w) use ($q) {
+                    $w->where('no_urut_surat', 'like', "%{$q}%")
+                        ->orWhere('peruntukan',   'like', "%{$q}%")
+                        ->orWhere('kepada',       'like', "%{$q}%")
+                        ->orWhere('nama_usaha',   'like', "%{$q}%");
+                });
+            })
+            ->orderByDesc('created_at');
+
+        // ===== TAB: Sedang Proses (0..4) =====
+        $sedangProses = (clone $items)
+            ->whereIn('status', [0, 1, 2, 3, 4])
+            ->paginate(10, ['*'], 'proses_page');
+
+        $sedangProses->getCollection()->transform(function ($surat) {
+            $surat->nomor_surat = $this->getNoSrt($surat);
+            return $surat;
+        });
+        
+        // ===== TAB: Riwayat (5) =====
+        $riwayat = (clone $items)
+            ->whereIn('status', [5, 6])
+            ->paginate(10, ['*'], 'riwayat_page');
+
+        $riwayat->getCollection()->transform(function ($surat) {
+            $surat->nomor_surat = $this->getNoSrt($surat);
+            return $surat;
+        });
+        
+        return view('skusaha.warga', compact(
+            'title',
+            'nama',
+            'nik',
+            'surat',
+            'detail_surat',
+            'jenis',
+            'skpd',
+            'sedangProses',
+            'riwayat'
+        ));
+    }
+
+    public function addwarga()
+    {
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
+        $nik   = auth()->user()->nik;
+
+        // konsisten dengan pengecekan di warga()
+        $resident = Resident::where('nik', $nik)->first();
+        if (!$resident) {
+            return redirect()->route('profile')
+                ->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
+        }
+
+        return view('skusaha.addwarga', compact('title', 'nik'));
+    }
+
+    public function show($id)
+    {
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
+        $suratKeterangan = SuratUsaha::findOrFail($id);
+
+        return view('skusaha.show', compact('suratKeterangan', 'title'));
     }
 
     public function add()
@@ -122,7 +206,7 @@ class SkusahaController extends Controller
         $request->validate([
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
-            'kd_instansi' => ['required', 'string'],
+            'id_instansi' => ['required', 'string'],
             'tahun' => ['required', 'string'],
             'tgl_surat' => ['required', 'date'],
             'nik' => ['required', 'min:16'],
@@ -141,6 +225,8 @@ class SkusahaController extends Controller
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
+            'rw' => ['required', 'string'],
+            'rt' => ['required', 'string'],
             'register_as' => ['required', 'string'],
             'nama_usaha' => ['required', 'string'],
             'alamat_usaha' => ['required', 'string'],
@@ -193,6 +279,10 @@ class SkusahaController extends Controller
             'kecamatan_nm' => $kecamatan->nama,
             'kelurahan' => $request->kelurahan,
             'kelurahan_nm' => $kelurahan->nama,
+            'rw' => $request->rw,
+            'rw_nm' => 'RW ' . $request->rw,
+            'rt' => $request->rt,
+            'rt_nm' => 'RT ' . $request->rt,
             'alamat' => $request->alamat
         ]);
 
@@ -275,6 +365,13 @@ class SkusahaController extends Controller
             return view('skusaha.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
         } else {
             return view('skusaha.edit', compact('title', 'currentUser', 'suratKeterangan'));
+        // $var = @unserialize($template->variable);
+        // $var = is_array($var) ? $var : [];
+
+        // $var_value = @unserialize($suratKeterangan->variable);
+        // $var_value = is_array($var_value) ? $var_value : [];
+
+        // return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
         }
     }
 
@@ -283,7 +380,7 @@ class SkusahaController extends Controller
         $request->validate([
             'kd_jenis_surat' => ['required', 'string'],
             'no_urut_surat' => ['required', 'string'],
-            'kd_instansi' => ['required', 'string'],
+            'id_instansi' => ['required', 'string'],
             'tahun' => ['required', 'string'],
             'tgl_surat' => ['required', 'date'],
             'nik' => ['required', 'min:16'],
@@ -301,6 +398,8 @@ class SkusahaController extends Controller
             'kabko' => ['required', 'string'],
             'kecamatan' => ['required', 'string'],
             'kelurahan' => ['required', 'string'],
+            'rw' => ['required', 'string'],
+            'rt' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
             'register_as' => ['required', 'string'],
             'nama_usaha' => ['required', 'string'],
@@ -358,6 +457,10 @@ class SkusahaController extends Controller
                 'kecamatan_nm' => $kecamatan->nama,
                 'kelurahan' => $request->kelurahan,
                 'kelurahan_nm' => $kelurahan->nama,
+                'rw' => $request->rw,
+                'rw_nm' => 'RW ' . $request->rw,
+                'rt' => $request->rt,
+                'rt_nm' => 'RT ' . $request->rt,
                 'alamat' => $request->alamat
             ]);
 
@@ -394,6 +497,7 @@ class SkusahaController extends Controller
                 }
                 $datavar = serialize($var);
             }
+
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
@@ -405,14 +509,32 @@ class SkusahaController extends Controller
                 'kepada' => $request->kepada,
                 'peruntukan' => $request->peruntukan,
                 'pengantar' => $request->pengantar,
-                'variable' => isset($template) ? $datavar : '',
-                'status' => 1,
+                // 'variable' => isset($template) ? $datavar : '',
+                'variable' => isset($template) ? $datavar : $suratKeterangan->variable,
                 'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
             ]);
 
             return redirect()->route('skusaha.index');
         } else {
             return redirect()->route('skusaha.index');
+        }
+    }
+
+    public function proses($id)
+    {
+        $suratKeterangan = SuratUsaha::find($id);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 1]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_usahas',
+                'nama_surat' => 'SURAT KETERANGAN USAHA',
+                'id_surat' => $id,
+                'status_surat' => 1,
+            ]);
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
         }
     }
 
@@ -427,6 +549,24 @@ class SkusahaController extends Controller
                 'nama_surat' => 'SURAT KETERANGAN USAHA',
                 'id_surat' => $id,
                 'status_surat' => 2,
+            ]);
+            return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Data updated failed.']);
+        }
+    }
+
+    public function naikLurah($id)
+    {
+        $suratKeterangan = SuratUsaha::find($id);
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 3]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_usahas',
+                'nama_surat' => 'SURAT KETERANGAN USAHA',
+                'id_surat' => $id,
+                'status_surat' => 3,
             ]);
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
@@ -524,9 +664,11 @@ class SkusahaController extends Controller
 
         $suket = SuratUsaha::create([
             'id_kel'    => auth()->user()->id_instansi,
+            'id_rw'    => auth()->user()->id_rw,
+            'id_rt'    => auth()->user()->id_rt,
             'kd_jenis_surat' => 0,
             'no_urut_surat' => 0,
-            'kd_instansi' => $regional['skpd']->instansi_kode,
+            'id_instansi' => $regional['skpd']->instansi_kode,
             'tahun' => date('Y'),
             'tgl_surat' => date('Y-m-d'),
             'nik' => $request->nik,
@@ -569,22 +711,102 @@ class SkusahaController extends Controller
         return response()->json($surat);
     }
 
+    public function nilai(Request $request, $id)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'komentar' => 'nullable|string',
+        ]);
+
+        $surat = SuratUsaha::find($id);
+
+        if (!$surat) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        // simpan rating & komentar
+        $surat->update([
+            'status'   => 5,
+            'rating'   => $request->rating,
+            'komentar' => $request->komentar,
+        ]);
+
+        // log status
+        Log_surat::create([
+            'nik'          => $surat->nik,
+            'tabel_surat'  => 'surat_usahas',
+            'nama_surat'   => 'SURAT KETERANGAN USAHA',
+            'id_surat'     => $id,
+            'status_surat' => 5,
+        ]);
+
+        return response()->json([
+            'message' => 'Penilaian berhasil disimpan.',
+            'data' => $id
+        ]);
+    }
+
+    public function lihatNilai($id)
+    {
+        // Ambil data surat
+        $surat = SuratUsaha::find($id);
+
+        if (!$surat || $surat->rating === null) {
+            return response()->json(['message' => 'Belum ada penilaian'], 404);
+        }
+
+        // Ambil waktu nilai dari log_surat (status_surat = 5)
+        $log = Log_surat::where('tabel_surat', 'surat_usahas')
+                    ->where('id_surat', $id)
+                    ->where('status_surat', 5)
+                    ->orderBy('id', 'DESC')
+                    ->first();
+
+        return response()->json([
+            'rating'   => $surat->rating,
+            'komentar' => $surat->komentar ?? '-',
+            'tanggal'  => optional($log?->created_at)->timezone('Asia/Jakarta')->format('d-m-Y H:i'),
+        ]);
+    }
 
     public function tolak($id)
     {
         $suratKeterangan = SuratUsaha::find($id);
         if ($suratKeterangan) {
-            $suratKeterangan->update(['status' => 4]);
+            $suratKeterangan->update(['status' => 6]);
             Log_surat::create([
                 'nik' => $suratKeterangan->nik,
                 'tabel_surat' => 'surat_usahas',
                 'nama_surat' => 'SURAT KETERANGAN USAHA',
                 'id_surat' => $id,
-                'status_surat' => 4,
+                'status_surat' => 6,
             ]);
             return response()->json(['message' => 'Data updated successfully.', 'data' => $id]);
         } else {
             return response()->json(['message' => 'Data updated failed.']);
+        }
+    }
+
+    public function hapus($id)
+    {
+        $suratKeterangan = SuratUsaha::find($id);
+        if (!$suratKeterangan) return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+        
+        if (in_array($suratKeterangan->status, ['1', '2', '3', '4', '5'])) {
+        return response()->json(['message' => 'Surat sudah selesai atau dinilai, tidak bisa dihapus.'], 422);
+    }
+        if ($suratKeterangan) {
+            $suratKeterangan->update(['status' => 7]);
+            Log_surat::create([
+                'nik' => $suratKeterangan->nik,
+                'tabel_surat' => 'surat_usahas',
+                'nama_surat' => 'SURAT KETERANGAN USAHA',
+                'id_surat' => $id,
+                'status_surat' => 7,
+            ]);
+            return response()->json(['message' => 'Pengajuan berhasil dihapus.', 'data' => $id]);
+        } else {
+            return response()->json(['message' => 'Gagal menghapus.']);
         }
     }
 }

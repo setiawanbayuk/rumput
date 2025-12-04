@@ -14,6 +14,7 @@
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="shortcut icon" href="{{ asset('assets/favicon.ico') }}" type="image/x-icon">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
@@ -22,6 +23,7 @@
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet"> --}}
 
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @routes
 </head>

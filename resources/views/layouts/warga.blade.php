@@ -9,58 +9,110 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="{{ asset('assets/favicon.ico') }}" type="image/x-icon">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'E-SUKET') }}</title>
 
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
+    <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 
     @stack('styles')
+
+    <style>
+        /* navbar */
+        .floating-navbar {
+            position: sticky;
+            top: 12px;
+            z-index: 1030;
+        }
+
+        .navbar-card {
+            background: #ffffff;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            box-shadow: 0 0px 8px rgba(0, 0, 0, .2);
+        }
+
+        .navbar-card .nav-link {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: .4rem 2rem;
+            font-weight: 500;
+            color: #333333;
+        }
+
+        .navbar-card .nav-link.active,
+        .navbar-card .nav-link:hover {
+            background: #AEA07A;
+            color: #fff;
+        }
+    </style>
     @routes
 </head>
 
 <body class="min-vh-100 d-flex flex-column">
-
-    <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
-        <div class="container">
-
-            <button class="btn btn-outline-secondary " id="toggleSidebar" data-bs-toggle="offcanvas"
-                data-bs-target="#offcanvasSuket" aria-controls="offcanvasSuket">
-                <i class="ri-menu-line"></i>
-            </button>
+    <!-- navbar -->
+    <div class="container floating-navbar">
+        <nav class="navbar navbar-expand-lg navbar-card mt2 mx-4 px-4 py-3">
             <!-- Logo E-SUKET -->
             <a class="navbar-brand" href="{{ url('/warga') }}">
-                <img src="{{ asset('assets/esuket.png') }}" alt="E-SUKET Logo" height="30">
+                <img src="{{ asset('assets/esuket.png') }}" alt="E-SUKET Logo" height="25">
             </a>
 
-            <li class="nav-item dropdown" style="display: block">
-                <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center" href="#"
-                    role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                    <div class="user-info bg-success me-2"></div>
-                    <i class="ri-user-fill me-2"></i>
-                </a>
+            <!-- toggler mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarMain" aria-controls="navbarMain"
+                    aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
 
-                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="{{ route('profile') }}">
-                        <i class="ri-user-fill me-2"></i>
-                        <span>{{ Auth::user()->name }}</span>
+            <!-- menu tengah -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <div class="d-flex justify-content-center w-100 gap-4">
+                    <a class="nav-link {{ request()->is('warga') ? 'active' : '' }}" href="{{ url('/warga') }}">
+                        Beranda
                     </a>
-                    <a class="dropdown-item" href="{{ route('logout') }}"
-                        onclick="event.preventDefault();document.getElementById('logout-form').submit();">
-                        <i class="ri-logout-circle-r-line me-2"></i>
-                        <span>Logout</span>
+                    <a class="nav-link {{ request()->is('warga/ajukan') ? 'active' : '' }}"
+                        href="{{ url('/warga/ajukan') }}">
+                        Ajukan Surat
                     </a>
-
-                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                        @csrf
-                    </form>
                 </div>
-            </li>
 
-        </div>
-    </nav>
+
+
+                <!-- kanan: dropdown user -->
+                <ul class="navbar-nav ms-lg-3">
+                    @auth
+                    <li class="nav-item dropdown">
+                        <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center" href="#"
+                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="ri-user-fill me-2"></i>
+                        </a>
+
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="{{ route('profile') }}">
+                                <i class="ri-user-fill me-2"></i> {{ Auth::user()->name }}
+                            </a>
+                            <a class="dropdown-item" href="{{ route('logout') }}"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="ri-logout-circle-r-line me-2"></i> Logout
+                            </a>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                @csrf</form>
+                        </div>
+                    </li>
+                    @endauth
+                    @guest
+                        <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Login</a></li>
+                    @endguest
+                </ul>
+            </div>
+        </nav>
+    </div>
+
+    <!-- SIDEBAR OFFCANVAS -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSuket" aria-labelledby="offcanvasSuketLabel">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title fw-bold ms-4" id="offcanvasSuketLabel">
@@ -73,27 +125,29 @@
             <div class="list-group">
                 @foreach ($surat as $item)
                     <a href="{{ route($item['jenis'] . '.warga') }}" class="list-group-item">
-                        <img src="{{ asset('assets/images/' . $item['assets']) }}" alt="Surat Keterangan Belum Nikah"
+                        <img src="{{ asset('assets/images/' . $item['assets']) }}" alt="Surat"
                             class="img-fluid rounded me-2">
-
                     </a>
                 @endforeach
             </div>
         </div>
     </div>
-    <main class="py-4 flex-fill">
+
+    <!-- MAIN CONTENT -->
+    <main class="py-0 flex-fill">
         @yield('content')
     </main>
 
-    <footer class="py-3" style="background-color: rgb(150, 104, 19);">
+    <!-- FOOTER -->
+    <footer class="py-3" style="background-color: #AB9C71">
         <div class="container d-flex justify-content-between align-items-center text-white">
             <p class="mb-0">© 2025 Pemerintah Kota Kediri</p>
-            <p class="mb-0">Support by <a href="#" class="text-white text-decoration-none">Dinas Komunikasi
-                    dan
-                    Informatika Kota Kediri</a></p>
+            <p class="mb-0">Support by <a href="#" class="text-white text-decoration-none">Dinas Kominfo Kota
+                    Kediri</a></p>
         </div>
     </footer>
 
+    <!-- SCRIPTS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
