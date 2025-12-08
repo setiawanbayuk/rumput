@@ -39,7 +39,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="nik_saksi1" class="col-md-4 col-form-label">NIK</label>
+                                                    <label for="nik_saksi1" class="col-md-3 col-form-label text-md-start ms-2">NIK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="nik_saksi1" name="nik_saksi1"
                                                             class="form-control @error('nik_saksi1') is-invalid @enderror"
@@ -52,7 +52,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="kk_saksi1" class="col-md-4 col-form-label">No. KK</label>
+                                                    <label for="kk_saksi1" class="col-md-3 col-form-label text-md-start ms-2">No. KK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="kk_saksi1" name="kk_saksi1"
                                                             class="form-control @error('kk_saksi1') is-invalid @enderror"
@@ -65,7 +65,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="name_saksi1" class="col-md-4 col-form-label">Nama</label>
+                                                    <label for="name_saksi1" class="col-md-3 col-form-label text-md-start ms-2">Nama</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="name_saksi1" name="name_saksi1"
                                                             class="form-control @error('name_saksi1') is-invalid @enderror"
@@ -79,7 +79,7 @@
 
                                                 <div class="row mb-4">
                                                     <label for="kewarganegaraan_saksi1"
-                                                        class="col-md-4 col-form-label">Kewarganegaraan</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Kewarganegaraan</label>
                                                     <div class="col-md-8">
                                                         <select id="kewarganegaraan_saksi1" name="kewarganegaraan_saksi1"
                                                             class="form-control @error('kewarganegaraan_saksi1') is-invalid @enderror"
@@ -97,7 +97,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="nik_saksi2" class="col-md-4 col-form-label">NIK</label>
+                                                    <label for="nik_saksi2" class="col-md-3 col-form-label text-md-start ms-2">NIK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="nik_saksi2" name="nik_saksi2"
                                                             class="form-control @error('nik_saksi2') is-invalid @enderror"
@@ -110,7 +110,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="kk_saksi2" class="col-md-4 col-form-label">No. KK</label>
+                                                    <label for="kk_saksi2" class="col-md-3 col-form-label text-md-start ms-2">No. KK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="kk_saksi2" name="kk_saksi2"
                                                             class="form-control @error('kk_saksi2') is-invalid @enderror"
@@ -123,7 +123,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="name_saksi2" class="col-md-4 col-form-label">Nama</label>
+                                                    <label for="name_saksi2" class="col-md-3 col-form-label text-md-start ms-2">Nama</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="name_saksi2" name="name_saksi2"
                                                             class="form-control @error('name_saksi2') is-invalid @enderror"
@@ -135,9 +135,9 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="row mb-0">
+                                                <div class="row mb-3">
                                                     <label for="kewarganegaraan_saksi2"
-                                                        class="col-md-4 col-form-label">Kewarganegaraan</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Kewarganegaraan</label>
                                                     <div class="col-md-8">
                                                         <select id="kewarganegaraan_saksi2" name="kewarganegaraan_saksi2"
                                                             class="form-control @error('kewarganegaraan_saksi2') is-invalid @enderror"
@@ -148,6 +148,14 @@
                                                         @enderror
                                                     </div>
                                                 </div>
+
+                                                {{-- === PERUNTUKAN & PENGANTAR === --}}
+                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
+                                                    Lampiran
+                                                </div>
+
+                                                {{-- Pengantar (WAJIB sesuai controller) --}}
+                                                <x-pengantar></x-pengantar>
 
                                             </div>
                                         </div>
@@ -164,7 +172,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="name_anak" class="col-md-4 col-form-label">Nama
+                                                    <label for="name_anak" class="col-md-3 col-form-label text-md-start ms-2">Nama
                                                         Anak</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="name_anak" name="name_anak"
@@ -178,7 +186,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="gender_anak" class="col-md-4 col-form-label">Jenis
+                                                    <label for="gender_anak" class="col-md-3 col-form-label text-md-start ms-2">Jenis
                                                         Kelamin</label>
                                                     <div class="col-md-8">
                                                         <select id="gender_anak" name="gender_anak"
@@ -193,7 +201,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="tempat_dilahirkan_anak"
-                                                        class="col-md-4 col-form-label">Tempat Dilahirkan</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Tempat Dilahirkan</label>
                                                     <div class="col-md-8">
                                                         <select id="tempat_dilahirkan_anak" name="tempat_dilahirkan_anak"
                                                             class="form-control @error('tempat_dilahirkan_anak') is-invalid @enderror"
@@ -214,7 +222,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="tempat_kelahiran_anak"
-                                                        class="col-md-4 col-form-label">Tempat Kelahiran</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Tempat Kelahiran</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="tempat_kelahiran_anak"
                                                             name="tempat_kelahiran_anak"
@@ -228,44 +236,49 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label class="col-md-4 col-form-label">Hari & Tgl. Lahir</label>
-                                                    <div class="col-md-4">
-                                                        <input type="text" id="hari_lhr_anak" name="hari_lhr_anak"
+                                                    <label for="hari_tgl_lhr_anak"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Hari & Tgl. Lahir</label>
+
+                                                    <div class="col-md-2">
+                                                        <input id="hari_lhr_anak" type="text"
                                                             class="form-control @error('hari_lhr_anak') is-invalid @enderror"
-                                                            placeholder="Senin/Jumat..."
-                                                            value="{{ old('hari_lhr_anak') }}">
+                                                            name="hari_lhr_anak" value="{{ old('hari_lhr_anak') }}"
+                                                            autocomplete="hari_lhr_anak" autofocus>
+
                                                         @error('hari_lhr_anak')
-                                                            <span
-                                                                class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
                                                         @enderror
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <input type="date" id="tgl_lhr_anak" name="tgl_lhr_anak"
+                                                    <div class="col-md-3">
+                                                        <input id="tgl_lhr_anak" type="date"
                                                             class="form-control @error('tgl_lhr_anak') is-invalid @enderror"
-                                                            value="{{ old('tgl_lhr_anak') }}">
+                                                            name="tgl_lhr_anak" value="{{ old('tgl_lhr_anak') }}"
+                                                            autocomplete="tgl_lhr_anak" autofocus>
+
                                                         @error('tgl_lhr_anak')
-                                                            <span
-                                                                class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
                                                         @enderror
                                                     </div>
-                                                </div>
-
-                                                <div class="row mb-3">
-                                                    <label for="jam_lhr_anak" class="col-md-4 col-form-label">Jam
-                                                        Lahir</label>
-                                                    <div class="col-md-8">
-                                                        <input type="time" id="jam_lhr_anak" name="jam_lhr_anak"
+                                                    <div class="col-md-3">
+                                                        <input id="jam_lhr_anak" type="time"
                                                             class="form-control @error('jam_lhr_anak') is-invalid @enderror"
-                                                            value="{{ old('jam_lhr_anak') }}">
+                                                            name="jam_lhr_anak" value="{{ old('jam_lhr_anak') }}"
+                                                            autocomplete="jam_lhr_anak" autofocus>
+
                                                         @error('jam_lhr_anak')
-                                                            <span
-                                                                class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
                                                         @enderror
                                                     </div>
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="jenis_klhr_anak" class="col-md-4 col-form-label">Jenis
+                                                    <label for="jenis_klhr_anak" class="col-md-3 col-form-label text-md-start ms-2">Jenis
                                                         Kelahiran</label>
                                                     <div class="col-md-8">
                                                         <select id="jenis_klhr_anak" name="jenis_klhr_anak"
@@ -286,7 +299,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="klhr_ke_anak" class="col-md-4 col-form-label">Kelahiran
+                                                    <label for="klhr_ke_anak" class="col-md-3 col-form-label text-md-start ms-2">Kelahiran
                                                         ke</label>
                                                     <div class="col-md-8">
                                                         <input type="number" id="klhr_ke_anak" name="klhr_ke_anak"
@@ -301,7 +314,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="penolong_klhr_anak"
-                                                        class="col-md-4 col-form-label">Penolong Kelahiran</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Penolong Kelahiran</label>
                                                     <div class="col-md-8">
                                                         <select id="penolong_klhr_anak" name="penolong_klhr_anak"
                                                             class="form-control @error('penolong_klhr_anak') is-invalid @enderror"
@@ -320,7 +333,7 @@
                                                 </div>
 
                                                 <div class="row mb-4">
-                                                    <label class="col-md-4 col-form-label">BB / TB</label>
+                                                    <label class="col-md-3 col-form-label text-md-start ms-2">BB / TB</label>
                                                     <div class="col-md-3">
                                                         <input type="text" id="bb_anak" name="bb_anak"
                                                             class="form-control @error('bb_anak') is-invalid @enderror"
@@ -349,7 +362,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="nik_ayah" class="col-md-4 col-form-label">NIK</label>
+                                                    <label for="nik_ayah" class="col-md-3 col-form-label text-md-start ms-2">NIK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="nik_ayah" name="nik_ayah"
                                                             class="form-control @error('nik_ayah') is-invalid @enderror"
@@ -362,7 +375,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="kk_ayah" class="col-md-4 col-form-label">No. KK</label>
+                                                    <label for="kk_ayah" class="col-md-3 col-form-label text-md-start ms-2">No. KK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="kk_ayah" name="kk_ayah"
                                                             class="form-control @error('kk_ayah') is-invalid @enderror"
@@ -375,7 +388,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="name_ayah" class="col-md-4 col-form-label">Nama</label>
+                                                    <label for="name_ayah" class="col-md-3 col-form-label text-md-start ms-2">Nama</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="name_ayah" name="name_ayah"
                                                             class="form-control @error('name_ayah') is-invalid @enderror"
@@ -388,7 +401,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label class="col-md-4 col-form-label">Tempat / Tgl. Lahir</label>
+                                                    <label class="col-md-3 col-form-label text-md-start ms-2">Tempat / Tgl. Lahir</label>
                                                     <div class="col-md-5">
                                                         <input type="text" id="tempat_lhr_ayah" name="tempat_lhr_ayah"
                                                             class="form-control @error('tempat_lhr_ayah') is-invalid @enderror"
@@ -414,7 +427,7 @@
 
                                                 <div class="row mb-4">
                                                     <label for="kewarganegaraan_ayah"
-                                                        class="col-md-4 col-form-label">Kewarganegaraan</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Kewarganegaraan</label>
                                                     <div class="col-md-8">
                                                         <select id="kewarganegaraan_ayah" name="kewarganegaraan_ayah"
                                                             class="form-control @error('kewarganegaraan_ayah') is-invalid @enderror"
@@ -432,7 +445,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="nik_ibu" class="col-md-4 col-form-label">NIK</label>
+                                                    <label for="nik_ibu" class="col-md-3 col-form-label text-md-start ms-2">NIK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="nik_ibu" name="nik_ibu"
                                                             class="form-control @error('nik_ibu') is-invalid @enderror"
@@ -445,7 +458,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="kk_ibu" class="col-md-4 col-form-label">No. KK</label>
+                                                    <label for="kk_ibu" class="col-md-3 col-form-label text-md-start ms-2">No. KK</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="kk_ibu" name="kk_ibu"
                                                             class="form-control @error('kk_ibu') is-invalid @enderror"
@@ -458,7 +471,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="name_ibu" class="col-md-4 col-form-label">Nama</label>
+                                                    <label for="name_ibu" class="col-md-3 col-form-label text-md-start ms-2">Nama</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="name_ibu" name="name_ibu"
                                                             class="form-control @error('name_ibu') is-invalid @enderror"
@@ -471,7 +484,7 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label class="col-md-4 col-form-label">Tempat / Tgl. Lahir</label>
+                                                    <label class="col-md-3 col-form-label text-md-start ms-2">Tempat / Tgl. Lahir</label>
                                                     <div class="col-md-5">
                                                         <input type="text" id="tempat_lhr_ibu" name="tempat_lhr_ibu"
                                                             class="form-control @error('tempat_lhr_ibu') is-invalid @enderror"
@@ -497,7 +510,7 @@
 
                                                 <div class="row mb-4">
                                                     <label for="kewarganegaraan_ibu"
-                                                        class="col-md-4 col-form-label">Kewarganegaraan</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">Kewarganegaraan</label>
                                                     <div class="col-md-8">
                                                         <select id="kewarganegaraan_ibu" name="kewarganegaraan_ibu"
                                                             class="form-control @error('kewarganegaraan_ibu') is-invalid @enderror"
@@ -508,15 +521,6 @@
                                                         @enderror
                                                     </div>
                                                 </div>
-
-                                                {{-- === PERUNTUKAN & PENGANTAR === --}}
-                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
-                                                    Lampiran
-                                                </div>
-
-                                                {{-- Pengantar (WAJIB sesuai controller) --}}
-                                                <x-pengantar></x-pengantar>
-
                                             </div>
                                         </div>
                                     </div>

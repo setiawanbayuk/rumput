@@ -35,7 +35,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="nik_saksi1"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Saksi 1') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <div class="input-group">
@@ -58,7 +58,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kk_saksi1"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Saksi 1') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="kk_saksi1" type="number"
@@ -77,7 +77,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="name_saksi1"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Saksi 1') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="name_saksi1" type="text"
@@ -96,7 +96,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kewarganegaraan_saksi1"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Saksi 1') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan') }}</label>
 
                                                     <div class="col-md-8">
                                                         <select
@@ -118,7 +118,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="nik_saksi2"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Saksi 2') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <div class="input-group">
@@ -141,7 +141,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kk_saksi2"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Saksi 2') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="kk_saksi2" type="number"
@@ -160,7 +160,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="name_saksi2"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Saksi 2') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="name_saksi2" type="text"
@@ -179,7 +179,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kewarganegaraan_saksi2"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Saksi 2') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan') }}</label>
 
                                                     <div class="col-md-8">
                                                         <select
@@ -195,6 +195,13 @@
                                                         @enderror
                                                     </div>
                                                 </div>
+                                                {{-- === PERUNTUKAN & PENGANTAR === --}}
+                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
+                                                    Lampiran
+                                                </div>
+
+                                                {{-- Pengantar (WAJIB sesuai controller) --}}
+                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +213,7 @@
                                             <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Anak</div>
                                                 <div class="row mb-3">
                                                     <label for="name_anak"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Anak') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="name_anak" type="text"
@@ -286,9 +293,9 @@
 
                                                 <div class="row mb-3">
                                                     <label for="hari_tgl_lhr_anak"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Hari dan Tgl. Lahir Anak') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Hari & Tgl. Lahir') }}</label>
 
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-2">
                                                         <input id="hari_lhr_anak" type="text"
                                                             class="form-control @error('hari_lhr_anak') is-invalid @enderror"
                                                             name="hari_lhr_anak"
@@ -302,7 +309,7 @@
                                                         @enderror
                                                     </div>
 
-                                                    <div class="col-md-2">
+                                                    <div class="col-md-3">
                                                         <input id="tgl_lhr_anak" type="date"
                                                             class="form-control @error('tgl_lhr_anak') is-invalid @enderror"
                                                             name="tgl_lhr_anak"
@@ -316,7 +323,7 @@
                                                         @enderror
                                                     </div>
 
-                                                    <div class="col-md-2">
+                                                    <div class="col-md-3">
                                                         <input id="jam_lhr_anak" type="time"
                                                             class="form-control @error('jam_lhr_anak') is-invalid @enderror"
                                                             name="jam_lhr_anak"
@@ -426,7 +433,7 @@
                                                     Data Ayah</div>
                                                 <div class="row mb-3">
                                                     <label for="nik_ayah"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Ayah') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <div class="input-group">
@@ -449,7 +456,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kk_ayah"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Ayah') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="kk_ayah" type="number"
@@ -468,7 +475,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="name_ayah"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Ayah') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="name_ayah" type="text"
@@ -487,7 +494,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="ttl_ayah"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Tempat/Tgl. Lahir Ayah') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Tempat/Tgl. Lahir') }}</label>
 
                                                     <div class="col-md-5">
                                                         <input id="tempat_lhr_ayah" type="text"
@@ -520,7 +527,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kewarganegaraan_ayah"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Ayah') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan') }}</label>
 
                                                     <div class="col-md-8">
                                                         <select
@@ -540,7 +547,7 @@
                                                     Data Ibu</div>
                                                 <div class="row mb-3">
                                                     <label for="nik_ibu"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Ibu') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <div class="input-group">
@@ -562,7 +569,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kk_ibu"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Ibu') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="kk_ibu" type="number"
@@ -581,7 +588,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="name_ibu"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Ibu') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama') }}</label>
 
                                                     <div class="col-md-8">
                                                         <input id="name_ibu" type="text"
@@ -600,7 +607,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="ttl_ibu"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Tempat/Tgl. Lahir Ibu') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Tempat/Tgl. Lahir') }}</label>
 
                                                     <div class="col-md-5">
                                                         <input id="tempat_lhr_ibu" type="text"
@@ -632,7 +639,7 @@
 
                                                 <div class="row mb-3">
                                                     <label for="kewarganegaraan_ibu"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Ibu') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan') }}</label>
 
                                                     <div class="col-md-8">
                                                         <select
@@ -647,13 +654,6 @@
                                                         @enderror
                                                     </div>
                                                 </div>
-                                                {{-- === PERUNTUKAN & PENGANTAR === --}}
-                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
-                                                    Lampiran
-                                                </div>
-
-                                                {{-- Pengantar (WAJIB sesuai controller) --}}
-                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                             </div>
                                         </div>
                                     </div>

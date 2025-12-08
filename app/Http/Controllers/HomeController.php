@@ -83,6 +83,20 @@ class HomeController extends Controller
                 ->addColumn('jenis', function ($row) {
                     return $row->jenis_label;
                 })
+                ->addColumn('peruntukan', function ($row) {
+                    // SK KELAHIRAN → tampilkan nama anak
+                    if ($row->jenis == 'skkelahiran') {
+                        return $row->raw->nama_anak ?? '-';
+                    }
+
+                    // SK KEMATIAN → tampilkan nama alm/almh
+                    if ($row->jenis == 'skkematian') {
+                        return $row->raw->nama ?? '-';
+                    }
+
+                    // default untuk jenis surat lain
+                    return $row->peruntukan ?? '-';
+                })
                 // status (pakai accessor st dari model surat)
                 ->addColumn('st', function ($row) {
                     // asumsi semua model surat punya accessor getStAttribute() yang return ['name' => ..., 'color' => ...]
@@ -111,7 +125,6 @@ class HomeController extends Controller
         $title = "Dashboard";
         return view('home', compact('title', 'rt', 'rw', 'kelurahan','kecamatan'));
     }
-
 
     public function warga()
     {
@@ -160,7 +173,9 @@ class HomeController extends Controller
             $items = $items->filter(function ($row) use ($q) {
                 return str_contains(strtolower($row->jenis_label), $q)
                     || str_contains(strtolower($row->peruntukan ?? ''), $q)
-                    || str_contains(strtolower($row->nomor_surat ?? ''), $q);
+                    || str_contains(strtolower($row->kepada ?? ''), $q)
+                    || str_contains(strtolower($row->nama_anak ?? ''), $q)
+                    || str_contains(strtolower($row->nama ?? ''), $q);
             });
         }
 

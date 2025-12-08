@@ -372,17 +372,19 @@
         sidebar.addEventListener("transitionend", (e) => {
             if (e.propertyName === "width") {
 
-                // Resize chart setelah sidebar selesai animasi
-                if (window.chartSurat) {
-                    window.chartSurat.reflow();
-                }
+                setTimeout(() => {
+                    if (window.chartSurat) {
+                        window.chartSurat.reflow();
+                        window.chartSurat.redraw();
+                    }
+                }, 20);
 
                 const chartContainer = document.getElementById("chartSuratDrill");
                 if (chartContainer) chartContainer.classList.remove("animating");
             }
         });
-    </script>
 
+    </script>
 
     <script>
         document.querySelectorAll("#sidebar .sidebar-item").forEach(item => {

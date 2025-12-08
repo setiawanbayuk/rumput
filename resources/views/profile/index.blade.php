@@ -60,15 +60,21 @@
                                     {{-- KIRI: FOTO + GANTI FOTO --}}
                                     <div class="col-lg-4">
                                         <div class="text-center">
-                                            <div
-                                                class="avatar-frame mx-auto rounded-3 d-flex align-items-center justify-content-center overflow-hidden">
-                                                <img id="avatarPreview"
-                                                    src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : asset('assets/default-avatar.png') }}"
-                                                    alt="Foto profil" style="width:100%; height:100%; object-fit:cover;">
-                                            </div>
+                                            @php
+                                                $avatar = Auth::user()->avatar 
+                                                    ? asset('storage/' . Auth::user()->avatar) 
+                                                    : asset('assets/default-avatar.png');
+                                            @endphp
 
-                                            {{-- input file DIPINDAHKAN ke dalam form (lihat di bawah) --}}
-                                            {{-- Tombol trigger tetap label atau button --}}
+                                            <a href="{{ $avatar }}" target="_blank">
+                                                <div class="avatar-frame mx-auto rounded-3 d-flex align-items-center justify-content-center overflow-hidden" style="cursor:pointer;">
+                                                    <img id="avatarPreview"
+                                                        src="{{ $avatar }}"
+                                                        alt="Foto profil" 
+                                                        style="width:100%; height:100%; object-fit:cover;">
+                                                </div>
+                                            </a>
+
                                             <label for="avatar" class="btn-ganti mt-3 px-4 py-2">Ganti Foto</label>
                                         </div>
                                     </div>

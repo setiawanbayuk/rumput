@@ -13,34 +13,17 @@
                 outline: none !important;
                 border-color: #AEA07A;
             }
+
+            #chartSuratDrill {
+                width: 100% !important;
+                display: block !important;
+                transition: opacity .35s ease, transform .35s ease;
+            }
+
             #chartSuratDrill text {
                 font-family: 'Poppins', sans-serif !important;
             }
-
-            .highcharts-title {
-                font-size: 16px !important;
-                font-weight: 700 !important;
-                fill: #333 !important;
-            }
-
-            .highcharts-subtitle {
-                font-size: 12px !important;
-                fill: #666 !important;
-            }
-
-            .highcharts-axis-labels text {
-                font-size: 11px !important;
-                fill: #555 !important;
-            }
-
-            #chartSuratDrill {
-                width: 100%;
-                min-height: 350px;
-            }
-
-            #chartSuratDrill {
-                transition: opacity .35s ease, transform .35s ease;
-            }
+            
             #chartSuratDrill.animating {
                 opacity: 0.4;
                 transform: scale(.98);

@@ -291,7 +291,7 @@
                                             <div id="data-jenazah" name="data-jenazah">
                                                 <div class="row mb-3">
                                                     <label for="nik"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Jenazah') }}</label>
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
                                                     <div class="col-md-8">
                                                         <div class="input-group">
                                                             <input type="number"

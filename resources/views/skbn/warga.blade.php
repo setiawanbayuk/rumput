@@ -189,7 +189,6 @@
                                         class="btn btn-success btn-chip">
                                             Cetak Surat
                                         </a>
-
                                         <x-btnnilai :alias="$alias" :id="$id" :nosrt="$nosrt" :nama="$nama" />
                                     @endif
 

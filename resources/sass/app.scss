@@ -27,7 +27,6 @@
 //     --bs-backdrop-opacity: .3;
 // }
 
-
 .swal2-container {
     z-index: 99999 !important;
 }
@@ -592,4 +591,23 @@
 #seg-proses:checked~.seg-wrap label[for="seg-proses"],
 #seg-riwayat:checked~.seg-wrap label[for="seg-riwayat"] {
     color: #fff;
+}
+
+.highcharts-container,
+.highcharts-root,
+#chartSuratDrill svg {
+    width: 100% !important;
+}
+.highcharts-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    fill: #333 !important;
+}
+.highcharts-subtitle {
+    font-size: 12px !important;
+    fill: #666 !important;
+}
+.highcharts-axis-labels text {
+    font-size: 11px !important;
+    fill: #555 !important;
 }
