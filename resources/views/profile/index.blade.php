@@ -398,6 +398,7 @@
                 let provinsi_id = "";
                 let kabko_id = "";
                 let kecamatan_id = "";
+                let kelurahan_id = "";
                 let rw_id ="";
                 $("#gender").select2({
                     theme: "bootstrap-5",
@@ -682,43 +683,43 @@
                 });
 
                 // ---------- RESET CHAIN ----------
-                function resetSelect(id) {
+                function reset(id) {
                     $(id).empty().trigger("change");
                 }
 
                 // PROVINSI → reset kabko, kecamatan, kelurahan, rw, rt
                 $("#provinsi").on("change", function () {
-                    resetSelect("#kabko");
-                    resetSelect("#kecamatan");
-                    resetSelect("#kelurahan");
-                    resetSelect("#rw");
-                    resetSelect("#rt");
+                    reset("#kabko");
+                    reset("#kecamatan");
+                    reset("#kelurahan");
+                    reset("#rw");
+                    reset("#rt");
                 });
 
                 // KAB/KOTA → reset kecamatan, kelurahan, rw, rt
                 $("#kabko").on("change", function () {
-                    resetSelect("#kecamatan");
-                    resetSelect("#kelurahan");
-                    resetSelect("#rw");
-                    resetSelect("#rt");
+                    reset("#kecamatan");
+                    reset("#kelurahan");
+                    reset("#rw");
+                    reset("#rt");
                 });
 
                 // KECAMATAN → reset kelurahan, rw, rt
                 $("#kecamatan").on("change", function () {
-                    resetSelect("#kelurahan");
-                    resetSelect("#rw");
-                    resetSelect("#rt");
+                    reset("#kelurahan");
+                    reset("#rw");
+                    reset("#rt");
                 });
 
                 // KELURAHAN → reset rw, rt
                 $("#kelurahan").on("change", function () {
-                    resetSelect("#rw");
-                    resetSelect("#rt");
+                    reset("#rw");
+                    reset("#rt");
                 });
 
                 // RW → reset rt
                 $("#rw").on("change", function () {
-                    resetSelect("#rt");
+                    reset("#rt");
                 });
 
                 $("#gender").select2("trigger", "select", {

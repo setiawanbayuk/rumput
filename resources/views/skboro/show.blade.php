@@ -93,13 +93,17 @@
                             </div>
                         </div>
 
-                        {{-- ====================== TOMBOL KEMBALI ====================== --}}
-                        <div class="d-flex justify-content-center" style="margin-top: 75px;">
-                            <a href="{{ route('skboro.warga') }}" class="btn-edit">
+                        {{-- ===== TOMBOL EDIT ===== --}}
+                        <div class="d-flex justify-content-center gap-4" style="margin-top:100px;">
+                            <a href="{{ route('skboro.warga') }}" class="btn-ajukan">
                                 Kembali
                             </a>
+                            @if ($suratKeterangan->status == 0)
+                                <a href="{{ route('skboro.edit', $suratKeterangan->id) }}" class="btn-edit">
+                                    Edit
+                                </a>
+                            @endif
                         </div>
-
                     </div> {{-- END CARD BODY --}}
                 </div>
             </div>

@@ -20,7 +20,6 @@
                                 <div class="col-md-6 mb-4">
                                     <div class="card h-100 border-1 shadow-sm rounded-4"
                                         style="background: #fff; border-color: #AEA07A">
-                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Surat</div>
                                         <div class="card-body">
                                             <div>
                                                 <x-nosrt>
@@ -29,15 +28,7 @@
                                                     <x-slot:instansi_kode>{{ $currentUser->skpd->instansi_kode }}</x-slot:instansi_kode>
                                                     <x-slot:tgl_surat>{{ $suratKeterangan->tgl_surat }}</x-slot:tgl_surat>
                                                 </x-nosrt>
-
-                                                <x-pengantar></x-pengantar>
-                                                <div class="row mb-3">
-                                                    <label class="col-md-3 col-form-label text-md-start ms-2"></label>
-                                                    <div class="col-md-8">
-                                                        <x-viewer src="{{ $suratKeterangan->pengantar }}" height="150px" />
-                                                    </div>
-                                                </div>
-
+                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                                 <div id="data-pelapor" name="data-pelapor">
                                                     <div class="card-header bg-transparent mb-3 text-center fw-bold">Data
                                                         Pelapor</div>
@@ -302,7 +293,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-4">
-                                    <div class="card h-100 border-1 shadow-sm rounded-4"
+                                    <div class="card h-80 border-1 shadow-sm rounded-4"
                                         style="background: #fff; border-color: #AEA07A">
                                         <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Anak</div>
                                         <div class="card-body">
@@ -499,43 +490,29 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="bb_anak"
-                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Berat') }}</label>
-                                                    <div class="col-md-2">
-                                                        <div class="input-group">
-                                                            <input type="text"
-                                                                class="form-control @error('bb_anak') is-invalid @enderror"
-                                                                id="bb_anak" name="bb_anak"
-                                                                value="{{ old('bb_anak', $suratKeterangan->bb_anak) }}">
-
-                                                            @error('bb_anak')
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
-                                                        </div>
+                                                    <label class="col-md-3 col-form-label text-md-start ms-2">{{__('BB / TB')}}</label>
+                                                    <div class="col-md-3">
+                                                        <input type="text" id="bb_anak" name="bb_anak"
+                                                            class="form-control @error('bb_anak') is-invalid @enderror"
+                                                            placeholder="kg" value="{{ old('bb_anak', $suratKeterangan->bb_anak) }}">
+                                                        @error('bb_anak')
+                                                            <span
+                                                                class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                                        @enderror
                                                     </div>
-                                                    <label for="tb_anak"
-                                                        class="col-md-1 col-form-label text-md-start">{{ __('kg') }}</label>
-                                                    <label for="tb_anak"
-                                                        class="col-md-2 col-form-label text-md-start ms-2">{{ __('Panjang') }}</label>
-                                                    <div class="col-md-2">
-                                                        <div class="input-group">
-                                                            <input type="text"
-                                                                class="form-control @error('tb_anak') is-invalid @enderror"
-                                                                id="tb_anak" name="tb_anak"
-                                                                value="{{ old('tb_anak', $suratKeterangan->tb_anak) }}">
-
-                                                            @error('tb_anak')
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
-                                                        </div>
+                                                    <div class="col-md-1 d-flex align-items-center">{{__('kg')}}</div>
+                                                    <div class="col-md-3">
+                                                        <input type="text" id="tb_anak" name="tb_anak"
+                                                            class="form-control @error('tb_anak') is-invalid @enderror"
+                                                            placeholder="cm" value="{{ old('tb_anak', $suratKeterangan->tb_anak) }}">
+                                                        @error('tb_anak')
+                                                            <span
+                                                                class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                                        @enderror
                                                     </div>
-                                                    <label for="tb_anak"
-                                                        class="col-md-1 col-form-label text-md-start">{{ __('cm') }}</label>
+                                                    <div class="col-md-1 d-flex align-items-center">{{__('cm')}}</div>
                                                 </div>
+
                                                 <div id="data-ortu" name="data-ortu">
                                                     <div class="card-header bg-transparent mb-3 text-center fw-bold">
                                                         Data Ayah</div>
@@ -755,22 +732,20 @@
                                                             @enderror
                                                         </div>
                                                     </div>
-                                                    <div class="row mb-0">
-                                                        <div class="col-md-8 offset-md-4">
-                                                            <a href="{{ url()->previous() ?? route('skkelahiran.index')}}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
-                                                                <i class="ri-close-line me-1"></i>
-                                                                <span>Batal</span>
-                                                            </a>
-                                                            <button type="submit" class="btn text-white py-2 px-4"
-                                                                style="background: #7896B2; border-radius: 8px;">
-                                                                <i class="ri-save-3-fill me-1"></i>
-                                                                <span>Update</span>
-                                                            </button>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="d-flex justify-content-center mt-4">
+                                        <a href="{{ url()->previous() ?? route('skkelahiran.index') }}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
+                                            <i class="ri-close-line me-1"></i>
+                                            <span>Batal</span>
+                                        </a>
+                                        <button type="submit" class="btn text-white py-2 px-4"
+                                            style="background: #7896B2; border-radius: 8px;">
+                                            <i class="ri-save-3-fill me-1"></i>
+                                            <span>Update</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1032,7 +1007,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1050,7 +1024,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1068,7 +1041,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1086,7 +1058,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1104,7 +1075,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1123,7 +1093,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("gender.index"),
                         dataType: "json",
@@ -1142,7 +1111,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
 
                 $("#jenis_klhr_anak").select2({
@@ -1151,7 +1119,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
 
                 $("#penolong_klhr_anak").select2({
@@ -1160,7 +1127,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
 
                 $("#kewarganegaraan_pelapor").select2("trigger", "select", {

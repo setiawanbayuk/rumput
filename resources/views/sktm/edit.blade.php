@@ -33,7 +33,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-4">
-                                    <div class="card h-100 border-1 shadow-sm rounded-4" style="background: #fff; border-color: #AEA07A">
+                                    <div class="card h-80 border-1 shadow-sm rounded-4" style="background: #fff; border-color: #AEA07A">
                                         <div class="card-body">
                                             <div class="row mb-3 align-items-md-center">
                                                 <label for="nip" class="col-md-3 col-form-label text-md-start ms-2">Jenis SKTM</label>
@@ -197,8 +197,8 @@
                                                         @enderror
                                                     </div>
                                                 </div>
-
                                             </div>
+                                            
                                             <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
                                             <div class="row mb-3">
                                                 <label for="kategori"
@@ -237,27 +237,19 @@
                                                     </div>
                                                 @endforeach
                                             @endisset
-                                            <x-pengantar></x-pengantar>
-                                            <div class="row mb-3">
-                                                <label class="col-md-3 col-form-label text-md-start ms-2"></label>
-                                                <div class="col-md-8">
-                                                    <x-viewer src="{{ $suratKeterangan->pengantar }}" height="150px" />
-                                                </div>
-                                            </div>
-                                            <div class="row mb-0">
-                                                <div class="col-md-8 offset-md-4">
-                                                    <a href="{{ url()->previous() ?? route('sktm.index')}}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
-                                                        <i class="ri-close-line me-1"></i>
-                                                        <span>Batal</span>
-                                                    </a>
-                                                    <button type="submit" class="btn text-white py-2 px-4"
-                                                        style="background: #7896B2; border-radius: 8px;">
-                                                        <i class="ri-save-3-fill me-1"></i>
-                                                        <span>Update</span>
-                                                    </button>
-                                                </div>
-                                            </div>
+                                            <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                         </div>
+                                    </div>
+                                    <div class="d-flex justify-content-center mt-4">
+                                        <a href="{{ url()->previous() ?? route('sktm.index') }}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
+                                            <i class="ri-close-line me-1"></i>
+                                            <span>Batal</span>
+                                        </a>
+                                        <button type="submit" class="btn text-white py-2 px-4"
+                                            style="background: #7896B2; border-radius: 8px;">
+                                            <i class="ri-save-3-fill me-1"></i>
+                                            <span>Update</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -280,7 +272,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("gender.index"),
                         dataType: "json",
@@ -298,7 +289,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
                 $("#kepada_hubungan").select2({
                     theme: "bootstrap-5",
@@ -306,7 +296,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
                 if ('{{ $suratKeterangan->jenis }}' == 'sekolah') {
                     $("#flexRadioDefault2").attr('checked', true).trigger('click');

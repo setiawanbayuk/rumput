@@ -87,7 +87,6 @@
                 color: #8b6f1d
             }
 
-            /* tombol kecil bundar */
             .btn-chip {
                 border-radius: 2rem;
                 padding: .35rem 2rem;
@@ -109,8 +108,8 @@
         {{-- Tabs --}}
         <div class="seg seg-3">
             <!-- radio disembunyikan -->
-            <input type="radio" name="seg" id="seg-detail" checked>
-            <input type="radio" name="seg" id="seg-proses">
+            <input type="radio" name="seg" id="seg-detail">
+            <input type="radio" name="seg" id="seg-proses" checked>
             <input type="radio" name="seg" id="seg-riwayat">
 
             <div class="seg-wrap">
@@ -338,7 +337,7 @@
                 const segIdFromLast = Object.keys(map).find(k => map[k] === lastTab);
 
                 // fallback ke 'proses' jika null/invalid
-                const segToCheck = segIdFromLast || 'seg-detail';
+                const segToCheck = segIdFromLast || 'seg-proses';
                 const tabToShow = map[segToCheck];
 
                 // PENTING: tandai radio dulu, baru tampilkan pane

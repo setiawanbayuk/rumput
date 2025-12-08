@@ -183,6 +183,67 @@ class SuketController extends Controller
         return view('suket.addwarga', compact('title', 'nik'));
     }
 
+    public function editwarga($id)
+    {
+        // dd($id);
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
+        $suratKeterangan = SuratKeterangan::find($id);
+
+        return view('suket.editwarga', compact('title', 'suratKeterangan'));
+    }
+
+    public function updatewarga(Request $request, $id)
+    {
+        $suratKeterangan = SuratKeterangan::findOrFail($id);
+
+        $rules = [
+            'nik'         => 'required|min:16',
+            'keterangan'  => 'required|max:450',
+            'peruntukan'  => 'required|max:100',
+            'kepada'      => 'required',
+        ];
+
+        if ($request->hasFile('pengantar')) {
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+        }
+
+        $request->validate($rules);
+
+        // === HANDLE FILE PENGANTAR ===
+        $fileLocation = $suratKeterangan->pengantar; // default: pakai file lama
+
+        if ($request->hasFile('pengantar')) {
+
+            // Hapus file lama jika ada
+            if ($suratKeterangan->pengantar && Storage::exists(str_replace('/storage/', 'public/', $suratKeterangan->pengantar))) {
+                Storage::delete(str_replace('/storage/', 'public/', $suratKeterangan->pengantar));
+            }
+
+            // Upload file baru
+            $path = '/public/pengantar/' . date('Y') . '/suket';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
+
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
+
+        // === UPDATE DATA ===
+        $suratKeterangan->update([
+            'nik' => $request->nik,
+            'keterangan' => $request->keterangan,
+            'peruntukan' => $request->peruntukan,
+            'kepada' => $request->kepada,
+            'pengantar' => $fileLocation
+        ]);
+
+        // === RESPONSE ===
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Surat berhasil diperbarui!'], 200);
+        }
+
+        return redirect()->route('suket.warga')->with('success', 'Data berhasil diperbarui');
+    }
+
     public function show($id)
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
@@ -379,64 +440,6 @@ class SuketController extends Controller
         // return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
         }
     }
-
-    public function editwarga($id)
-    {
-        // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
-        $suratKeterangan = SuratKeterangan::find($id);
-
-        return view('suket.editwarga', compact('title', 'suratKeterangan'));
-    }
-
-    public function updatewarga(Request $request, $id)
-    {
-        $suratKeterangan = SuratKeterangan::findOrFail($id);
-
-        $request->validate([
-            'nik' => ['required', 'min:16'],
-            'keterangan' => ['required', 'max:450'],
-            'peruntukan' => ['required', 'max:100'],
-            'kepada' => ['required'],
-            'pengantar' => ['nullable', 'mimes:jpg,bmp,png'] // file opsional
-        ]);
-
-        // === HANDLE FILE PENGANTAR ===
-        $fileLocation = $suratKeterangan->pengantar; // default: pakai file lama
-
-        if ($request->hasFile('pengantar')) {
-
-            // Hapus file lama jika ada
-            if ($suratKeterangan->pengantar && Storage::exists(str_replace('/storage/', 'public/', $suratKeterangan->pengantar))) {
-                Storage::delete(str_replace('/storage/', 'public/', $suratKeterangan->pengantar));
-            }
-
-            // Upload file baru
-            $path = '/public/pengantar/' . date('Y') . '/suket';
-            $fileName = $request->file('pengantar')->hashName();
-            $fileLocation = '/storage/pengantar/' . date('Y') . '/suket/' . $fileName;
-
-            $request->file('pengantar')->storeAs($path, $fileName);
-        }
-
-        // === UPDATE DATA ===
-        $suratKeterangan->update([
-            'nik' => $request->nik,
-            'keterangan' => $request->keterangan,
-            'peruntukan' => $request->peruntukan,
-            'kepada' => $request->kepada,
-            'pengantar' => $fileLocation
-        ]);
-
-        // === RESPONSE ===
-        if ($request->segment(1) == 'api') {
-            return response()->json(['message' => 'Surat berhasil diperbarui!'], 200);
-        }
-
-        return redirect()->route('suket.warga')->with('success', 'Data berhasil diperbarui');
-    }
-
-
 
     public function update(Request $request, $id)
     {

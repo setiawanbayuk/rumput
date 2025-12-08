@@ -10,7 +10,7 @@ $(function () {
             ? "100%"
             : "style",
         placeholder: $(this).data("placeholder"),
-        minimumInpuLength: 2,
+        minimumInputLength: 2,
         ajax: {
             url: route("provinsi.index"),
             dataType: "json",
@@ -31,7 +31,7 @@ $(function () {
                 ? "100%"
                 : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInpuLength: 2,
+            minimumInputLength: 2,
             ajax: {
                 url:
                     window.location.origin +
@@ -56,7 +56,7 @@ $(function () {
                 ? "100%"
                 : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInpuLength: 2,
+            minimumInputLength: 2,
             ajax: {
                 url:
                     window.location.origin +
@@ -82,7 +82,7 @@ $(function () {
                 ? "100%"
                 : "style",
             placeholder: $(this).data("placeholder"),
-            minimumInpuLength: 2,
+            minimumInputLength: 2,
             ajax: {
                 url:
                     window.location.origin +
@@ -98,31 +98,49 @@ $(function () {
         });
     });
     // ---------- RESET CHAIN ----------
-    function resetSelect(id) {
+    function reset(id) {
         $(id).empty().trigger("change");
     }
 
-    // PROVINSI → reset kabko, kecamatan, kelurahan, rw, rt
-    $("#provinsi").on("change", function () {
-        resetSelect("#kabko");
-        resetSelect("#kecamatan");
-        resetSelect("#kelurahan");
-        resetSelect("#rw");
-        resetSelect("#rt");
+    // PROVINSI → reset kabko, kecamatan, kelurahan
+    $("#provinsi_boro").on("change", function () {
+        reset("#kabko_boro");
+        reset("#kecamatan_boro");
+        reset("#kelurahan_boro");
     });
 
-    // KAB/KOTA → reset kecamatan, kelurahan, rw, rt
-    $("#kabko").on("change", function () {
-        resetSelect("#kecamatan");
-        resetSelect("#kelurahan");
-        resetSelect("#rw");
-        resetSelect("#rt");
+    // KAB/KOTA → reset kecamatan, kelurahan
+    $("#kabko_boro").on("change", function () {
+        reset("#kecamatan_boro");
+        reset("#kelurahan_boro");
     });
 
-    // KECAMATAN → reset kelurahan, rw, rt
-    $("#kecamatan").on("change", function () {
-        resetSelect("#kelurahan");
-        resetSelect("#rw");
-        resetSelect("#rt");
+    // KECAMATAN → reset kelurahan
+    $("#kecamatan_boro").on("change", function () {
+        reset("#kelurahan_boro");
     });
+
+    // Fungsi prefill sederhana
+    function prefill(id, value, text) {
+        if (!value) return;
+
+        const option = new Option(text || value, value, true, true);
+        $(id).append(option).trigger("change");
+    }
+
+    // Ambil data atribut cara lama (manual satu-satu)
+    let prov        = $("#provinsi_boro").data("selected");
+    let prov_nm     = $("#provinsi_boro").data("selected-text");
+    let kabko       = $("#kabko_boro").data("selected");
+    let kabko_nm    = $("#kabko_boro").data("selected-text");
+    let kec         = $("#kecamatan_boro").data("selected");
+    let kec_nm      = $("#kecamatan_boro").data("selected-text");
+    let kel         = $("#kelurahan_boro").data("selected");
+    let kel_nm      = $("#kelurahan_boro").data("selected-text");
+
+    // Jalankan prefill satu-satu (tanpa timeout)
+    prefill("#provinsi_boro",   prov, prov_nm);
+    prefill("#kabko_boro",      kabko,  kabko_nm);
+    prefill("#kecamatan_boro",  kec,  kec_nm);
+    prefill("#kelurahan_boro",  kel,  kel_nm);
 });

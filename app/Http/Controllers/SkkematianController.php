@@ -162,6 +162,129 @@ class SkkematianController extends Controller
         return view('skkematian.addwarga', compact('title', 'nik'));
     }
 
+        public function editwarga($id)
+    {
+        // dd($id);
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELAHIRAN";
+        $suratKeterangan = SuratKematian::find($id);
+
+        return view('skkematian.editwarga', compact('title', 'suratKeterangan'));
+    }
+
+    public function updatewarga(Request $request, $id)
+    {
+        $suratKeterangan = SuratKematian::findOrFail($id);
+
+        $rules = [
+            'nik_pelapor' => ['required', 'min:16'],
+            'nik_saksi1' => ['required', 'min:16'],
+            'kk_saksi1' => ['required', 'min:16'],
+            'name_saksi1' => ['required', 'string'],
+            'kewarganegaraan_saksi2' => ['required', 'string'],
+            'nik_saksi2' => ['required', 'min:16'],
+            'kk_saksi2' => ['required', 'min:16'],
+            'name_saksi2' => ['required', 'string'],
+            'kewarganegaraan_saksi2' => ['required', 'string'],
+            'nik_ayah' => ['required', 'min:16'],
+            'name_ayah' => ['required', 'string'],
+            'tempat_lhr_ayah' => ['required', 'string'],
+            'tgl_lhr_ayah' =>  ['required', 'date'],
+            'kewarganegaraan_ayah' => ['required', 'string'],
+            'nik_ibu' => ['required', 'min:16'],
+            'name_ibu' => ['required', 'string'],
+            'tempat_lhr_ibu' => ['required', 'string'],
+            'tgl_lhr_ibu' =>  ['required', 'date'],
+            'kewarganegaraan_ibu' => ['required', 'string'],
+            'nik' => ['required', 'min:16'],
+            'name' => ['required', 'string'],
+            'tgl_kematian' =>  ['required', 'date'],
+            'jam_kematian' =>  ['required'],
+            'sebab_kematian' => ['required', 'string'],
+            'tempat_kematian' => ['required', 'string'],
+            'yang_menerangkan' => ['required', 'string'],
+        ];
+
+        if ($request->hasFile('pengantar')) {
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+        }
+
+        $request->validate($rules);
+
+        // === HANDLE FILE PENGANTAR ===
+        $fileLocation = $suratKeterangan->pengantar; // default: pakai file lama
+
+        if ($request->hasFile('pengantar')) {
+
+            // Hapus file lama jika ada
+            if ($suratKeterangan->pengantar && Storage::exists(str_replace('/storage/', 'public/', $suratKeterangan->pengantar))) {
+                Storage::delete(str_replace('/storage/', 'public/', $suratKeterangan->pengantar));
+            }
+
+            // Upload file baru
+            $path = '/public/pengantar/' . date('Y') . '/skkelahiran';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skkelahiran/' . $fileName;
+
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
+
+        $nik_pelapor = $suratKeterangan->nik_pelapor;
+        $nama_pelapor = $suratKeterangan->nama_pelapor;
+        $kk_pelapor = $suratKeterangan->kk_pelapor;
+        $kewarganegaraan_pelapor = $suratKeterangan->kewarganegaraan_pelapor;
+        $kewarganegaraan_pelapor_nm = $suratKeterangan->kewarganegaraan_pelapor_nm;
+        $kewarganegaraan_saksi1 = Kewarganegaraan::find($request->kewarganegaraan_saksi1);
+        $kewarganegaraan_saksi2 = Kewarganegaraan::find($request->kewarganegaraan_saksi2);
+        $kewarganegaraan_ayah = Kewarganegaraan::find($request->kewarganegaraan_ayah);
+        $kewarganegaraan_ibu = Kewarganegaraan::find($request->kewarganegaraan_ibu);
+
+        // === UPDATE DATA ===
+        $suratKeterangan->update([
+            'nama_pelapor' => $nama_pelapor,
+            'nik_pelapor' => $nik_pelapor,
+            'kk_pelapor' => $kk_pelapor,
+            'kewarganegaraan_pelapor' => $kewarganegaraan_pelapor,
+            'kewarganegaraan_pelapor_nm' => $kewarganegaraan_pelapor_nm,
+            'nama_saksi1' => $request->name_saksi1,
+            'nik_saksi1' => $request->nik_saksi1,
+            'kk_saksi1' => $request->kk_saksi1,
+            'kewarganegaraan_saksi1' => $request->kewarganegaraan_saksi1,
+            'kewarganegaraan_saksi1_nm' => $kewarganegaraan_saksi1->nama,
+            'nama_saksi2' => $request->name_saksi2,
+            'nik_saksi2' => $request->nik_saksi2,
+            'kk_saksi2' => $request->kk_saksi2,
+            'kewarganegaraan_saksi2' => $request->kewarganegaraan_saksi2,
+            'kewarganegaraan_saksi2_nm' => $kewarganegaraan_saksi2->nama,
+            'nama_ayah' => $request->name_ayah,
+            'nik_ayah' => $request->nik_ayah,
+            'tempat_lhr_ayah' => $request->tempat_lhr_ayah,
+            'tgl_lhr_ayah' => $request->tgl_lhr_ayah,
+            'kewarganegaraan_ayah' => $request->kewarganegaraan_ayah,
+            'kewarganegaraan_ayah_nm' => $kewarganegaraan_ayah->nama,
+            'nama_ibu' => $request->name_ibu,
+            'nik_ibu' => $request->nik_ibu,
+            'tempat_lhr_ibu' => $request->tempat_lhr_ibu,
+            'tgl_lhr_ibu' => $request->tgl_lhr_ibu,
+            'kewarganegaraan_ibu' => $request->kewarganegaraan_ibu,
+            'kewarganegaraan_ibu_nm' => $kewarganegaraan_ibu->nama,
+            'nik' => $request->nik,
+            'nama' => $request->name,
+            'tgl_kematian' => $request->tgl_kematian,
+            'jam_kematian' => $request->jam_kematian,
+            'sebab_kematian' => $request->sebab_kematian,
+            'tempat_kematian' => $request->tempat_kematian,
+            'yang_menerangkan' => $request->yang_menerangkan,
+            'pengantar' => $fileLocation
+        ]);
+
+        // === RESPONSE ===
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Surat berhasil diperbarui!'], 200);
+        }
+
+        return redirect()->route('skkematian.warga')->with('success', 'Data berhasil diperbarui');
+    }
+
     public function show($id)
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";

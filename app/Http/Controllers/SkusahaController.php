@@ -22,7 +22,6 @@ use App\Models\StatusKwn;
 use App\Models\SuratUsaha;
 use App\Models\User;
 use App\Models\Pejabat;
-use App\Models\SuratKeterangan;
 use App\Models\Skpd;
 use App\Models\SuratTemplate;
 use App\Traits\GetNoSurat;
@@ -175,6 +174,71 @@ class SkusahaController extends Controller
         }
 
         return view('skusaha.addwarga', compact('title', 'nik'));
+    }
+
+    public function editwarga($id)
+    {
+        // dd($id);
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
+        $suratKeterangan = SuratUsaha::find($id);
+
+        return view('skusaha.editwarga', compact('title', 'suratKeterangan'));
+    }
+
+    public function updatewarga(Request $request, $id)
+    {
+        $suratKeterangan = SuratUsaha::findOrFail($id);
+
+        $rules = [
+            'nik' => ['required', 'min:16'],
+            'register_as' => ['required', 'string'],
+            'nama_usaha' => ['required', 'string'],
+            'alamat_usaha' => ['required', 'string'],
+            'kepada' => ['required', 'string'],
+            'peruntukan' => ['required', 'max:100'],
+        ];
+
+        if ($request->hasFile('pengantar')) {
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+        }
+
+        $request->validate($rules);
+
+        // === HANDLE FILE PENGANTAR ===
+        $fileLocation = $suratKeterangan->pengantar; // default: pakai file lama
+
+        if ($request->hasFile('pengantar')) {
+
+            // Hapus file lama jika ada
+            if ($suratKeterangan->pengantar && Storage::exists(str_replace('/storage/', 'public/', $suratKeterangan->pengantar))) {
+                Storage::delete(str_replace('/storage/', 'public/', $suratKeterangan->pengantar));
+            }
+
+            // Upload file baru
+            $path = '/public/pengantar/' . date('Y') . '/skusaha';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skusaha/' . $fileName;
+
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
+
+        // === UPDATE DATA ===
+        $suratKeterangan->update([
+            'nik' => $request->nik,
+            'jenis' => $request->register_as,
+            'peruntukan' => $request->peruntukan,
+            'kepada' => $request->kepada,
+            'nama_usaha' => $request->nama_usaha,
+            'alamat_usaha' => $request->alamat_usaha,
+            'pengantar' => $fileLocation
+        ]);
+
+        // === RESPONSE ===
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Surat berhasil diperbarui!'], 200);
+        }
+
+        return redirect()->route('skusaha.warga')->with('success', 'Data berhasil diperbarui');
     }
 
     public function show($id)

@@ -60,7 +60,6 @@
                                                 </div>
                                             </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
@@ -72,28 +71,30 @@
                                     <div class="card-body">
 
                                         {{-- Kepada --}}
-                                        <x-kepada :kepada="$suratKeterangan->kepada" readonly="true" />
+                                        <x-kepada :kepada="$suratKeterangan->kepada" :readonly="true" />
 
                                         {{-- Peruntukan --}}
-                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" readonly="true" />
+                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="true" />
 
                                         {{-- Pengantar --}}
-                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
-
+                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                         {{-- END ROW --}}
 
-                        {{-- ========== BUTTON EDIT ========== --}}
-                        <div class="d-flex justify-content-center" style="bottom:0; margin-top:75px;">
-                            <a href="{{ route('skusaha.warga') }}" class="btn-edit">
-                                Edit
+                        {{-- ===== TOMBOL EDIT ===== --}}
+                        <div class="d-flex justify-content-center gap-4" style="margin-top:100px;">
+                            <a href="{{ route('skusaha.warga') }}" class="btn-ajukan">
+                                Kembali
                             </a>
+                            @if ($suratKeterangan->status == 0)
+                                <a href="{{ route('skusaha.edit', $suratKeterangan->id) }}" class="btn-edit">
+                                    Edit
+                                </a>
+                            @endif
                         </div>
-
                     </div> {{-- END card-body --}}
                 </div> {{-- END card --}}
             </div>

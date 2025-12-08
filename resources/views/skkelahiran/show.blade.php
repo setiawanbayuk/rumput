@@ -267,17 +267,19 @@
                             </div>
                         </div>
 
-                        {{-- TOMBOL EDIT --}}
-                        <div class="d-flex justify-content-center" style="margin-top:100px;">
-                            <a href="{{ route('skkelahiran.warga') }}" class="btn-edit">
-                                Edit
+                        {{-- ===== TOMBOL EDIT ===== --}}
+                        <div class="d-flex justify-content-center gap-4" style="margin-top:100px;">
+                            <a href="{{ route('skkelahiran.warga') }}" class="btn-ajukan">
+                                Kembali
                             </a>
+                            @if ($suratKeterangan->status == 0)
+                                <a href="{{ route('skkelahiran.edit', $suratKeterangan->id) }}" class="btn-edit">
+                                    Edit
+                                </a>
+                            @endif
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
         </div>
     </div>

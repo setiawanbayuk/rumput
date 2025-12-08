@@ -179,7 +179,7 @@
                                     <div class="d-flex gap-2">
                                         {{-- STEP 1 & 2: Tombol PREVIEW --}}
                                         @if ($step == 1 || $step == 2)
-                                            <a href="{{ route($alias.'.show', ['id' => $id]) }}"
+                                            <a href="{{ route($alias.'.show', ['id' => $id]) }}" target="_blank"
                                             class="btn btn-chip text-white" style="background: #7896B2">
                                                 Lihat
                                             </a>

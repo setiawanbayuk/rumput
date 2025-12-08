@@ -163,13 +163,6 @@
                                         </div>
 
                                         <div class="row mb-3">
-                                            <label class="col-md-4 col-form-label">No. KK</label>
-                                            <div class="col-md-8">
-                                                <input class="form-control-plaintext border rounded px-3 py-2 bg-light" readonly value="{{ $suratKeterangan->kk_ayah }}">
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
                                             <label class="col-md-4 col-form-label">Nama</label>
                                             <div class="col-md-8">
                                                 <input class="form-control-plaintext border rounded px-3 py-2 bg-light" readonly value="{{ $suratKeterangan->nama_ayah }}">
@@ -204,13 +197,6 @@
                                         </div>
 
                                         <div class="row mb-3">
-                                            <label class="col-md-4 col-form-label">No. KK</label>
-                                            <div class="col-md-8">
-                                                <input class="form-control-plaintext border rounded px-3 py-2 bg-light" readonly value="{{ $suratKeterangan->kk_ibu }}">
-                                            </div>
-                                        </div>
-
-                                        <div class="row mb-3">
                                             <label class="col-md-4 col-form-label">Nama</label>
                                             <div class="col-md-8">
                                                 <input class="form-control-plaintext border rounded px-3 py-2 bg-light" readonly value="{{ $suratKeterangan->nama_ibu }}">
@@ -238,24 +224,24 @@
                                         </div>
 
                                         <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
-
                                     </div>
                                 </div>
                             </div>
-
                         </div>
 
                         {{-- ===== TOMBOL EDIT ===== --}}
-                        <div class="d-flex justify-content-center" style="margin-top:100px;">
+                        <div class="d-flex justify-content-center gap-4" style="margin-top:100px;">
                             <a href="{{ route('skkematian.warga') }}" class="btn-ajukan">
-                                Edit
+                                Kembali
                             </a>
+                            @if ($suratKeterangan->status == 0)
+                                <a href="{{ route('skkematian.edit', $suratKeterangan->id) }}" class="btn-edit">
+                                    Edit
+                                </a>
+                            @endif
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
         </div>
     </div>

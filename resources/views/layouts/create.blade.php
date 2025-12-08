@@ -17,6 +17,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
     @stack('styles')
 
@@ -77,8 +78,8 @@
             @endif
 
             <!-- toggler mobile -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" datas-bs-target="#navbarMain"
-                aria-controls="navbarMain" aria-expanded="flase" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -94,7 +95,7 @@
                     <a href="{{ url()->previous() ?: url('/warga') }}"
                         class="back-link d-flex align-items-center gap-1 text-decoration-none">
                         <i class="ri-arrow-go-back-line"></i>
-                    <span>Kembali</span>
+                        <span>Kembali</span>
                     </a>
                 @endif
             </div>
@@ -106,46 +107,14 @@
         @yield('content')
     </main>
 
-    <!-- FOOTER -->
-    <footer class="py-3" style="background-color: #AB9C71;">
-        <div class="container d-flex justify-content-between align-items-center text-white">
-            <p class="mb-0">© 2025 Pemerintah Kota Kediri</p>
-            <p class="mb-0">Support by <a href="#" class="text-white text-decoration-none">Dinas Kominfo Kota
-                    Kediri</a></p>
-        </div>
-    </footer>
-
     <!-- SCRIPTS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    {{-- SweetAlert2 --}}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    {{-- Flash message --}}
-    @if (session('success'))
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil',
-                text: '{{ session('success') }}',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        </script>
-    @endif
-
-    @if ($errors->any())
-        <script>
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal',
-                text: 'Ada kesalahan pada input, silakan cek lagi.'
-            });
-        </script>
-    @endif
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     @stack('scripts')
+
 </body>
 
 </html>

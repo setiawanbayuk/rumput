@@ -288,19 +288,6 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="kk_ayah" class="col-md-4 col-form-label">No. KK</label>
-                                                    <div class="col-md-8">
-                                                        <input type="text" id="kk_ayah" name="kk_ayah"
-                                                            class="form-control @error('kk_ayah') is-invalid @enderror"
-                                                            value="{{ old('kk_ayah') }}">
-                                                        @error('kk_ayah')
-                                                            <span
-                                                                class="invalid-feedback"><strong>{{ $message }}</strong></span>
-                                                        @enderror
-                                                    </div>
-                                                </div>
-
-                                                <div class="row mb-3">
                                                     <label for="name_ayah" class="col-md-4 col-form-label">Nama</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="name_ayah" name="name_ayah"
@@ -370,19 +357,6 @@
                                                 </div>
 
                                                 <div class="row mb-3">
-                                                    <label for="kk_ibu" class="col-md-4 col-form-label">No. KK</label>
-                                                    <div class="col-md-8">
-                                                        <input type="text" id="kk_ibu" name="kk_ibu"
-                                                            class="form-control @error('kk_ibu') is-invalid @enderror"
-                                                            value="{{ old('kk_ibu') }}">
-                                                        @error('kk_ibu')
-                                                            <span
-                                                                class="invalid-feedback"><strong>{{ $message }}</strong></span>
-                                                        @enderror
-                                                    </div>
-                                                </div>
-
-                                                <div class="row mb-3">
                                                     <label for="name_ibu" class="col-md-4 col-form-label">Nama</label>
                                                     <div class="col-md-8">
                                                         <input type="text" id="name_ibu" name="name_ibu"
@@ -444,7 +418,6 @@
                                         </div>
                                     </div>
                                 </div>
-
                                 {{-- Tombol Ajukan --}}
                                 <div class="d-flex justify-content-center" style="margin-top: 100px;">
                                     <button type="button" class="btn-ajukan" data-bs-toggle="modal"
@@ -452,7 +425,6 @@
                                         Ajukan
                                     </button>
                                 </div>
-
                             </form>
                         </div>
                     </div>
@@ -789,7 +761,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -807,7 +778,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -825,7 +795,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -843,7 +812,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -861,7 +829,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -879,7 +846,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
 
                 $("#yang_menerangkan").select2({
@@ -888,7 +854,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
             });
         </script>

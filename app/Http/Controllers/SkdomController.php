@@ -176,6 +176,79 @@ class SkdomController extends Controller
         return view('skdom.addwarga', compact('title', 'nik'));
     }
 
+        public function editwarga($id)
+    {
+        // dd($id);
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN DOMISILI WARGA";
+        $suratKeterangan = SuratDomisili::find($id);
+
+        return view('skdom.editwarga', compact('title', 'suratKeterangan'));
+    }
+
+    public function updatewarga(Request $request, $id)
+    {
+        $suratKeterangan = SuratDomisili::findOrFail($id);
+
+        $rules = [
+            'nik'         => 'required|min:16',
+            'peruntukan' => ['required', 'max:100'],
+            'kepada' => ['required'],
+            'register_as'   => ['required', 'string'],
+            'nama_perusahaan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
+            'status_bangunan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
+            'jumlah_karyawan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
+            'alamat_domisili' => ['required', 'string'],
+        ];
+
+        if ($request->hasFile('pengantar')) {
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+        }
+
+        $request->validate($rules);
+
+        // === HANDLE FILE PENGANTAR ===
+        $fileLocation = $suratKeterangan->pengantar; // default: pakai file lama
+
+        if ($request->hasFile('pengantar')) {
+
+            // Hapus file lama jika ada
+            if ($suratKeterangan->pengantar && Storage::exists(str_replace('/storage/', 'public/', $suratKeterangan->pengantar))) {
+                Storage::delete(str_replace('/storage/', 'public/', $suratKeterangan->pengantar));
+            }
+
+            // Upload file baru
+            $path = '/public/pengantar/' . date('Y') . '/skdom';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skdom/' . $fileName;
+
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
+
+        // === UPDATE DATA ===
+        $suratKeterangan->update([
+            'nik' => $request->nik,
+            'jenis' => $request->register_as,
+            'kepada' => $request->kepada,
+            'nama_perusahaan' => $request->nama_perusahaan,
+            'status_bangunan' => $request->status_bangunan,
+            'jumlah_karyawan' => $request->jumlah_karyawan,
+            'alamat_domisili' => $request->alamat_domisili,
+            'tgl_berlaku' => $request->tgl_berlaku,
+            'peruntukan' => $request->peruntukan,
+            'pengantar' => $request->pengantar,
+            'kepada' => $request->kepada,
+            'pengantar' => $fileLocation,
+        ]);
+
+        // === RESPONSE ===
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Surat berhasil diperbarui!'], 200);
+        }
+
+        return redirect()->route('skdom.warga')->with('success', 'Data berhasil diperbarui');
+    }
+
+
     public function show($id)
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN DOMISILI";

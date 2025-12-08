@@ -180,6 +180,100 @@ class SkboroController extends Controller
         return view('skboro.addwarga', compact('title', 'nik'));
     }
 
+    public function editwarga($id)
+    {
+        // dd($id);
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
+        $suratKeterangan = SuratBoro::find($id);
+        $pengikut = SuratBoroPengikut::where('boro_id', $id)->get();
+
+
+        return view('skboro.editwarga', compact('title', 'suratKeterangan', 'pengikut'));
+    }
+
+    public function updatewarga(Request $request, $id)
+    {
+        $suratKeterangan = SuratBoro::findOrFail($id);
+
+        $rules = [
+            'nik'         => 'required|min:16',
+            'peruntukan'  => 'required|max:100',
+        ];
+
+        if ($request->hasFile('pengantar')) {
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+        }
+
+        $request->validate($rules);
+
+        // === HANDLE FILE PENGANTAR ===
+        $fileLocation = $suratKeterangan->pengantar; // default: pakai file lama
+
+        if ($request->hasFile('pengantar')) {
+
+            // Hapus file lama jika ada
+            if ($suratKeterangan->pengantar && Storage::exists(str_replace('/storage/', 'public/', $suratKeterangan->pengantar))) {
+                Storage::delete(str_replace('/storage/', 'public/', $suratKeterangan->pengantar));
+            }
+
+            // Upload file baru
+            $path = '/public/pengantar/' . date('Y') . '/skboro';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skboro/' . $fileName;
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
+
+        $provinsi_boro = Provinsi::find($request->provinsi_boro);
+        $kabko_boro = Kabko::find($request->kabko_boro);
+        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
+        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
+
+        // === UPDATE DATA ===
+        $suratKeterangan->update([
+            'nik' => $request->nik,
+            'prov_boro' => $request->provinsi_boro,
+            'prov_boro_nm' => $provinsi_boro->nama,
+            'kabko_boro' => $request->kabko_boro,
+            'kabko_boro_nm' => $kabko_boro->nama,
+            'kec_boro' => $request->kecamatan_boro,
+            'kec_boro_nm' => $kecamatan_boro->nama,
+            'kel_boro' => $request->kelurahan_boro,
+            'kel_boro_nm' => $kelurahan_boro->nama,
+            'alamat_boro' => $request->alamat_boro,
+            'tgl_awal' => $request->tgl_awal,
+            'tgl_akhir' => $request->tgl_akhir,
+            'peruntukan' => $request->peruntukan,
+            'pengantar' => $fileLocation,        ]);
+
+        SuratBoroPengikut::where('boro_id', $id)->delete();
+        if ($request->add_nik) {
+            foreach ($request->add_nik as $key => $value) {
+                if (!$value) continue; // skip data kosong
+
+                $gender_pengikut = Gender::find($request->add_jk[$key]);
+                $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
+                SuratBoroPengikut::create([
+                    'boro_id' => $id,
+                    'nik' => $request->add_nik[$key],
+                    'nama' => $request->add_nama[$key],
+                    'gender' => $request->add_jk[$key],
+                    'gender_nm' => $gender_pengikut->nama,
+                    'status_kwn' => $request->add_stat[$key],
+                    'status_kwn_nm' => $status_kwn_pengikut->nama,
+                    'umur' => $request->add_umr[$key],
+                    'hubungan' => $request->add_hub[$key],
+                ]);
+            }
+        }
+
+        // === RESPONSE ===
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Surat berhasil diperbarui!'], 200);
+        }
+
+        return redirect()->route('skboro.warga')->with('success', 'Data berhasil diperbarui');
+    }
+
     public function show($id)
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
@@ -437,7 +531,6 @@ class SkboroController extends Controller
             'tgl_akhir' => ['required', 'date'],
             'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
         ]);
-
 
         // dd($request->all());
         if ($request->file('pengantar')) {

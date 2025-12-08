@@ -1,294 +1,209 @@
-@extends('layouts.main')
+{{-- resources/views/suket/edit.blade.php --}}
+@extends('layouts.create')
 
-@section('title', '{{ $title }}')
+@section('title', $title ?? 'Edit Surat Keterangan')
 
 @section('content')
-    <div class="container mt-2">
-        <div class="row justify-content-center">
-            <div class="col-md-12">
-                <div class="card shadow-sm border-0 rounded-4">
-                    <div class="card-header border-0 pt-3 pb-2" style="background: #AEA07A; border-radius: 1rem 1rem 0 0">
-                        <h5 class="my-3 fw-bold text-white text-center" style="letter-spacing: .5px">{{ $title }}</h5>
-                    </div>
+    <div class="d-flex align-items-center justify-content-center min-vh-100"
+        style="background: url('{{ asset('assets/profile.png') }}') no-repeat center center; background-size: cover; margin-top:-75px;">
+        <div class="container" style="margin-top:125px; margin-bottom:50px;">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card border-0 shadow-sm rounded-3"
+                        style="background-color:rgba(255,255,255,.28); backdrop-filter:blur(10px);">
+                        <div class="card-header bg-transparent py-3">
+                            <h5 class="my-3 fw-bold text-white text-center" style="letter-spacing:.5px">
+                                {{ $title }}
+                            </h5>
+                        </div>
 
-                    <div class="card-body">
-                        <form method="POST" enctype="multipart/form-data" action="{{ route('skkematian.update', ['id' => $suratKeterangan->id]) }}">
-                            @csrf
+                        <div class="card-body">
+                            <form id="formEditSkkematian" method="POST" enctype="multipart/form-data" 
+                                action="{{ route('skkematian.updatewarga', $suratKeterangan->id) }}" >
+                                @csrf
+                                <input type="hidden" id="nik_pelapor" name="nik_pelapor" value="{{ $suratKeterangan->nik_pelapor }}">
+                                {{-- ================== ROW KEDUA KARTU ================== --}}
+                                <div class="row g-3" style="min-height:500px;">
 
-                            <div class="row" style="min-height: 500px;">
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100 border-1 shadow-sm rounded-4"
-                                        style="background: #fff; border-color: #AEA07A">
-                                        <div class="card-body">
-                                            <div>
-                                                <x-nosrt>
-                                                    <x-slot:kd_jenis_surat>{{ $suratKeterangan->kd_jenis_surat }}</x-slot:kd_jenis_surat>
-                                                    <x-slot:no_urut_surat>{{ $suratKeterangan->no_urut_surat }}</x-slot:no_urut_surat>
-                                                    <x-slot:instansi_kode>{{ $currentUser->skpd->instansi_kode }}</x-slot:instansi_kode>
-                                                    <x-slot:tgl_surat>{{ $suratKeterangan->tgl_surat }}</x-slot:tgl_surat>
-                                                </x-nosrt>
-                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
-                                                <div id="data-pelapor" name="data-pelapor">
-                                                    <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Pelapor</div>
-                                                    <div class="row mb-3">
-                                                        <label for="nik_pelapor"
-                                                            class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Pelapor') }}</label>
-                                                        <div class="col-md-8">
-                                                            <div class="input-group">
-                                                                <input type="number"
-                                                                    class="form-control @error('nik_pelapor') is-invalid @enderror"
-                                                                    id="nik_pelapor" name="nik_pelapor"
-                                                                    placeholder="Masukkan 16 digit NIK" aria-label="NIK"
-                                                                    value="{{ old('nik_pelapor', $suratKeterangan->nik_pelapor) }}"
-                                                                    aria-describedby="basic-addon2">
-                                                                {{-- <button type="button" class="input-group-text btn btn-subtle-primary"
-                                                                    onclick="checkNIK()">CARI</button> --}}
+                                    {{-- ========== KIRI: KETERANGAN ========== --}}
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card h-100 border-1 shadow-sm bg-white">
+                                            <div class="card-body">
 
-                                                                @error('nik_pelapor')
-                                                                    <span class="invalid-feedback" role="alert">
-                                                                        <strong>{{ $message }}</strong>
-                                                                    </span>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row mb-3">
-                                                        <label for="no_dokumen_perjalanan"
-                                                            class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. Dokumen Perjalanan') }}</label>
+                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
+                                                    Data Saksi 1</div>
 
-                                                        <div class="col-md-8">
-                                                            <input id="no_dokumen_perjalanan" type="number"
-                                                                class="form-control @error('no_dokumen_perjalanan') is-invalid @enderror"
-                                                                name="no_dokumen_perjalanan" value="{{ old('no_dokumen_perjalanan', $suratKeterangan->no_dokumen_perjalanan) }}"
-                                                                autocomplete="no_dokumen_perjalanan" autofocus>
+                                                <div class="row mb-3">
+                                                    <label for="nik_saksi1"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Saksi 1') }}</label>
 
-                                                            @error('no_dokumen_perjalanan')
+                                                    <div class="col-md-8">
+                                                        <div class="input-group">
+                                                            <input type="number"
+                                                                class="form-control @error('nik_saksi1') is-invalid @enderror"
+                                                                id="nik_saksi1" name="nik_saksi1"
+                                                                placeholder="Masukkan 16 digit NIK"
+                                                                aria-label="NIK"
+                                                                value="{{ old('nik_saksi1', $suratKeterangan->nik_saksi1) }}"
+                                                                aria-describedby="basic-addon2">
+
+                                                            @error('nik_saksi1')
                                                                 <span class="invalid-feedback" role="alert">
                                                                     <strong>{{ $message }}</strong>
                                                                 </span>
                                                             @enderror
                                                         </div>
                                                     </div>
-                                                    <div class="row mb-3">
-                                                        <label for="kk_pelapor"
-                                                            class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Pelapor') }}</label>
+                                                </div>
 
-                                                        <div class="col-md-8">
-                                                            <input id="kk_pelapor" type="number"
-                                                                class="form-control @error('kk_pelapor') is-invalid @enderror"
-                                                                name="kk_pelapor"
-                                                                value="{{ old('kk_pelapor', $suratKeterangan->kk_pelapor) }}"
-                                                                autocomplete="kk_pelapor" autofocus>
+                                                <div class="row mb-3">
+                                                    <label for="kk_saksi1"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Saksi 1') }}</label>
 
-                                                            @error('kk_pelapor')
+                                                    <div class="col-md-8">
+                                                        <input id="kk_saksi1" type="number"
+                                                            class="form-control @error('kk_saksi1') is-invalid @enderror"
+                                                            name="kk_saksi1"
+                                                            value="{{ old('kk_saksi1', $suratKeterangan->kk_saksi1) }}"
+                                                            autocomplete="kk_saksi1" autofocus>
+
+                                                        @error('kk_saksi1')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <label for="name_saksi1"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Saksi 1') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <input id="name_saksi1" type="text"
+                                                            class="form-control @error('name_saksi1') is-invalid @enderror"
+                                                            name="name_saksi1"
+                                                            value="{{ old('name_saksi1', $suratKeterangan->nama_saksi1) }}"
+                                                            autocomplete="name_saksi1" autofocus>
+
+                                                        @error('name_saksi1')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <label for="kewarganegaraan_saksi1"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Saksi 1') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <select
+                                                            class="form-control @error('kewarganegaraan_saksi1') is-invalid @enderror"
+                                                            id="kewarganegaraan_saksi1"
+                                                            name="kewarganegaraan_saksi1"
+                                                            data-placeholder="Kewarganegaraan">
+                                                        </select>
+                                                        @error('kewarganegaraan_saksi1')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
+                                                    Data Saksi 2</div>
+
+                                                <div class="row mb-3">
+                                                    <label for="nik_saksi2"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Saksi 2') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <div class="input-group">
+                                                            <input type="number"
+                                                                class="form-control @error('nik_saksi2') is-invalid @enderror"
+                                                                id="nik_saksi2" name="nik_saksi2"
+                                                                placeholder="Masukkan 16 digit NIK"
+                                                                aria-label="NIK"
+                                                                value="{{ old('nik_saksi2', $suratKeterangan->nik_saksi2) }}"
+                                                                aria-describedby="basic-addon2">
+
+                                                            @error('nik_saksi2')
                                                                 <span class="invalid-feedback" role="alert">
                                                                     <strong>{{ $message }}</strong>
                                                                 </span>
                                                             @enderror
                                                         </div>
                                                     </div>
-                                                    <div class="row mb-3">
-                                                        <label for="name_pelapor"
-                                                            class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Pelapor') }}</label>
+                                                </div>
 
-                                                        <div class="col-md-8">
-                                                            <input id="name_pelapor" type="text"
-                                                                class="form-control @error('name_pelapor') is-invalid @enderror"
-                                                                name="name_pelapor"
-                                                                value="{{ old('name_pelapor', $suratKeterangan->nama_pelapor) }}"
-                                                                autocomplete="name_pelapor" autofocus>
+                                                <div class="row mb-3">
+                                                    <label for="kk_saksi2"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Saksi 2') }}</label>
 
-                                                            @error('name_pelapor')
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
-                                                        </div>
+                                                    <div class="col-md-8">
+                                                        <input id="kk_saksi2" type="number"
+                                                            class="form-control @error('kk_saksi2') is-invalid @enderror"
+                                                            name="kk_saksi2"
+                                                            value="{{ old('kk_saksi2', $suratKeterangan->kk_saksi2) }}"
+                                                            autocomplete="kk_saksi2" autofocus>
+
+                                                        @error('kk_saksi2')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
                                                     </div>
+                                                </div>
 
-                                                    <div class="row mb-3">
-                                                        <label for="kewarganegaraan_pelapor"
-                                                            class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Pelapor') }}</label>
+                                                <div class="row mb-3">
+                                                    <label for="name_saksi2"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Saksi 2') }}</label>
 
-                                                        <div class="col-md-8">
-                                                            <select
-                                                                class="form-control @error('kewarganegaraan_pelapor') is-invalid @enderror"
-                                                                id="kewarganegaraan_pelapor" name="kewarganegaraan_pelapor"
-                                                                data-placeholder="Kewarganegaraan">
-                                                            </select>
-                                                            @error('kewarganegaraan_pelapor')
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
-                                                        </div>
+                                                    <div class="col-md-8">
+                                                        <input id="name_saksi2" type="text"
+                                                            class="form-control @error('name_saksi2') is-invalid @enderror"
+                                                            name="name_saksi2"
+                                                            value="{{ old('name_saksi2', $suratKeterangan->nama_saksi2) }}"
+                                                            autocomplete="name_saksi2" autofocus>
+
+                                                        @error('name_saksi2')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
                                                     </div>
+                                                </div>
 
-                                                    <div id="data-saksi" name="data-saksi">
-                                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Saksi 1</div>
-                                                        <div class="row mb-3">
-                                                            <label for="nik_saksi1"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Saksi 1') }}</label>
-                                                            <div class="col-md-8">
-                                                                <div class="input-group">
-                                                                    <input type="number"
-                                                                        class="form-control @error('nik_saksi1') is-invalid @enderror"
-                                                                        id="nik_saksi1" name="nik_saksi1"
-                                                                        placeholder="Masukkan 16 digit NIK" aria-label="NIK"
-                                                                        value="{{ old('nik_saksi1', $suratKeterangan->nik_saksi1) }}"
-                                                                        aria-describedby="basic-addon2">
+                                                <div class="row mb-3">
+                                                    <label for="kewarganegaraan_saksi2"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Saksi 2') }}</label>
 
-                                                                    @error('nik_saksi1')
-                                                                        <span class="invalid-feedback" role="alert">
-                                                                            <strong>{{ $message }}</strong>
-                                                                        </span>
-                                                                    @enderror
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row mb-3">
-                                                            <label for="kk_saksi1"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Saksi 1') }}</label>
-                                                            <div class="col-md-8">
-                                                                <input id="kk_saksi1" type="number"
-                                                                    class="form-control @error('kk_saksi1') is-invalid @enderror"
-                                                                    name="kk_saksi1"
-                                                                    value="{{ old('kk_saksi1', $suratKeterangan->kk_saksi1) }}"
-                                                                    autocomplete="kk_saksi1" autofocus>
-
-                                                                @error('kk_saksi1')
-                                                                    <span class="invalid-feedback" role="alert">
-                                                                        <strong>{{ $message }}</strong>
-                                                                    </span>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
-                                                        <div class="row mb-3">
-                                                            <label for="name_saksi1"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Saksi 1') }}</label>
-                                                            <div class="col-md-8">
-                                                                <input id="name_saksi1" type="text"
-                                                                    class="form-control @error('name_saksi1') is-invalid @enderror"
-                                                                    name="name_saksi1"
-                                                                    value="{{ old('name_saksi1', $suratKeterangan->nama_saksi1) }}"
-                                                                    autocomplete="name_saksi1" autofocus>
-
-                                                                @error('name_saksi1')
-                                                                    <span class="invalid-feedback" role="alert">
-                                                                        <strong>{{ $message }}</strong>
-                                                                    </span>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="row mb-3">
-                                                            <label for="kewarganegaraan_saksi1"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Saksi 1') }}</label>
-
-                                                            <div class="col-md-8">
-                                                                <select
-                                                                    class="form-control @error('kewarganegaraan_saksi1') is-invalid @enderror"
-                                                                    id="kewarganegaraan_saksi1" name="kewarganegaraan_saksi1"
-                                                                    data-placeholder="Kewarganegaraan">
-                                                                </select>
-                                                                @error('kewarganegaraan_saksi1')
-                                                                    <span class="invalid-feedback" role="alert">
-                                                                        <strong>{{ $message }}</strong>
-                                                                    </span>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
-
-                                                        {{-- <div class="garis"></div> --}}
-
-                                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Saksi 2</div>
-
-                                                        <div class="row mb-3">
-                                                            <label for="nik_saksi2"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Saksi 2') }}</label>
-                                                            <div class="col-md-8">
-                                                                <div class="input-group">
-                                                                    <input type="number"
-                                                                        class="form-control @error('nik_saksi2') is-invalid @enderror"
-                                                                        id="nik_saksi2" name="nik_saksi2"
-                                                                        placeholder="Masukkan 16 digit NIK" aria-label="NIK"
-                                                                        value="{{ old('nik_saksi2', $suratKeterangan->nik_saksi2) }}"
-                                                                        aria-describedby="basic-addon2">
-
-                                                                    @error('nik_saksi2')
-                                                                        <span class="invalid-feedback" role="alert">
-                                                                            <strong>{{ $message }}</strong>
-                                                                        </span>
-                                                                    @enderror
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row mb-3">
-                                                            <label for="kk_saksi2"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Saksi 2') }}</label>
-
-                                                            <div class="col-md-8">
-                                                                <input id="kk_saksi2" type="number"
-                                                                    class="form-control @error('kk_saksi2') is-invalid @enderror"
-                                                                    name="kk_saksi2"
-                                                                    value="{{ old('kk_saksi2', $suratKeterangan->kk_saksi2) }}"
-                                                                    autocomplete="kk_saksi2" autofocus>
-
-                                                                @error('kk_saksi2')
-                                                                    <span class="invalid-feedback" role="alert">
-                                                                        <strong>{{ $message }}</strong>
-                                                                    </span>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
-                                                        <div class="row mb-3">
-                                                            <label for="name_saksi2"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Saksi 2') }}</label>
-
-                                                            <div class="col-md-8">
-                                                                <input id="name_saksi2" type="text"
-                                                                    class="form-control @error('name_saksi2') is-invalid @enderror"
-                                                                    name="name_saksi2"
-                                                                    value="{{ old('name_saksi2', $suratKeterangan->nama_saksi2) }}"
-                                                                    autocomplete="name_saksi2" autofocus>
-
-                                                                @error('name_saksi2')
-                                                                    <span class="invalid-feedback" role="alert">
-                                                                        <strong>{{ $message }}</strong>
-                                                                    </span>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="row mb-3">
-                                                            <label for="kewarganegaraan_saksi2"
-                                                                class="col-md-3 col-form-label text-md-start ms-2">{{ __('Kewarganegaraan Saksi 2') }}</label>
-
-                                                            <div class="col-md-8">
-                                                                <select
-                                                                    class="form-control @error('kewarganegaraan_saksi2') is-invalid @enderror"
-                                                                    id="kewarganegaraan_saksi2" name="kewarganegaraan_saksi2"
-                                                                    data-placeholder="Kewarganegaraan">
-                                                                </select>
-                                                                @error('kewarganegaraan_saksi2')
-                                                                    <span class="invalid-feedback" role="alert">
-                                                                        <strong>{{ $message }}</strong>
-                                                                    </span>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
+                                                    <div class="col-md-8">
+                                                        <select
+                                                            class="form-control @error('kewarganegaraan_saksi2') is-invalid @enderror"
+                                                            id="kewarganegaraan_saksi2"
+                                                            name="kewarganegaraan_saksi2"
+                                                            data-placeholder="Kewarganegaraan">
+                                                        </select>
+                                                        @error('kewarganegaraan_saksi2')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-80 border-1 shadow-sm rounded-4"
-                                        style="background: #fff; border-color: #AEA07A">
-                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Jenazah</div>
-                                        <div class="card-body">
-                                            <div id="data-jenazah" name="data-jenazah">
+
+                                    {{-- ========== KANAN: KEPADA + PERUNTUKAN + PENGANTAR ========== --}}
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card h-100 border-1 shadow-sm bg-white">
+                                            <div class="card-body">
+                                            <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Jenazah</div>
                                                 <div class="row mb-3">
                                                     <label for="nik"
                                                         class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Jenazah') }}</label>
@@ -375,6 +290,7 @@
                                                             <option value="Bunuh Diri">Bunuh Diri</option>
                                                             <option value="Lainnya">Lainnya</option>
                                                         </select>
+
                                                         @error('sebab_kematian')
                                                             <span class="invalid-feedback" role="alert">
                                                                 <strong>{{ $message }}</strong>
@@ -417,6 +333,7 @@
                                                             <option value="Kepolisian">Kepolisian</option>
                                                             <option value="Lainnya">Lainnya</option>
                                                         </select>
+
                                                         @error('yang_menerangkan')
                                                             <span class="invalid-feedback" role="alert">
                                                                 <strong>{{ $message }}</strong>
@@ -424,19 +341,20 @@
                                                         @enderror
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div id="data-ortu" name="data-ortu">
-                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Ayah
-                                                </div>
+
+                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
+                                                    Data Ayah</div>
                                                 <div class="row mb-3">
                                                     <label for="nik_ayah"
                                                         class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Ayah') }}</label>
+
                                                     <div class="col-md-8">
                                                         <div class="input-group">
                                                             <input type="number"
                                                                 class="form-control @error('nik_ayah') is-invalid @enderror"
                                                                 id="nik_ayah" name="nik_ayah"
-                                                                placeholder="Masukkan 16 digit NIK" aria-label="NIK"
+                                                                placeholder="Masukkan 16 digit NIK"
+                                                                aria-label="NIK"
                                                                 value="{{ old('nik_ayah', $suratKeterangan->nik_ayah) }}"
                                                                 aria-describedby="basic-addon2">
 
@@ -448,6 +366,26 @@
                                                         </div>
                                                     </div>
                                                 </div>
+
+                                                {{-- <div class="row mb-3">
+                                                    <label for="kk_ayah"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Ayah') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <input id="kk_ayah" type="number"
+                                                            class="form-control @error('kk_ayah') is-invalid @enderror"
+                                                            name="kk_ayah"
+                                                            value="{{ old('kk_ayah', $suratKeterangan->kk_ayah) }}"
+                                                            autocomplete="kk_ayah" autofocus>
+
+                                                        @error('kk_ayah')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div> --}}
+
                                                 <div class="row mb-3">
                                                     <label for="name_ayah"
                                                         class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Ayah') }}</label>
@@ -484,6 +422,7 @@
                                                             </span>
                                                         @enderror
                                                     </div>
+
                                                     <div class="col-md-3">
                                                         <input id="tgl_lhr_ayah" type="date"
                                                             class="form-control @error('tgl_lhr_ayah') is-invalid @enderror"
@@ -517,15 +456,18 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Ibu</div>
+                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
+                                                    Data Ibu</div>
                                                 <div class="row mb-3">
                                                     <label for="nik_ibu"
                                                         class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK Ibu') }}</label>
+
                                                     <div class="col-md-8">
                                                         <div class="input-group">
                                                             <input type="number"
                                                                 class="form-control @error('nik_ibu') is-invalid @enderror"
-                                                                id="nik_ibu" name="nik_ibu" placeholder="Masukkan 16 digit NIK"
+                                                                id="nik_ibu" name="nik_ibu"
+                                                                placeholder="Masukkan 16 digit NIK"
                                                                 value="{{ old('nik_ibu', $suratKeterangan->nik_ibu) }}"
                                                                 aria-label="NIK" aria-describedby="basic-addon2">
 
@@ -537,6 +479,26 @@
                                                         </div>
                                                     </div>
                                                 </div>
+
+                                                {{-- <div class="row mb-3">
+                                                    <label for="kk_ibu"
+                                                        class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK Ibu') }}</label>
+
+                                                    <div class="col-md-8">
+                                                        <input id="kk_ibu" type="number"
+                                                            class="form-control @error('kk_ibu') is-invalid @enderror"
+                                                            name="kk_ibu"
+                                                            value="{{ old('kk_ibu', $suratKeterangan->kk_ibu) }}"
+                                                            autocomplete="kk_ibu" autofocus>
+
+                                                        @error('kk_ibu')
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $message }}</strong>
+                                                            </span>
+                                                        @enderror
+                                                    </div>
+                                                </div> --}}
+
                                                 <div class="row mb-3">
                                                     <label for="name_ibu"
                                                         class="col-md-3 col-form-label text-md-start ms-2">{{ __('Nama Ibu') }}</label>
@@ -605,30 +567,45 @@
                                                         @enderror
                                                     </div>
                                                 </div>
+                                                {{-- === PERUNTUKAN & PENGANTAR === --}}
+                                                <div class="card-header bg-transparent mb-3 text-center fw-bold">
+                                                    Lampiran
+                                                </div>
+
+                                                {{-- Pengantar (WAJIB sesuai controller) --}}
+                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="d-flex justify-content-center mt-4">
-                                        <a href="{{ url()->previous() ?? route('skkematian.index') }}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
-                                            <i class="ri-close-line me-1"></i>
-                                            <span>Batal</span>
-                                        </a>
-                                        <button type="submit" class="btn text-white py-2 px-4"
-                                            style="background: #7896B2; border-radius: 8px;">
-                                            <i class="ri-save-3-fill me-1"></i>
-                                            <span>Update</span>
-                                        </button>
-                                    </div>
                                 </div>
-                            </div>
-                        </form>
+                                {{-- END ROW --}}
+
+                                {{-- ========== BUTTON UPDATE ========== --}}
+                                <div class="d-flex justify-content-center gap-3" style="margin-top:75px;">
+                                    <a href="{{ route('skkematian.warga') }}" class="btn btn-secondary px-4 py-2 rounded-3">
+                                        Batal
+                                    </a>
+                                    <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditSkkematian">
+                                        Update
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        {{-- card-body --}}
                     </div>
+                    {{-- card --}}
                 </div>
+                {{-- Modal Konfirmasi --}}
+                <x-confirm-ajukan modalId="modalEditSkkematian" formId="formEditSkkematian"
+                    title="Yakin Ingin Mengubah Surat Ini?"
+                    message="Pastikan perubahan sudah benar sebelum mengirim pembaruan."
+                    agreeLabel="Saya memastikan bahwa data yang saya ubah sudah benar."
+                    cancelText="Cek Lagi"
+                    confirmText="Simpan Perubahan" />
             </div>
         </div>
     </div>
     @push('scripts')
-        {{-- <script type="text/javascript" src="{{ asset('assets/js/personal.js') }}"></script> --}}
         <script>
             $("#nik_pelapor").keyup(function() {
                 if ($(this).val().length == 16) {
@@ -680,7 +657,6 @@
                             }).showToast();
                         },
                     });
-
                 }
             });
 
@@ -726,7 +702,6 @@
                             }).showToast();
                         },
                     });
-
                 }
             });
 
@@ -772,7 +747,6 @@
                             }).showToast();
                         },
                     });
-
                 }
             });
 
@@ -820,7 +794,6 @@
                             }).showToast();
                         },
                     });
-
                 }
             });
 

@@ -178,6 +178,97 @@ class SktmController extends Controller
         return view('sktm.addwarga', compact('title', 'nik'));
     }
 
+    public function editwarga($id)
+    {
+        // dd($id);
+        $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
+        $suratKeterangan = SuratSktm::find($id);
+
+        return view('sktm.editwarga', compact('title', 'suratKeterangan'));
+    }
+
+    public function updatewarga(Request $request, $id)
+    {
+        $suratKeterangan = SuratSktm::findOrFail($id);
+
+        $rules = [
+            'nik'         => 'required|min:16',
+            'peruntukan' => ['required', 'max:100'],
+            'register_as' => ['required', 'string'],
+            'kepada' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_tempat_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_tgl_lhr' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_gender' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_hubungan' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_kelas' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
+            'kategori' => ['required', 'string'],
+        ];
+
+        if ($request->hasFile('pengantar')) {
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+        }
+
+        $request->validate($rules);
+
+        // === HANDLE FILE PENGANTAR ===
+        $fileLocation = $suratKeterangan->pengantar; // default: pakai file lama
+
+        if ($request->hasFile('pengantar')) {
+
+            // Hapus file lama jika ada
+            if ($suratKeterangan->pengantar && Storage::exists(str_replace('/storage/', 'public/', $suratKeterangan->pengantar))) {
+                Storage::delete(str_replace('/storage/', 'public/', $suratKeterangan->pengantar));
+            }
+
+            // Upload file baru
+            $path = '/public/pengantar/' . date('Y') . '/sktm';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/sktm/' . $fileName;
+
+            $request->file('pengantar')->storeAs($path, $fileName);
+        }
+
+        $kepada_gender = Gender::find($request->kepada_gender);
+
+        // === UPDATE DATA ===
+        if ($request->register_as == 'sekolah') {
+            $suratKeterangan->update([
+                'nik' => $request->nik,
+                'jenis' => $request->register_as,
+                'kepada' => $request->kepada,
+                'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
+                'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
+                'kepada_gender' => $request->kepada_gender,
+                'kepada_gender_nm' => isset($kepada_gender) ? $kepada_gender->nama : '',
+                'kepada_hubungan' => $request->kepada_hubungan,
+                'kepada_sekolah' => $request->kepada_sekolah,
+                'kepada_kelas' => $request->kepada_kelas,
+                'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
+                'peruntukan' => $request->peruntukan,
+                'kategori' => $request->kategori,
+                'pengantar' => $fileLocation,
+            ]);
+        } else {
+            $suratKeterangan->update([
+                'nik' => $request->nik,
+                'jenis' => $request->register_as,
+                'kepada' => $request->kepada,
+                'peruntukan' => $request->peruntukan,
+                'kategori' => $request->kategori,
+                'pengantar' => $fileLocation,
+            ]);
+        }
+
+        // === RESPONSE ===
+        if ($request->segment(1) == 'api') {
+            return response()->json(['message' => 'Surat berhasil diperbarui!'], 200);
+        }
+
+        return redirect()->route('sktm.warga')->with('success', 'Data berhasil diperbarui');
+    }
+
     public function show($id)
     {
         $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
@@ -375,7 +466,6 @@ class SktmController extends Controller
 
         return redirect()->route('sktm.index');
     }
-
 
     public function edit($id)
     {

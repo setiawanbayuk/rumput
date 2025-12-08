@@ -32,9 +32,9 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-4">
-                                    <div class="card h-100 border-1 shadow-sm rounded-4"
+                                    <div class="card h-40 border-1 shadow-sm rounded-4 mb-3"
                                         style="background: #fff; border-color: #AEA07A">
-                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Pengikut</div>
+                                        <div class="card-header bg-transparent text-center fw-bold">Data Pengikut</div>
                                         <div class="card-body">
                                             <div id="data_pengikut" name="data_pengikut">
                                                 <div class="row mb-3">
@@ -158,20 +158,20 @@
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <div class="row mb-3">
-                                                <div class="col-md-8 offset-md-4">
-                                                    <button type="button" class="btn btn-success py-2 px-4" style="border-radius: 8px" name="tambah_pengikut"
-                                                        id ="tambah_pengikut"><i class="ri-user-add-fill me-2"></i>
-                                                        <span>Tambah</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div class="card-header bg-transparent mb-3 text-center fw-bold">Bepergian /
-                                                Boro
-                                                Ke
-                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-8 offset-md-4">
+                                            <button type="button" class="btn btn-success py-2 px-4" style="border-radius: 8px" name="tambah_pengikut"
+                                                id ="tambah_pengikut"><i class="ri-user-add-fill me-2"></i>
+                                                <span>Tambah</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card h-70 border-1 shadow-sm rounded-4"
+                                        style="background: #fff; border-color: #AEA07A">
+                                    <div class="card-header bg-transparent mb-3 text-center fw-bold">Bepergian / Boro Ke</div>
+                                        <div class="card-body">
                                             <x-boro>
                                                 <x-slot:alamat_boro></x-slot:alamat_boro>
                                                 <x-slot:tgl_awal></x-slot:tgl_awal>
@@ -199,20 +199,18 @@
                                             @endisset --}}
                                             <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
                                             <x-pengantar></x-pengantar>
-                                            <div class="row mb-0 g-2">
-                                                <div class="col-md-8 offset-md-3">
-                                                    <a href="{{ url()->previous() ?? route('skboro.index')}}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
-                                                        <i class="ri-close-line me-1"></i>
-                                                        <span>Batal</span>
-                                                    </a>
-                                                    <button type="submit" class="btn text-white py-2 px-4"
-                                                        style="background: #7896B2; border-radius: 8px;">
-                                                        <i class="ri-save-3-fill me-1"></i>
-                                                        <span>Simpan</span>
-                                                    </button>
-                                                </div>
-                                            </div>
                                         </div>
+                                    </div>
+                                    <div class="d-flex justify-content-center mt-4">
+                                        <a href="{{ url()->previous() ?? route('skboro.index') }}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
+                                            <i class="ri-close-line me-1"></i>
+                                            <span>Batal</span>
+                                        </a>
+                                        <button type="submit" class="btn text-white py-2 px-4"
+                                            style="background: #7896B2; border-radius: 8px;">
+                                            <i class="ri-save-3-fill me-1"></i>
+                                            <span>Simpan</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -265,7 +263,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
             });
 

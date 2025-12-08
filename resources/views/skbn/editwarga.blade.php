@@ -1,7 +1,7 @@
 {{-- resources/views/suket/edit.blade.php --}}
 @extends('layouts.create')
 
-@section('title', $title ?? 'Edit Surat Keterangan')
+@section('title', $title ?? 'Edit Surat Keterangan Belum Menikah')
 
 @section('content')
     <div class="d-flex align-items-center justify-content-center min-vh-100"
@@ -18,8 +18,8 @@
                         </div>
 
                         <div class="card-body">
-                            <form id="formEditSuket" method="POST" enctype="multipart/form-data" 
-                                action="{{ route('suket.updatewarga', $suratKeterangan->id) }}" >
+                            <form id="formEditSkbn" method="POST" enctype="multipart/form-data" 
+                                action="{{ route('skbn.updatewarga', $suratKeterangan->id) }}" >
                                 @csrf
                                 <input type="hidden" id="nik" name="nik" value="{{ $suratKeterangan->nik }}">
                                 {{-- ================== ROW KEDUA KARTU ================== --}}
@@ -29,7 +29,7 @@
                                     <div class="col-md-6 mb-4">
                                         <div class="card h-100 border-1 shadow-sm bg-white">
                                             <div class="card-body">
-                                                <x-keterangan :keterangan="$suratKeterangan->keterangan" :readonly="false" />
+                                                <x-kepada :kepada="$suratKeterangan->kepada" :readonly="false" />
                                             </div>
                                         </div>
                                     </div>
@@ -38,7 +38,6 @@
                                     <div class="col-md-6 mb-4">
                                         <div class="card h-100 border-1 shadow-sm bg-white">
                                             <div class="card-body">
-                                                <x-kepada :kepada="$suratKeterangan->kepada" :readonly="false" />
                                                 <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="false" />
                                                 <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                             </div>
@@ -49,10 +48,10 @@
 
                                 {{-- ========== BUTTON UPDATE ========== --}}
                                 <div class="d-flex justify-content-center gap-3" style="margin-top:75px;">
-                                    <a href="{{ route('suket.warga') }}" class="btn btn-secondary px-4 py-2 rounded-3">
+                                    <a href="{{ route('skbn.warga') }}" class="btn btn-secondary px-4 py-2 rounded-3">
                                         Batal
                                     </a>
-                                    <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditSuket">
+                                    <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditSkbn">
                                         Update
                                     </button>
                                 </div>
@@ -63,7 +62,7 @@
                     {{-- card --}}
                 </div>
                 {{-- Modal Konfirmasi --}}
-                <x-confirm-ajukan modalId="modalEditSuket" formId="formEditSuket"
+                <x-confirm-ajukan modalId="modalEditSkbn" formId="formEditSkbn"
                     title="Yakin Ingin Mengubah Surat Ini?"
                     message="Pastikan perubahan sudah benar sebelum mengirim pembaruan."
                     agreeLabel="Saya memastikan bahwa data yang saya ubah sudah benar."

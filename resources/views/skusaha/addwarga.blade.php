@@ -115,6 +115,7 @@
                                         data-bs-target="#modalSkusaha">
                                         Ajukan
                                     </button>
+                                </div>
                             </form>
                         </div>
                     </div>

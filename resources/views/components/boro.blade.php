@@ -6,69 +6,89 @@
     'alamat_boro' => '',
     'tgl_awal' => '',
     'tgl_akhir' => '',
+    'prov_boro' => '',
+    'kabko_boro' => '',
+    'kec_boro' => '',
+    'kel_boro' => '',
     'readonly' => false
 ])
 
 <div id="data_boro">
     {{-- PROVINSI --}}
     <div class="row mb-3">
-        <label class="col-md-3 col-form-label ms-2">Provinsi</label>
+        <label class="col-md-3 col-form-label text-md-start ms-2">Provinsi</label>
         <div class="col-md-8">
             @if($readonly)
                 <div class="form-control-plaintext border rounded bg-light px-3 py-2">
                     {{ $prov_boro_nm }}
                 </div>
             @else
-                <select class="form-control" id="provinsi_boro" name="provinsi_boro"></select>
+                <select class="form-control" id="provinsi_boro" name="provinsi_boro">
+                    @if($prov_boro)
+                        <option value="{{ $prov_boro }}" selected>{{ $prov_boro_nm }}</option>
+                    @endif
+                </select>
             @endif
         </div>
     </div>
 
     {{-- KABUPATEN/KOTA --}}
     <div class="row mb-3">
-        <label class="col-md-3 col-form-label ms-2">Kabupaten/Kota</label>
+        <label class="col-md-3 col-form-label text-md-start ms-2">Kabupaten/Kota</label>
         <div class="col-md-8">
             @if($readonly)
                 <div class="form-control-plaintext border rounded bg-light px-3 py-2">
                     {{ $kabko_boro_nm }}
                 </div>
             @else
-                <select class="form-control" id="kabko_boro" name="kabko_boro"></select>
+                <select class="form-control" id="kabko_boro" name="kabko_boro">
+                    @if($kabko_boro)
+                        <option value="{{ $kabko_boro }}" selected>{{ $kabko_boro_nm }}</option>
+                    @endif
+                </select>
             @endif
         </div>
     </div>
 
     {{-- KECAMATAN --}}
     <div class="row mb-3">
-        <label class="col-md-3 col-form-label ms-2">Kecamatan</label>
+        <label class="col-md-3 col-form-label text-md-start ms-2">Kecamatan</label>
         <div class="col-md-8">
             @if($readonly)
                 <div class="form-control-plaintext border rounded bg-light px-3 py-2">
                     {{ $kec_boro_nm }}
                 </div>
             @else
-                <select class="form-control" id="kecamatan_boro" name="kecamatan_boro"></select>
+                <select class="form-control" id="kecamatan_boro" name="kecamatan_boro">
+                    @if($kec_boro)
+                        <option value="{{ $kec_boro }}" selected>{{ $kec_boro_nm }}</option>
+                    @endif
+                </select>
             @endif
         </div>
     </div>
 
     {{-- KELURAHAN --}}
     <div class="row mb-3">
-        <label class="col-md-3 col-form-label ms-2">Kelurahan</label>
+        <label class="col-md-3 col-form-label text-md-start ms-2">Kelurahan</label>
         <div class="col-md-8">
             @if($readonly)
                 <div class="form-control-plaintext border rounded bg-light px-3 py-2">
                     {{ $kel_boro_nm }}
                 </div>
             @else
-                <select class="form-control" id="kelurahan_boro" name="kelurahan_boro"></select>
+                <select class="form-control" id="kelurahan_boro" name="kelurahan_boro">
+                    @if($kel_boro)
+                        <option value="{{ $kel_boro }}" selected>{{ $kel_boro_nm }}</option>
+                    @endif
+                </select>
             @endif
         </div>
     </div>
 
     {{-- ALAMAT --}}
     <div class="row mb-3">
-        <label class="col-md-3 col-form-label ms-2">Alamat</label>
+        <label class="col-md-3 col-form-label text-md-start ms-2">Alamat</label>
         <div class="col-md-8">
             @if($readonly)
                 <div class="form-control-plaintext border rounded bg-light px-3 py-2" style="white-space: pre-line;">
@@ -82,7 +102,7 @@
 
     {{-- TANGGAL --}}
     <div class="row mb-3">
-        <label class="col-md-3 col-form-label ms-2">Pada Tgl.</label>
+        <label class="col-md-3 col-form-label text-md-start ms-2">Pada Tgl.</label>
 
         <div class="col-md-3">
             @if($readonly)

@@ -26,7 +26,7 @@
                             <div class="col-md-6 mb-4">
                                 <div class="card h-100 border-1 shadow-sm bg-white">
                                     <div class="card-body">
-                                        <x-kepada :kepada="$suratKeterangan->kepada" readonly="true" />
+                                        <x-kepada :kepada="$suratKeterangan->kepada" :readonly="true" />
                                     </div>
                                 </div>
                             </div>
@@ -35,24 +35,26 @@
                             <div class="col-md-6 mb-4">
                                 <div class="card h-100 border-1 shadow-sm bg-white">
                                     <div class="card-body">
-                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" readonly="true" />
-                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
+                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="true" />
+                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- TOMBOL KEMBALI --}}
-                        <div class="d-flex justify-content-center" style="bottom: 0px; margin-top: 75px;">
-                            <a href="{{ route('skbn.warga') }}" class="btn-edit">
-                                Edit
+                        {{-- ===== TOMBOL EDIT ===== --}}
+                        <div class="d-flex justify-content-center gap-4" style="margin-top:100px;">
+                            <a href="{{ route('skbn.warga') }}" class="btn-ajukan">
+                                Kembali
                             </a>
+                            @if ($suratKeterangan->status == 0)
+                                <a href="{{ route('skbn.edit', $suratKeterangan->id) }}" class="btn-edit">
+                                    Edit
+                                </a>
+                            @endif
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
         </div>
     </div>

@@ -104,9 +104,6 @@
 
         <div class="wrapper">
             <aside id="sidebar" class="expand">
-                {{-- HEADER SIDEBAR --}}
-                {{-- <div class="sidebar-header"></div> --}}
-
                 <div class="sidebar-body">
                     <ul class="sidebar-nav">
                         {{-- BERANDA --}}

@@ -135,18 +135,21 @@
 
                                         {{-- Pengantar --}}
                                         <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
-
                                     </div>
                                 </div>
                             </div>
-
                         </div>
 
-                        {{-- Tombol Kembali --}}
-                        <div class="d-flex justify-content-center" style="bottom: 0px; margin-top: 75px;">
-                            <a href="{{ route('sktm.warga') }}" class="btn-edit">
+                        {{-- ===== TOMBOL EDIT ===== --}}
+                        <div class="d-flex justify-content-center gap-4" style="margin-top:100px;">
+                            <a href="{{ route('sktm.warga') }}" class="btn-ajukan">
                                 Kembali
                             </a>
+                            @if ($suratKeterangan->status == 0)
+                                <a href="{{ route('sktm.edit', $suratKeterangan->id) }}" class="btn-edit">
+                                    Edit
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>

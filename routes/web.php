@@ -98,15 +98,17 @@ Route::prefix('warga')->group(function () {
     Route::get('/suket', [SuketController::class, 'warga'])->name('suket.warga');
     Route::get('/suket/create', [SuketController::class, 'addwarga'])->name('suket.create');
     Route::post('/suket', [SuketController::class, 'save'])->name('suket.save');
-    Route::get('/suket/{id}', [SuketController::class, 'show'])->name('suket.show');
     Route::get('/suket/{id}/edit', [SuketController::class, 'editwarga'])->name('suket.editwarga');
     Route::post('/suket/{id}/update', [SuketController::class, 'updatewarga'])->name('suket.updatewarga');
+    Route::get('/suket/{id}', [SuketController::class, 'show'])->name('suket.show');
     Route::post('/suket/{id}/hapus', [SuketController::class, 'hapus'])->name('suket.hapus');
     Route::post('/suket/{id}/nilai', [SuketController::class, 'nilai'])->name('suket.nilai');
     Route::get('/suket/{id}/nilai', [SuketController::class, 'lihatNilai'])->name('suket.nilai.lihat');
     Route::get('/skusaha', [SkusahaController::class, 'warga'])->name('skusaha.warga');
     Route::get('/skusaha/create', [SkusahaController::class, 'addwarga'])->name('skusaha.create');
     Route::post('/skusaha', [SkusahaController::class, 'save'])->name('skusaha.save');
+    Route::get('/skusaha/{id}/edit', [SkusahaController::class, 'editwarga'])->name('skusaha.editwarga');
+    Route::post('/skusaha/{id}/update', [SkusahaController::class, 'updatewarga'])->name('skusaha.updatewarga');
     Route::get('/skusaha/{id}', [SkusahaController::class, 'show'])->name('skusaha.show');
     Route::post('/skusaha/{id}/hapus', [SkusahaController::class, 'hapus'])->name('skusaha.hapus');
     Route::post('/skusaha/{id}/nilai', [SkusahaController::class, 'nilai'])->name('skusaha.nilai');
@@ -114,6 +116,8 @@ Route::prefix('warga')->group(function () {
     Route::get('/skhsl', [SkhslController::class, 'warga'])->name('skhsl.warga');
     Route::get('/skhsl/create', [SkhslController::class, 'addwarga'])->name('skhsl.create');
     Route::post('/skhsl', [SkhslController::class, 'save'])->name('skhsl.save');
+    Route::get('/skhsl/{id}/edit', [SkhslController::class, 'editwarga'])->name('skhsl.editwarga');
+    Route::post('/skhsl/{id}/update', [SkhslController::class, 'updatewarga'])->name('skhsl.updatewarga');
     Route::get('/skhsl/{id}', [SkhslController::class, 'show'])->name('skhsl.show');
     Route::post('/skhsl/{id}/hapus', [SkhslController::class, 'hapus'])->name('skhsl.hapus');
     Route::post('/skhsl/{id}/nilai', [SkhslController::class, 'nilai'])->name('skhsl.nilai');
@@ -121,6 +125,8 @@ Route::prefix('warga')->group(function () {
     Route::get('/skdom', [SkdomController::class, 'warga'])->name('skdom.warga');
     Route::get('/skdom/create', [SkdomController::class, 'addwarga'])->name('skdom.create');
     Route::post('/skdom', [SkdomController::class, 'save'])->name('skdom.save');
+    Route::get('/skdom/{id}/edit', [SkdomController::class, 'editwarga'])->name('skdom.editwarga');
+    Route::post('/skdom/{id}/update', [SkdomController::class, 'updatewarga'])->name('skdom.updatewarga');
     Route::get('/skdom/{id}', [SkdomController::class, 'show'])->name('skdom.show');
     Route::post('/skdom/{id}/hapus', [SkdomController::class, 'hapus'])->name('skdom.hapus');
     Route::post('/skdom/{id}/nilai', [SkdomController::class, 'nilai'])->name('skdom.nilai');
@@ -128,6 +134,8 @@ Route::prefix('warga')->group(function () {
     Route::get('/sktm', [SktmController::class, 'warga'])->name('sktm.warga');
     Route::get('/sktm/create', [SktmController::class, 'addwarga'])->name('sktm.create');
     Route::post('/sktm', [SktmController::class, 'save'])->name('sktm.save');
+    Route::get('/sktm/{id}/edit', [SktmController::class, 'editwarga'])->name('sktm.editwarga');
+    Route::post('/sktm/{id}/update', [SktmController::class, 'updatewarga'])->name('sktm.updatewarga');
     Route::get('/sktm/{id}', [SktmController::class, 'show'])->name('sktm.show');
     Route::post('/sktm/{id}/hapus', [SktmController::class, 'hapus'])->name('sktm.hapus');
     Route::post('/sktm/{id}/nilai', [SktmController::class, 'nilai'])->name('sktm.nilai');
@@ -135,6 +143,8 @@ Route::prefix('warga')->group(function () {
     Route::get('/skbn', [SkbnController::class, 'warga'])->name('skbn.warga');
     Route::get('/skbn/create', [SkbnController::class, 'addwarga'])->name('skbn.create');
     Route::post('/skbn', [SkbnController::class, 'save'])->name('skbn.save');
+    Route::get('/skbn/{id}/edit', [SkbnController::class, 'editwarga'])->name('skbn.editwarga');
+    Route::post('/skbn/{id}/update', [SkbnController::class, 'updatewarga'])->name('skbn.updatewarga');
     Route::get('/skbn/{id}', [SkbnController::class, 'show'])->name('skbn.show');
     Route::post('/skbn/{id}/hapus', [SkbnController::class, 'hapus'])->name('skbn.hapus');
     Route::post('/skbn/{id}/nilai', [SkbnController::class, 'nilai'])->name('skbn.nilai');
@@ -142,6 +152,8 @@ Route::prefix('warga')->group(function () {
     Route::get('/skboro', [SkboroController::class, 'warga'])->name('skboro.warga');
     Route::get('/skboro/create', [SkboroController::class, 'addwarga'])->name('skboro.create');
     Route::post('/skboro', [SkboroController::class, 'save'])->name('skboro.save');
+    Route::get('/skboro/{id}/edit', [SkboroController::class, 'editwarga'])->name('skboro.editwarga');
+    Route::post('/skboro/{id}/update', [SkboroController::class, 'updatewarga'])->name('skboro.updatewarga');
     Route::get('/skboro/{id}', [SkboroController::class, 'show'])->name('skboro.show');
     Route::post('/skboro/{id}/hapus', [SkboroController::class, 'hapus'])->name('skboro.hapus');
     Route::post('/skboro/{id}/nilai', [SkboroController::class, 'nilai'])->name('skboro.nilai');
@@ -149,6 +161,8 @@ Route::prefix('warga')->group(function () {
     Route::get('/skkelahiran', [SkkelahiranController::class, 'warga'])->name('skkelahiran.warga');
     Route::get('/skkelahiran/create', [SkkelahiranController::class, 'addwarga'])->name('skkelahiran.create');
     Route::post('/skkelahiran', [SkkelahiranController::class, 'save'])->name('skkelahiran.save');
+    Route::get('/skkelahiran/{id}/edit', [SkkelahiranController::class, 'editwarga'])->name('skkelahiran.editwarga');
+    Route::post('/skkelahiran/{id}/update', [SkkelahiranController::class, 'updatewarga'])->name('skkelahiran.updatewarga');
     Route::get('/skkelahiran/{id}', [SkkelahiranController::class, 'show'])->name('skkelahiran.show');
     Route::post('/skkelahiran/{id}/hapus', [SkkelahiranController::class, 'hapus'])->name('skkelahiran.hapus');
     Route::post('/skkelahiran/{id}/nilai', [SkkelahiranController::class, 'nilai'])->name('skkelahiran.nilai');
@@ -156,6 +170,8 @@ Route::prefix('warga')->group(function () {
     Route::get('/skkematian', [SkkematianController::class, 'warga'])->name('skkematian.warga');
     Route::get('/skkematian/create', [SkkematianController::class, 'addwarga'])->name('skkematian.create');
     Route::post('/skkematian', [SkkematianController::class, 'save'])->name('skkematian.save');
+    Route::get('/skkematian/{id}/edit', [SkkematianController::class, 'editwarga'])->name('skkematian.editwarga');
+    Route::post('/skkematian/{id}/update', [SkkematianController::class, 'updatewarga'])->name('skkematian.updatewarga');
     Route::get('/skkematian/{id}', [SkkematianController::class, 'show'])->name('skkematian.show');
     Route::post('/skkematian/{id}/hapus', [SkkematianController::class, 'hapus'])->name('skkematian.hapus');
     Route::post('/skkematian/{id}/nilai', [SkkematianController::class, 'nilai'])->name('skkematian.nilai');

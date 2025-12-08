@@ -19,7 +19,6 @@
                                 <div class="col-md-6 mb-4">
                                     <div class="card h-100 border-1 shadow-sm rounded-4"
                                         style="background: #fff; border-color: #AEA07A">
-                                        <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Surat</div>
                                         <div class="card-body">
                                             <div>
                                                 <x-nosrt>
@@ -285,7 +284,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-4">
-                                    <div class="card h-100 border-1 shadow-sm rounded-4"
+                                    <div class="card h-80  border-1 shadow-sm rounded-4"
                                         style="background: #fff; border-color: #AEA07A">
                                         <div class="card-header bg-transparent mb-3 text-center fw-bold">Data Anak</div>
                                         <div class="card-body">
@@ -723,21 +722,18 @@
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <div class="row mb-0">
-                                                <div class="col-md-8 offset-md-4">
-                                                    <a href="{{ url()->previous() ?? route('skkelahiran.index')}}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
-                                                        <i class="ri-close-line me-1"></i>
-                                                        <span>Batal</span>
-                                                    </a>
-                                                    <button type="submit" class="btn text-white py-2 px-4"
-                                                        style="background: #7896B2; border-radius: 8px;">
-                                                        <i class="ri-save-3-fill me-1"></i>
-                                                        <span>Simpan</span>
-                                                    </button>
-                                                </div>
-                                            </div>
                                         </div>
+                                    </div>
+                                    <div class="d-flex justify-content-center mt-4">
+                                        <a href="{{ url()->previous() ?? route('skkelahiran.index') }}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
+                                            <i class="ri-close-line me-1"></i>
+                                            <span>Batal</span>
+                                        </a>
+                                        <button type="submit" class="btn text-white py-2 px-4"
+                                            style="background: #7896B2; border-radius: 8px;">
+                                            <i class="ri-save-3-fill me-1"></i>
+                                            <span>Simpan</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -999,7 +995,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1017,7 +1012,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1035,7 +1029,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1053,7 +1046,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1071,7 +1063,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("kewarganegaraan.index"),
                         dataType: "json",
@@ -1090,7 +1081,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                     ajax: {
                         url: route("gender.index"),
                         dataType: "json",
@@ -1109,7 +1099,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
 
                 $("#jenis_klhr_anak").select2({
@@ -1118,7 +1107,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
 
                 $("#penolong_klhr_anak").select2({
@@ -1127,7 +1115,6 @@
                         $(this).data("width") : $(this).hasClass("w-100") ?
                         "100%" : "style",
                     placeholder: $(this).data("placeholder"),
-                    minimumInputLenght: 2,
                 });
             });
         </script>

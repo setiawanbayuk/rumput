@@ -54,7 +54,6 @@
                                             </div>
                                         </div>
                                     </div>
-
                                 </div> {{-- end: row dua card --}}
                                 {{-- Tombol Ajukan --}}
                                 <div class="d-flex justify-content-center" style="margin-top: 100px;">
@@ -62,6 +61,7 @@
                                         data-bs-target="#modalSuket">
                                         Ajukan
                                     </button>
+                                </div>
                             </form>
                         </div>
                     </div>
