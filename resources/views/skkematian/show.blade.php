@@ -1,6 +1,6 @@
 @extends('layouts.create')
 
-@section('title', $title ?? 'Detail Surat Keterangan Kematian')
+@section('title', $title)
 
 @section('content')
 <div class="d-flex align-items-center justify-content-center min-vh-100"
@@ -99,7 +99,7 @@
                                             Lampiran
                                         </div>
 
-                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
+                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                     </div>
                                 </div>
                             </div>

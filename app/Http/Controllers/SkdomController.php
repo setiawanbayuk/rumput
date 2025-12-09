@@ -179,7 +179,7 @@ class SkdomController extends Controller
         public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN DOMISILI WARGA";
+        $title = "SURAT KETERANGAN DOMISILI WARGA";
         $suratKeterangan = SuratDomisili::find($id);
 
         return view('skdom.editwarga', compact('title', 'suratKeterangan'));
@@ -251,7 +251,7 @@ class SkdomController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN DOMISILI";
+        $title = "SURAT KETERANGAN DOMISILI";
         $suratKeterangan = SuratDomisili::findOrFail($id);
 
         return view('skdom.show', compact('suratKeterangan', 'title'));

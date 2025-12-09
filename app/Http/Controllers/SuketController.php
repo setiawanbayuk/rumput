@@ -186,7 +186,7 @@ class SuketController extends Controller
     public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN WARGA";
+        $title = "SURAT KETERANGAN KELURAHAN WARGA";
         $suratKeterangan = SuratKeterangan::find($id);
 
         return view('suket.editwarga', compact('title', 'suratKeterangan'));
@@ -246,7 +246,7 @@ class SuketController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELURAHAN";
+        $title = "SURAT KETERANGAN KELURAHAN";
         $suratKeterangan = SuratKeterangan::findOrFail($id);
 
         return view('suket.show', compact('suratKeterangan', 'title'));

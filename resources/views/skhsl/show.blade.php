@@ -1,7 +1,7 @@
 {{-- resources/views/skhsl/show.blade.php --}}
 @extends('layouts.create')
 
-@section('title', $title ?? 'Detail Surat Keterangan Penghasilan')
+@section('title', $title)
 
 @section('content')
 <div class="d-flex align-items-center justify-content-center min-vh-100"
@@ -130,9 +130,9 @@
                                         </div>
 
                                         {{-- Peruntukan --}}
-                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" readonly="true" />
+                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="true" />
                                         {{-- Pengantar --}}
-                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
+                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                     </div>
                                 </div>
                             </div>

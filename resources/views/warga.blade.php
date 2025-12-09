@@ -249,45 +249,34 @@
                     <div class="d-flex text-center align-items-center justify-content-center mb-3">
                         {{-- KOTAK FOTO --}}
                         @php
-                            $avatarPath = auth()->user()->avatar ? asset('storage/' . auth()->user()->avatar) : null;
-
-                            // buat inisial: ambil huruf pertama tiap kata pada nama
-                            $parts = preg_split('/\s+/', trim(auth()->user()->name ?? ''));
-                            $initials = '';
-                            foreach ($parts as $w) {
-                                if ($w !== '') {
-                                    $initials .= mb_strtoupper(mb_substr($w, 0, 1));
-                                }
-                            }
+                            $avatar = Auth::user()->avatar 
+                                    ? asset('storage/' . Auth::user()->avatar) 
+                                    : asset('assets/default-avatar.png');
                         @endphp
 
                         <div class="id-photo-box me-3 mb-1">
-                            @if ($avatarPath)
-                                <img src="{{ $avatarPath }}" alt="Foto profil {{ auth()->user()->name }}">
-                            @else
-                                {{-- fallback: inisial / atau pakai gambar default --}}
-                                {{-- opsi A: inisial --}}
-                                <span style="font-weight:700; font-size:24px; color:#7896B2;">{{ $initials ?: 'U' }}</span>
-                                {{-- opsi B (kalau ingin gambar default), ganti baris di atas dengan:
-                                <img src="{{ asset('assets/default-avatar.png') }}" alt="Default avatar">
-                                --}}
-                            @endif
+                            <img id="avatarPreview"
+                                src="{{ $avatar }}"
+                                alt="Foto profil" 
+                                style="width:100%; height:100%; object-fit:cover;">
                         </div>
 
                         {{-- NIK --}}
-                        @php
-                            $nik = (string) auth()->user()->nik;
-                        @endphp
                         <div class="flex-fill p-2 rounded" style="background-color:#F8F8F8; border:1px solid #E1E1E1;">
-                            <p class="mb-0 fw-bold">{{ $nik }}</p>
+                            <p class="mb-0 fw-bold">{{ auth()->user()->nik }}</p>
                             <small class="text-muted">Nomor Induk Kependudukan</small>
                         </div>
                     </div>
                     {{-- Nama & Kelurahan --}}
                     <h5 class="fw-bold text-uppercase">{{ auth()->user()->name }}</h5>
-                    <p class="text-muted mb-0">
-                        {{ $skpd->nama ? 'KELURAHAN ' . $skpd->nama : 'Kelurahan tidak tersedia' }}
-                    </p>
+                    <div class="d-flex justify-content-between">
+                        <p class="text-start text-muted mb-0">
+                            {{ $skpd->nama ? 'KELURAHAN ' . $skpd->nama : 'Kelurahan tidak tersedia' }}
+                        </p>
+                        <p class="text-end text-muted mb-0">
+                            RW/RT {{ auth()->user()->id_rw }}/{{ auth()->user()->id_rt }}
+                        </p>
+                    </div>
                 </div>
             </div>
     </section>

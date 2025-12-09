@@ -1,7 +1,7 @@
 {{-- resources/views/sktm/show.blade.php --}}
 @extends('layouts.create')
 
-@section('title', $title ?? 'Detail Surat Keterangan Miskin')
+@section('title', $title)
 
 @section('content')
 <div class="d-flex align-items-center justify-content-center min-vh-100"
@@ -123,7 +123,7 @@
                                     <div class="card-body">
 
                                         {{-- Peruntukan --}}
-                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" readonly="true" />
+                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="true" />
 
                                         {{-- Kategori --}}
                                         <div class="row mb-3">
@@ -136,7 +136,7 @@
                                         </div>
 
                                         {{-- Pengantar --}}
-                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
+                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                     </div>
                                 </div>
                             </div>

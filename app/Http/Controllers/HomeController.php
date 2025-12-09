@@ -161,7 +161,6 @@ class HomeController extends Controller
         $q     = strtolower(request('q'));
 
         $surat = JenisSurat::where('is_active', true)->get(['jenis', 'assets', 'name']);
-        $skpd  = new Skpd_resource(Skpd::find($user->id_instansi));
         $items = $service->getAllForUser($user);
 
         $items = $items->map(function ($row) {
@@ -193,7 +192,7 @@ class HomeController extends Controller
 
         $riwayat      = paginate_collection($riwayat, 5, 'riwayat_page');
 
-        return view('ajukan', compact('surat', 'skpd', 'sedangProses', 'riwayat'));
+        return view('ajukan', compact('surat', 'sedangProses', 'riwayat'));
     }
 
 

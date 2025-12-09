@@ -12,6 +12,27 @@
                 outline: none !important;
                 border-color: #AEA07A;
             }
+
+            .status-badge {
+                display: inline-block;
+                padding: 3px 9px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                border-radius: 5px;
+            }
+
+            /* warna-warna */
+            .status-pengajuan  { background: #e0e0e0; color: #6C757D }
+            .status-proses  { background: #e8f2ff; color: #1e63ff }
+            .status-dinaikkan-ke-sekkel  { background: #ffe9d7; color: #F4A261 } 
+            .status-dinaikkan-ke-lurah  { background: #ffe9d7; color:  #F4A261 }
+            .status-dinaikkan-ke-camat  { background: #b4b1af; color:  #B2784A } 
+            .status-disetujui   { background: #e6f6ee;color: #0e8a5f }
+            .status-disetujui-lurah   { background: #e6f6ee;color: #0e8a5f }
+            .status-disetujui-camat   { background: #ebe7f5;color: #A78BFA }
+            .status-ditolak   { background: #fde4e6; color: #d2353c }
+            .status-dihapus   { background: #fde4e6; color: #d2353c } 
+            .status-dinilai   { background: #f6f1dd;color: #8b6f1d }
         </style>
     @endpush
 
@@ -115,9 +136,17 @@
                         },
                         {
                             data: 'st',
-                            render: function(data, type) {
+                            render: function(data) {
                                 if (!data) return '-';
-                                return `<span class="fw-semibold" style="color:${data.color}">${data.name}</span>`;
+
+                                // Convert name → slug (huruf kecil, tanpa spasi)
+                                let slug = data.name.toLowerCase().replace(/\s+/g, '-');
+
+                                return `
+                                    <span class="status-badge status-${slug}">
+                                        ${data.name}
+                                    </span>
+                                `;
                             },
                             orderable: false,
                             searchable: false,

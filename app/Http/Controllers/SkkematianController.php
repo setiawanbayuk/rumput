@@ -165,7 +165,7 @@ class SkkematianController extends Controller
         public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KELAHIRAN";
+        $title = "SURAT KETERANGAN KELAHIRAN";
         $suratKeterangan = SuratKematian::find($id);
 
         return view('skkematian.editwarga', compact('title', 'suratKeterangan'));
@@ -287,7 +287,7 @@ class SkkematianController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN KEMATIAN";
+        $title = "SURAT KETERANGAN KEMATIAN";
         $suratKeterangan = SuratKematian::findOrFail($id);
 
         return view('skkematian.show', compact('suratKeterangan', 'title'));

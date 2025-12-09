@@ -1,7 +1,7 @@
 {{-- resources/views/skdom/show.blade.php --}}
 @extends('layouts.create')
 
-@section('title', $title ?? 'Detail Surat Keterangan Domisili')
+@section('title', $title)
 
 @section('content')
     <div class="d-flex align-items-center justify-content-center min-vh-100"

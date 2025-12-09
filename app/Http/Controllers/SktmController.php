@@ -181,7 +181,7 @@ class SktmController extends Controller
     public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
+        $title = "SURAT KETERANGAN MISKIN";
         $suratKeterangan = SuratSktm::find($id);
 
         return view('sktm.editwarga', compact('title', 'suratKeterangan'));
@@ -271,7 +271,7 @@ class SktmController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN MISKIN";
+        $title = "SURAT KETERANGAN MISKIN";
         $suratKeterangan = SuratSktm::findOrFail($id);
 
         return view('sktm.show', compact('suratKeterangan', 'title'));

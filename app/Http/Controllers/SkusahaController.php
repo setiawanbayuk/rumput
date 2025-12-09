@@ -179,7 +179,7 @@ class SkusahaController extends Controller
     public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
+        $title = "SURAT KETERANGAN USAHA";
         $suratKeterangan = SuratUsaha::find($id);
 
         return view('skusaha.editwarga', compact('title', 'suratKeterangan'));
@@ -243,7 +243,7 @@ class SkusahaController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN USAHA";
+        $title = "SURAT KETERANGAN USAHA";
         $suratKeterangan = SuratUsaha::findOrFail($id);
 
         return view('skusaha.show', compact('suratKeterangan', 'title'));

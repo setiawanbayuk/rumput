@@ -1,7 +1,7 @@
 {{-- resources/views/skdom/show.blade.php --}}
 @extends('layouts.create')
 
-@section('title', $title ?? 'Detail Surat Keterangan Penghasilan')
+@section('title', $title)
 
 @section('content')
     <div class="d-flex align-items-center justify-content-center min-vh-100"
@@ -11,10 +11,14 @@
                 <div class="col-md-12">
                     <div class="card border-0 shadow-sm rounded-3"
                         style="background-color:rgba(255,255,255,.28); backdrop-filter:blur(10px);">
-                        <div class="card-header bg-transparent pt-3 pb-2">
-                            <h5 class="my-3 fw-bold text-white text-center" style="letter-spacing:.5px">
+                        
+                        <div class="card-header bg-transparent text-center pt-3 pb-2">
+                            <h5 class="mt-3 fw-bold text-white" style="letter-spacing:.5px">
                                 {{ $title }}
                             </h5>
+                            <h6 class="mb-3 fw-semibold text-white">
+                                No. Surat : {{ $suratKeterangan->getNoSrt($suratKeterangan) }}
+                            </h6>
                         </div>
 
                         <div class="card-body">

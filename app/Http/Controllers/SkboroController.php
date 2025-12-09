@@ -183,7 +183,7 @@ class SkboroController extends Controller
     public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
+        $title = "SURAT KETERANGAN BORO";
         $suratKeterangan = SuratBoro::find($id);
         $pengikut = SuratBoroPengikut::where('boro_id', $id)->get();
 
@@ -276,7 +276,7 @@ class SkboroController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN BORO";
+        $title = "SURAT KETERANGAN BORO";
         $suratKeterangan = SuratBoro::findOrFail($id);
         $pengikut = SuratBoroPengikut::where('boro_id', $id)->get();
 

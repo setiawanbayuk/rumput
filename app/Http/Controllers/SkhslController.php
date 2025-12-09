@@ -179,7 +179,7 @@ class SkhslController extends Controller
     public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN PENGHASILAN";
+        $title = "SURAT KETERANGAN PENGHASILAN";
         $suratKeterangan = SuratPenghasilan::find($id);
 
         return view('skhsl.editwarga', compact('title', 'suratKeterangan'));
@@ -260,7 +260,7 @@ class SkhslController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN PENGHASILAN";
+        $title = "SURAT KETERANGAN PENGHASILAN";
         $suratKeterangan = SuratPenghasilan::findOrFail($id);
 
         return view('skhsl.show', compact('suratKeterangan', 'title'));

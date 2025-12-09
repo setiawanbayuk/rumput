@@ -1,7 +1,7 @@
 {{-- resources/views/skusaha/show.blade.php --}}
 @extends('layouts.create')
 
-@section('title', $title ?? 'Detail Surat Keterangan Usaha')
+@section('title', $title)
 
 @section('content')
 <div class="d-flex align-items-center justify-content-center min-vh-100"
@@ -33,17 +33,21 @@
 
                                         {{-- Jenis Surat --}}
                                         <div class="row mb-3">
-                                            <label class="col-md-3 col-form-label ms-4">Jenis Surat</label>
+                                            <label class="col-md-3 col-form-label ms-2">Jenis Surat</label>
                                             <div class="col-md-8">
                                                 <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
-                                                    {{ strtoupper($suratKeterangan->jenis) }}
+                                                    @if ($suratKeterangan->jenis == 'luar')
+                                                        LUAR KELURAHAN
+                                                    @else
+                                                        KELURAHAN
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
 
                                         {{-- Nama Usaha --}}
                                         <div class="row mb-3">
-                                            <label class="col-md-3 col-form-label ms-4">Nama Usaha</label>
+                                            <label class="col-md-3 col-form-label ms-2">Nama Usaha</label>
                                             <div class="col-md-8">
                                                 <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
                                                     {{ $suratKeterangan->nama_usaha }}
@@ -53,7 +57,7 @@
 
                                         {{-- Alamat Usaha --}}
                                         <div class="row mb-3">
-                                            <label class="col-md-3 col-form-label ms-4">Alamat Usaha</label>
+                                            <label class="col-md-3 col-form-label ms-2">Alamat Usaha</label>
                                             <div class="col-md-8">
                                                 <div class="form-control-plaintext border rounded px-3 py-2 bg-light"
                                                     style="white-space: pre-line;">
@@ -64,7 +68,6 @@
                                     </div>
                                 </div>
                             </div>
-
 
                             {{-- ========== KANAN ========== --}}
                             <div class="col-md-6 mb-4">

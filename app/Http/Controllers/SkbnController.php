@@ -183,7 +183,7 @@ class SkbnController extends Controller
     public function editwarga($id)
     {
         // dd($id);
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN BELUM MENIKAH";
+        $title = "SURAT KETERANGAN BELUM MENIKAH";
         $suratKeterangan = SuratSkbn::find($id);
 
         return view('skbn.editwarga', compact('title', 'suratKeterangan'));
@@ -241,7 +241,7 @@ class SkbnController extends Controller
 
     public function show($id)
     {
-        $title = "USULAN PENGAJUAN SURAT KETERANGAN BELUM MENIKAH";
+        $title = "SURAT KETERANGAN BELUM MENIKAH";
         $suratKeterangan = SuratSkbn::findOrFail($id);
 
         return view('skbn.show', compact('suratKeterangan', 'title'));

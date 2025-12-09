@@ -1,7 +1,7 @@
 {{-- resources/views/suket/show.blade.php --}}
 @extends('layouts.create')
 
-@section('title', $title ?? 'Detail Surat Keterangan')
+@section('title', $title)
 
 @section('content')
 <div class="d-flex align-items-center justify-content-center min-vh-100"
@@ -30,7 +30,7 @@
                             <div class="col-md-6 mb-4">
                                 <div class="card h-100 border-1 shadow-sm bg-white">
                                     <div class="card-body">
-                                        <x-keterangan :keterangan="$suratKeterangan->keterangan" readonly="true" />
+                                        <x-keterangan :keterangan="$suratKeterangan->keterangan" :readonly="true" />
                                     </div>
                                 </div>
                             </div>
@@ -39,9 +39,9 @@
                             <div class="col-md-6 mb-4">
                                 <div class="card h-100 border-1 shadow-sm bg-white">
                                     <div class="card-body">
-                                        <x-kepada :kepada="$suratKeterangan->kepada" readonly="true" />
-                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" readonly="true" />
-                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" readonly="true" />
+                                        <x-kepada :kepada="$suratKeterangan->kepada" :readonly="true" />
+                                        <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="true" />
+                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                     </div>
                                 </div>
                             </div>
