@@ -53,48 +53,30 @@
             border-radius: .45rem
         }
 
-        .tracking-bar--DIAJUKAN {
-            background: #e0e0e0;
-            color: #6C757D;
-        }
-
-        .tracking-bar--DIPROSES {
-            background: #e8f2ff;
-            color: #1e63ff
-        }
-
-        .tracking-bar--DITOLAK {
-            background: #fde4e6;
-            color: #d2353c
-        }
-
-        .tracking-bar--SELESAI {
-            background: #e6f6ee;
-            color: #0e8a5f
-        }
-
-        .tracking-bar--DINILAI {
-            background: #f6f1dd;
-            color: #8b6f1d
-        }
+        .tracking-bar--DIAJUKAN { background: #e0e0e0; color: #6C757D; }
+        .tracking-bar--DIPROSES { background: #e8f2ff;ncolor: #1e63ff; }
+        .tracking-bar--DITOLAK { background: #fde4e6; color: #d2353c; }
+        .tracking-bar--SELESAI { background: #e6f6ee; color: #0e8a5f; }
+        .tracking-bar--DINILAI { background: #f6f1dd; color: #8b6f1d;}
 
         .tracking-wrapper {
-            gap: 10px;
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 12px;
         }
 
-        /* Tiap step */
         .tracking-step {
-            width: 110px;
+            flex: 0 0 120px;        /* ukuran minimum mobile */
+            text-align: center;
         }
 
         .step-icon-wrapper {
-            height: 50px;     /* tinggi ikon */
+            height: 70px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Ikon di dalam step */
         .tracking-icon {
             width: 55px;
             height: 55px;
@@ -119,7 +101,6 @@
             color: #6b7280;
         }
 
-        /* Garis penghubung */
         .tracking-connect {
             width: 55px;
             height: 4px;
@@ -175,28 +156,23 @@
             background: #D2353C;
         }
 
-        /* === layout 2 kolom: kiri waktu, kanan status+desc === */
         .timeline .item .meta {
             display: grid;
             grid-template-columns: max-content 1fr;
-            /* adaptif; bisa 140px jika mau fixed */
             grid-auto-rows: auto;
             column-gap: 12px;
             row-gap: 4px;
             align-items: start;
         }
 
-        /* waktu menempati dua baris kiri */
         .timeline .item .meta .time {
             grid-column: 1;
             grid-row: 1 / span 2;
             color: #6B7280;
             font-size: .85rem;
             white-space: nowrap;
-            /* biar rapi */
         }
 
-        /* status baris 1 kanan */
         .timeline .item .meta .status {
             grid-column: 2;
             grid-row: 1;
@@ -211,44 +187,75 @@
             color: #d2353c;
         }
 
-        /* deskripsi baris 2 kanan */
         .timeline .item .meta .desc {
             grid-column: 2;
             grid-row: 2;
             color: #6B7280;
             font-size: .9rem;
-            /* ≈14–15px */
         }
 
-        @media (max-width:576px) {
+        @media (max-width: 576px) {
             .tracking-card {
-                margin: -80px 12px 40px
+                margin: 80px 0px 30px;
+            }
+            
+            .tracking-step {
+                flex: 0 0 85px;
             }
 
-            .tracking-step small {
-                display: none
-            }
-
-            .tracking-step .title {
-                font-size: .8rem
+            .step-icon-wrapper {
+                height: 50px;
             }
 
             .tracking-icon {
-                width: 40px;
-                height: 40px;
+                width: 38px;
+                height: 38px;
             }
 
-            .tracking-icon img {
-                width: 40px;
-                height: 40px;
+            .tracking-title {
+                font-size: 0.75rem;
+                line-height: 1.1;
+            }
+
+            .tracking-time {
+                font-size: 0.6rem;
             }
 
             .tracking-connect {
-                margin: 0 -10px;
+                width: 25px;
+                height: 3px;
+                margin-top: 20px;
+            }
+
+            .btn-chip {
+                padding: .35rem 1.4rem;
+                font-size: .75rem;
+            }
+
+            .tracking-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .timeline {
+                margin-left: 12px;
+                padding-left: 14px;
             }
 
             .timeline .item .meta {
-                grid-template-columns: minmax(90px, max-content) 1fr;
+                grid-template-columns: minmax(70px, max-content) 1fr;
+            }
+
+            .timeline .item .meta .time {
+                font-size: 0.75rem;
+            }
+
+            .timeline .item .meta .status {
+                font-size: 0.85rem;
+            }
+
+            .timeline .item .meta .desc {
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -262,12 +269,10 @@
                 <div class="col-md-12">
                     <div class="tracking-card">
                         @php
-                            /** @var \Illuminate\Support\Collection $logs */
-                            $first = $logs->first();
-                            $last = $logs->last();
-                            $namasrt = $last?->nama_surat ?? '—';
+                            $first      = $logs->first();
+                            $last       = $logs->last();
+                            $namasrt    = $last?->nama_surat;
                         @endphp
-                        {{-- HEAD: pill status + no surat --}}
                         <div class="tracking-head">
                             <span
                                 class="tracking-bar tracking-bar--{{ $bar ?? 'DIAJUKAN' }}">{{ $bar ?? 'DIAJUKAN' }}</span>
@@ -277,7 +282,6 @@
                         <div class="divider"></div>
 
                         <div class="row justify-content-center text-center tracking-wrapper mt-4">
-                            {{-- STEP 1 --}}
                             <div class="col-auto tracking-step">
                                 <div class="step-icon-wrapper">
                                     <img src="{{ asset('assets/images/diajukan.png') }}" class="tracking-icon">
@@ -292,10 +296,8 @@
                                 </div>
                             </div>
 
-                            {{-- Connector --}}
                             <div class="col-auto tracking-connect {{ $step >= 2 ? 'active' : '' }}"></div>
 
-                            {{-- STEP 2 --}}
                             <div class="col-auto tracking-step">
                                 <div class="step-icon-wrapper">
                                     <img src="{{ asset('assets/images/' . ($step >= 2 ? 'diproses-active.png' : 'diproses.png')) }}" class="tracking-icon">
@@ -312,7 +314,6 @@
 
                             <div class="col-auto tracking-connect {{ $step >= 3 ? 'active' : '' }}"></div>
 
-                            {{-- STEP 3 --}}
                             <div class="col-auto tracking-step">
                                 <div class="step-icon-wrapper">
                                     <img src="{{ asset('assets/images/' . ($step >= 3 ? 'disetujui-active.png' : 'disetujui.png')) }}" class="tracking-icon">
@@ -329,14 +330,13 @@
 
                             <div class="col-auto tracking-connect {{$step >= 4 ? 'active' : '' }}"></div>
 
-                            {{-- STEP 4 --}}
                             <div class="col-auto tracking-step">
                                 <div class="step-icon-wrapper">
                                     <img src="{{ asset('assets/images/' . ($step >= 4 ? 'dinilai-active.png' : 'dinilai.png')) }}" class="tracking-icon">
                                 </div>
 
                                 <div class="tracking-title {{$step >= 4 ? 'active' : '' }}">
-                                    {!! $step >= 4 ? "Surat<br>Dinilai" : "Surat<br>Belum Dinilai" !!}
+                                    Surat Dinilai
                                 </div>
 
                                 <div class="tracking-time">
@@ -345,9 +345,7 @@
                             </div>
                         </div>
 
-                        {{-- ACTIONS --}}
                         <div class="tracking-actions mt-4">
-                            {{-- STEP 1 & 2: Tombol PREVIEW --}}
                             @if ($step == 1 || $step == 2)
                                 <a href="{{ route($alias.'.show', ['id' => $id]) }}"
                                     class="btn btn-chip text-white" style="background: #7896B2">
@@ -355,42 +353,25 @@
                                 </a>
                             @endif
 
-                            {{-- Tombol Cetak Surat - Tampil jika STEP 3 (SELESAI) atau STEP 4 (DINILAI) --}}
                             @if ($step == 3 || $step == 4)
-                                <a href="{{-- route('pengajuan.cetak', [$jenis, $id]) --}}"
-                                    class="btn btn-success btn-chip">
+                                <a href="#" class="btn btn-success btn-chip">
                                     Cetak Surat
                                 </a>
                             @endif
 
-                            {{-- STEP 3 (SELESAI) → Cetak & Nilai / Tampilkan Penilaian --}}
                             @if ($step == 3)
-                                {{-- Logika Penilaian (Nilai / Tampilkan Penilaian) --}}
                                 @if ($times['nilai'] == null)
-                                    {{-- kalau surat belum dinilai --}}
                                     <x-btnnilai :alias="$jenisSurat" :id="$id" :nosrt="$nomorSurat" :nama="$namasrt" />
                                 @else
-                                    {{-- sudah ada nilai --}}
-                                    <x-btnlihatnilai 
-                                        :alias="$jenisSurat" 
-                                        :id="$id"
-                                        :nosrt="$nomorSurat"
-                                        :nama="$namasrt"
+                                    <x-btnlihatnilai :alias="$jenisSurat" :id="$id" :nosrt="$nomorSurat" :nama="$namasrt"
                                     />
                                 @endif
                             @endif
 
-                            {{-- STEP 4 (Dinilai) → hanya tampilkan penilaian --}}
                             @if ($step == 4)
-                                <x-btnlihatnilai 
-                                        :alias="$jenisSurat" 
-                                        :id="$id"
-                                        :nosrt="$nomorSurat"
-                                        :nama="$namasrt"
-                                    />
+                                <x-btnlihatnilai :alias="$jenisSurat" :id="$id" :nosrt="$nomorSurat" :nama="$namasrt" />
                             @endif
 
-                            {{-- STEP 1 → tombol hapus --}}
                             @if (($step == 1 || $step == 2) && $alias && Route::has($alias.'.hapus'))
                                 <button type="button"
                                     @if ($step == 2) disabled @endif
@@ -404,31 +385,23 @@
 
                         <div class="divider mt-2"></div>
 
-                        {{-- TIMELINE --}}
                         <div class="tracking-body">
                             <div class="fw-bold mb-2">Detail Pengajuan</div>
                             <div class="timeline">
                                 @forelse($logs as $tracking)
-                                    @continue($tracking->status_surat == 5)
                                     @php
-                                        $status     = $tracking->status_surat;
-                                        // SKTM: selesai = 9, selain SKTM: selesai = 4
-                                        $isSelesai = match(true) {
-                                            $jenisSurat === 'sktm' && $status == 9 => true,
-                                            $jenisSurat !== 'sktm' && $status == 4 => true,
-                                            default => false,
-                                        };
-
-                                        $isDitolak = ($status == 6);
+                                        $status  = $tracking->status_surat;
+                                        $selesai = $status == 5;
+                                        $ditolak = $status == 6;
                                     @endphp
-                                    <div class="item {{ $isSelesai ? 'done' : '' }} {{ $isDitolak ? 'reject' : '' }}">
+                                    <div class="item {{ $selesai ? 'done' : '' }} {{ $ditolak ? 'reject' : '' }}">
                                         <div class="meta">
                                             <div class="time">
                                                 {{ optional($tracking->created_at)->timezone('Asia/Jakarta')->format('d-m-Y H:i') }}
                                             </div>
 
-                                            <div class="status {{ $isSelesai ? 'ok' : '' }} {{ $isDitolak ? 'no' : '' }}">
-                                                @if ($isSelesai && $jenisSurat !== 'sktm')
+                                            <div class="status {{ $selesai ? 'ok' : '' }} {{ $ditolak ? 'no' : '' }}">
+                                                @if ($selesai && $jenisSurat !== 'sktm')
                                                     Selesai
                                                 @else
                                                     {{ $tracking->st['name'] }}
@@ -449,11 +422,8 @@
                 </div>
             </div>
         </div>
-        <form id="formHapusGlobal" method="POST" data-action-template="">
-                @csrf
-        </form>
 
-        {{-- Modal global --}}
+        <form id="formHapusGlobal" method="POST" data-action-template="">@csrf</form>
         <div class="modal fade" id="modalHapusGlobal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content" style="border-radius:14px; overflow:hidden;">

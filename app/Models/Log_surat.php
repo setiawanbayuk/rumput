@@ -61,7 +61,7 @@ class Log_surat extends Model
         } else if ($this->status_surat == 4) {
             return ['name' => 'Disetujui Lurah', 'color' => 'green', 'keterangan' => 'Pengajuan surat disetujui Lurah'];
         } else if ($this->status_surat == 5) {
-            return ['name' => 'Dinilai', 'color' => '#EFBF04'];
+            return ['name' => 'Dinilai', 'color' => '#EFBF04', 'keterangan' => 'Surat telah diterima oleh pengguna dan sudah dinilai'];
         } else if ($this->status_surat == 6) {
             return ['name' => 'Ditolak', 'color' => 'red', 'keterangan' => 'Pengajuan surat disetujui Lurah'];
         } else if ($this->status_surat == 7) {

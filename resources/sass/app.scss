@@ -17,15 +17,6 @@
 @import "./docs";
 @import "./callout";
 
-/* Z-Index aman (tidak ekstrem) */
-// .modal {
-//     z-index: 2000 !important;
-// }
-
-// .modal-backdrop {
-//     z-index: 1990 !important;
-//     --bs-backdrop-opacity: .3;
-// }
 
 .swal2-container {
     z-index: 99999 !important;

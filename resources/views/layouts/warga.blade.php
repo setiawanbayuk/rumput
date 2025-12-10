@@ -19,7 +19,6 @@
     @stack('styles')
 
     <style>
-        /* navbar */
         .floating-navbar {
             position: sticky;
             top: 12px;
@@ -46,6 +45,45 @@
             background: #AEA07A;
             color: #fff;
         }
+
+        @media (max-width: 576px) {
+            .navbar .navbar-brand {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .navbar .navbar-brand img {
+                height: 18px;   /* dari 25px → 18px */
+            }
+
+            .navbar-card .nav-link {
+                padding: .35rem 1rem;
+                font-size: .75rem;
+                border-radius: 6px;
+            }
+
+            .navbar .nav-link i {
+                font-size: 16px ;
+            }
+
+            .dropdown-menu {
+                font-size: .8rem ;
+                padding: .3rem .2rem ;
+            }
+
+            .dropdown-item {
+                padding: .3rem .7rem ;
+            }
+
+            .navbar-nav {
+                margin-left: 8px ;
+            }
+
+            .navbar-card {
+                padding-top: 8px ;
+                padding-bottom: 8px ;
+            }
+        }
     </style>
     @routes
 </head>
@@ -54,17 +92,18 @@
     <!-- navbar -->
     <div class="container floating-navbar">
         <nav class="navbar navbar-expand-lg navbar-card mt2 mx-4 px-4 py-3">
-            <!-- Logo E-SUKET -->
-            <a class="navbar-brand" href="{{ url('/warga') }}">
-                <img src="{{ asset('assets/esuket.png') }}" alt="E-SUKET Logo" height="25">
-            </a>
 
             <!-- toggler mobile -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarMain" aria-controls="navbarMain"
                     aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+                <span class="navbar-toggler-icon"></span>
             </button>
+
+            <!-- Logo E-SUKET -->
+            <a class="navbar-brand" href="{{ url('/warga') }}">
+                <img src="{{ asset('assets/esuket.png') }}" alt="E-SUKET Logo" height="25">
+            </a>
 
             <!-- menu tengah -->
             <div class="collapse navbar-collapse" id="navbarMain">
