@@ -39,7 +39,6 @@
             margin: 0 1.25rem;
         }
 
-        /* efek hover body */
         .card-click {
             cursor: pointer;
             transition: background .15s ease, box-shadow .15s ease;
@@ -84,7 +83,6 @@
             color: #8b6f1d
         }
 
-        /* tombol kecil bundar */
         .btn-chip {
             border-radius: 999px;
             padding: .35rem 2rem;
@@ -105,9 +103,7 @@
 
 @section('content')
     <div class="container py-3">
-        {{-- Konten Utama --}}
         <section class="col-lg-12">
-            {{-- Search --}}
             <form class="mb-3" method="get">
                 <div class="fi fi--s">
                     <input id="search-box" type="text" class="fi-input" name="q" value="{{ request('q') }}"
@@ -117,9 +113,7 @@
                 </div>
             </form>
 
-            {{-- Tabs --}}
             <div class="seg seg-2 mb-3">
-                <!-- radio disembunyikan -->
                 <input type="radio" name="seg" id="seg-a" checked>
                 <input type="radio" name="seg" id="seg-b">
 
@@ -131,7 +125,6 @@
             </div>
 
             <div class="tab-content">
-                {{-- TAB: SEDANG PROSES --}}
                 <div class="tab-pane fade show active" id="tab-proses" role="tabpanel">
                     <div class="container rounded-3 px-4 py-2" style="background:rgba(174,160,122,.25)">
                         @forelse($sedangProses as $pengajuan)
@@ -149,20 +142,18 @@
                             @endphp
 
                             <div class="card suket-card mb-3 border-0 shadow-sm mt-3">
-                                {{-- HEAD --}}
                                 <div class="suket-head">
                                     <span class="bar {{ $color }}">{{ $label }}</span>
                                 </div>
 
                                 <div class="divider-card-line"></div>
 
-                                {{-- BODY --}}
                                 <div class="card-body position-relative p-4 card-click">
                                     <h5 class="fw-bold mb-1 text-uppercase">{{ $nama }}</h5>
                                     <div class="text-muted small mb-2">
                                         No. Surat : {{ $nosrt }}
                                     </div>
-                                    {{-- Link tracking (alias + id) --}}
+
                                     <a class="stretched-link"
                                         href="{{ route('tracking', ['jenisSurat' => $alias, 'id' => $id]) }}"
                                         aria-label="Lihat tracking {{ $nama }}">
@@ -171,30 +162,26 @@
 
                                 <div class="divider-card-line"></div>
 
-                                {{-- FOOTER --}}
                                 <div class="card-footer d-flex justify-content-between align-items-center px-4 py-3">
                                     <div class="text-muted small">
                                         <i class="ri-calendar-2-line me-1"></i>{{ $tgl }}
                                     </div>
                                     <div class="d-flex gap-2">
-                                        {{-- STEP 1 & 2: Tombol PREVIEW --}}
                                         @if ($step == 1 || $step == 2)
                                             <a href="{{ route($alias.'.show', ['id' => $id]) }}"
                                             class="btn btn-chip text-white" style="background: #7896B2">
                                                 Lihat
                                             </a>
                                         @endif
-                                        {{-- Tombol Cetak Surat - Tampil jika STEP 3 (SELESAI) atau STEP 4 (DINILAI) --}}
+
                                         @if ($step == 3)
-                                            <a href="{{-- route('pengajuan.cetak', [$jenis, $id]) --}}"
-                                            class="btn btn-success btn-chip">
+                                            <a href="#" class="btn btn-success btn-chip">
                                                 Cetak Surat
                                             </a>
 
                                             <x-btnnilai :alias="$alias" :id="$id" :nosrt="$nosrt" :nama="$nama" />
                                         @endif
 
-                                        {{-- STEP 1 → tombol hapus --}}
                                         @if (($step == 1 || $step == 2) && $alias && Route::has($alias.'.hapus'))
                                             <button type="button"
                                                 @if ($step == 2) disabled @endif
@@ -216,7 +203,6 @@
                     </div>
                 </div>
 
-                {{-- TAB: RIWAYAT --}}
                 <div class="tab-pane fade" id="tab-riwayat" role="tabpanel">
                     <div class="container rounded-3 px-4 py-2" style="background:rgba(174,160,122,.25)">
                         @forelse($riwayat as $pengajuan)
@@ -234,20 +220,18 @@
                                 @endphp
 
                             <div class="card suket-card mb-3 border-0 shadow-sm mt-3">
-                                {{-- HEAD --}}
                                 <div class="suket-head">
                                     <span class="bar {{ $color }}">{{ $label }}</span>
                                 </div>
 
                                 <div class="divider-card-line"></div>
 
-                                {{-- BODY --}}
                                 <div class="card-body position-relative p-4 card-click">
                                     <h5 class="fw-bold mb-1 text-uppercase">{{ $nama }}</h5>
                                     <div class="text-muted small mb-2">
                                         No. Surat : {{ $nosrt }}
                                     </div>
-                                    {{-- Link tracking (alias + id) --}}
+
                                     <a class="stretched-link"
                                         href="{{ route('tracking', ['jenisSurat' => $alias, 'id' => $id]) }}"
                                         aria-label="Lihat tracking {{ $nama }}">
@@ -256,24 +240,16 @@
 
                                 <div class="divider-card-line"></div>
 
-                                {{-- FOOTER --}}
                                 <div class="card-footer d-flex justify-content-between align-items-center px-4 py-3">
                                     <div class="text-muted small">
                                         <i class="ri-calendar-2-line me-1"></i>{{ $tgl }}
                                     </div>
                                     <div class="d-flex gap-2">
-                                        {{-- Tombol Cetak Surat - Tampil jika STEP 3 (SELESAI) atau STEP 4 (DINILAI) --}}
-                                        <a href="{{-- route('pengajuan.cetak', [$jenis, $id]) --}}"
-                                        class="btn btn-success btn-chip">
+                                        <a href="#" class="btn btn-success btn-chip">
                                             Cetak Surat
                                         </a>
 
-                                        <x-btnlihatnilai 
-                                            :alias="$alias" 
-                                            :id="$id"
-                                            :nosrt="$nosrt"
-                                            :nama="$nama"
-                                        />
+                                        <x-btnlihatnilai :alias="$alias" :id="$id" :nosrt="$nosrt" :nama="$nama"/>
                                     </div>
                                 </div>
                             </div>
@@ -290,31 +266,6 @@
             <form id="formHapusGlobal" method="POST" data-action-template="">
                 @csrf
             </form>
-
-            {{-- Modal global --}}
-            <div class="modal fade" id="modalHapusGlobal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content" style="border-radius:14px; overflow:hidden;">
-                        <div class="modal-header" style="background:#7896B2; color:#fff;">
-                            <h5 class="modal-title fw-semibold mx-auto text-center">
-                                Anda yakin ingin membatalkan dan menghapus pengajuan surat?</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body text-center">
-                            <img src="{{ asset('assets/images/hapus-surat.png') }}" style="max-width:200px" class="mb-3">
-                            <p class="mb-2 mx-2 text-start">
-                                Tindakan ini akan menghapus data pengajuan Anda. Surat ini tidak akan diproses dan akan hilang dari riwayat pengajuan Anda.</p>
-                        </div>
-
-                        <div class="modal-footer justify-content-center gap-3">
-                            <button id="btnHapusGlobal" class="btn text-white px-4" 
-                                style="border-radius:999px; background:#dc3545;">Hapus</button>
-                            <button class="btn text-white px-4" data-bs-dismiss="modal" 
-                                style="border-radius:999px; background:#AEA07A;">Batal</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </section>
     </div>
 

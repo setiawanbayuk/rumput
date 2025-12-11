@@ -350,7 +350,56 @@
                 showPane(tabToShow);
             });
         </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const modalEl = document.getElementById('modalHapusSuket');
+                const modal   = new bootstrap.Modal(modalEl);
+                const form    = document.getElementById('formHapusSuket');
+                const submit  = document.getElementById('btnHapusSuket');
+
+                // buka modal + simpan action template & id
+                document.querySelectorAll('.btn-open-hapus').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                    const tpl = btn.dataset.action;      // mis: /skbn/__ID__/hapus
+                    const id  = btn.dataset.id;
+                    form.dataset.actionTemplate = tpl;
+                    form.dataset.deleteId = id;
+                    modal.show();
+                    });
+                });
+
+                // kirim AJAX ke route per-jenis
+                submit.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const tpl = form.dataset.actionTemplate || '';
+                    const id  = form.dataset.deleteId || '';
+                    if (!tpl || !id) return;
+
+                    const url = tpl.replace('__ID__', id);
+
+                    try {
+                    const res  = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json'
+                        }
+                    });
+                    const json = await res.json();
+                    if (res.ok) {
+                        alert(json.message || 'Berhasil dihapus.');
+                        bootstrap.Modal.getInstance(modalEl)?.hide();
+                        location.reload();
+                    } else {
+                        alert(json.message || 'Terjadi kesalahan.');
+                    }
+                    } catch (err) {
+                    alert('Koneksi gagal. Silakan coba lagi.');
+                    }
+                });
+            });
+        </script>
     @endpush
+    <x-nilai />
+    <x-lihatnilai />
 @endsection
-<x-nilai />
-<x-lihatnilai />

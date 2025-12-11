@@ -249,8 +249,8 @@
                     {{-- Modal Konfirmasi --}}
                     <x-confirm-ajukan modalId="modalSktm" formId="formSktm"
                         title="Apakah Anda Yakin Ingin Mengirim Ajuan Ini ?"
-                        message="Pastikan isian ajuan telah sesuai. Kesalahan pengisian data atau lampiran dokumen dapat mengakibatkan ajuan ditolak saat proses verifikasi."
-                        agreeLabel="Saya menyatakan bahwa isian formulir dan dokumen yang terlampir pada ajuan ini telah sesuai"
+                        message="Dengan mengirim ajuan ini, Anda menyatakan bahwa seluruh data pribadi yang Anda masukkan, termasuk NIK, Nomor KK, dan dokumen pendukung lainnya, adalah benar, lengkap, dan sesuai dengan kondisi sebenarnya. Anda juga memahami bahwa kesalahan pengisian data atau ketidaksesuaian dokumen dapat mempengaruhi proses verifikasi dan dapat menyebabkan ajuan ditolak."
+                        agreeLabel="Saya menyatakan bahwa seluruh data pribadi dan dokumen yang saya kirimkan adalah benar dan sesuai."
                         cancelText="Periksa Kembali" confirmText="Kirim Ajuan" />
                 </div>
             </div>

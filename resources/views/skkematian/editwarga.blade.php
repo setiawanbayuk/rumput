@@ -585,11 +585,12 @@
                                 {{-- END ROW --}}
 
                                 {{-- ========== BUTTON UPDATE ========== --}}
-                                <div class="d-flex justify-content-center gap-3" style="margin-top:75px;">
-                                    <a href="{{ route('skkematian.warga') }}" class="btn btn-secondary px-4 py-2 rounded-3">
+                                <div class="d-flex justify-content-center gap-3 mb-3">
+                                    <a href="{{ route('skkematian.warga') }}" class="btn btn-danger py-2 px-4 me-2" style="border-radius: 8px">
                                         Batal
                                     </a>
-                                    <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditSkkematian">
+                                    <button type="button" class="btn text-white py-2 px-4"
+                                            style="background: #7896B2; border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#modalEditSkkematian">
                                         Update
                                     </button>
                                 </div>

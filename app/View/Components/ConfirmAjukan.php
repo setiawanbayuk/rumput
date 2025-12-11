@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
-class btn-hapus extends Component
+class ConfirmAjukan extends Component
 {
     /**
      * Create a new component instance.
@@ -21,6 +21,6 @@ class btn-hapus extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.btn-hapus');
+        return view('components.confirm-ajukan');
     }
 }
