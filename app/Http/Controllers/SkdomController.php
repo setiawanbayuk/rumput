@@ -176,7 +176,7 @@ class SkdomController extends Controller
         return view('skdom.addwarga', compact('title', 'nik'));
     }
 
-        public function editwarga($id)
+    public function editwarga($id)
     {
         // dd($id);
         $title = "SURAT KETERANGAN DOMISILI WARGA";
@@ -445,13 +445,13 @@ class SkdomController extends Controller
             return view('skdom.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
         } else {
             return view('skdom.edit', compact('title', 'currentUser', 'suratKeterangan'));
-        // $var = @unserialize($template->variable);
-        // $var = is_array($var) ? $var : [];
+            // $var = @unserialize($template->variable);
+            // $var = is_array($var) ? $var : [];
 
-        // $var_value = @unserialize($suratKeterangan->variable);
-        // $var_value = is_array($var_value) ? $var_value : [];
+            // $var_value = @unserialize($suratKeterangan->variable);
+            // $var_value = is_array($var_value) ? $var_value : [];
 
-        // return view('skdom.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
+            // return view('skdom.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
         }
     }
 
@@ -736,68 +736,129 @@ class SkdomController extends Controller
             'jumlah_karyawan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
             'alamat_domisili' => ['required', 'string'],
         ]);
+        try {
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skdom', 0755);
+            $path = '/public/pengantar/' . date('Y') . '/skdom';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skdom/' . $fileName;
+            $request->file('pengantar')->storeAs($path, $fileName);
+            $resident = Resident::where('nik', $request->nik)->first();
+            $penduduk = unserialize($resident->data);
 
-        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skdom', 0755);
-        $path = '/public/pengantar/' . date('Y') . '/skdom';
-        $fileName = $request->file('pengantar')->hashName();
-        $fileLocation = '/storage/pengantar/' . date('Y') . '/skdom/' . $fileName;
-        $request->file('pengantar')->storeAs($path, $fileName);
-        $resident = Resident::where('nik', $request->nik)->first();
-        $penduduk = unserialize($resident->data);
-        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-        $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
+            $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+            $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
 
-        $suket = SuratDomisili::create([
-            'id_kel'    => auth()->user()->id_instansi,
-            'id_rw'    => auth()->user()->id_rw,
-            'id_rt'    => auth()->user()->id_rt,
-            'kd_jenis_surat' => 0,
-            'no_urut_surat' => 0,
-            'id_instansi' => $regional['skpd']->instansi_kode,
-            'tahun' => date('Y'),
-            'tgl_surat' => date('Y-m-d'),
-            'nik' => $request->nik,
-            'jenis' => $request->register_as,
-            'kepada' => $request->kepada,
-            'nama_perusahaan' => $request->nama_perusahaan,
-            'status_bangunan' => $request->status_bangunan,
-            'jumlah_karyawan' => $request->jumlah_karyawan,
-            'alamat_domisili' => $request->alamat_domisili,
-            'tgl_berlaku' => $request->tgl_berlaku,
-            'peruntukan' => $request->peruntukan,
-            'pengantar' => $request->pengantar,
-            'kepada' => $request->kepada,
-            'status' => 0,
-            'pengantar' => $fileLocation
-        ]);
+            $suket = SuratDomisili::create([
+                'id_kel'    => auth()->user()->id_instansi,
+                'id_rw'    => auth()->user()->id_rw,
+                'id_rt'    => auth()->user()->id_rt,
+                'kd_jenis_surat' => 0,
+                'no_urut_surat' => 0,
+                'id_instansi' => $regional['skpd']->instansi_kode,
+                'tahun' => date('Y'),
+                'tgl_surat' => date('Y-m-d'),
+                'nik' => $request->nik,
+                'jenis' => $request->register_as,
+                'kepada' => $request->kepada,
+                'nama_perusahaan' => $request->nama_perusahaan,
+                'status_bangunan' => $request->status_bangunan,
+                'jumlah_karyawan' => $request->jumlah_karyawan,
+                'alamat_domisili' => $request->alamat_domisili,
+                'tgl_berlaku' => $request->tgl_berlaku,
+                'peruntukan' => $request->peruntukan,
+                'pengantar' => $request->pengantar,
+                'kepada' => $request->kepada,
+                'status' => 0,
+                'pengantar' => $fileLocation
+            ]);
 
-        Log_surat::create([
-            'nik' => $suket->nik,
-            'tabel_surat' => 'surat_domisilis',
-            'nama_surat' => 'SURAT KETERANGAN DOMISILI',
-            'id_surat' => $suket->id,
-            'status_surat' => 0,
-        ]);
-        if ($request->segment(1) == 'api') {
-            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
-        } else {
+            Log_surat::create([
+                'nik' => $suket->nik,
+                'tabel_surat' => 'surat_domisilis',
+                'nama_surat' => 'SURAT KETERANGAN DOMISILI',
+                'id_surat' => $suket->id,
+                'status_surat' => 0,
+            ]);
+            if ($request->segment(1) == 'api') {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Pengajuan Surat Keterangan Berhasil!',
+                    'data'    => $suket
+                ], 201); // 201 Created
+            }
 
             return redirect()->route('skdom.warga');
+        } catch (\Exception $e) {
+            if ($request->segment(1) == 'api') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->with('error', 'Gagal menyimpan data.');
         }
     }
 
     public function get(Request $request)
     {
-        if (isset($request->nik)) {
-            $surat = SuratDomisili::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_domisilis');
-            }])->where('nik', $request->nik)->orderBy('id', 'desc')->get();
-        } else if (isset($request->id)) {
-            $surat = SuratDomisili::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_domisilis');
-            }])->findOrFail($request->id);
+        try {
+            // JIKA INGIN DETAIL BERDASARKAN ID
+            if ($request->has('id')) {
+                $surat = SuratDomisili::with(['history' => function ($query) {
+                    $query->where('tabel_surat', 'surat_keterangans');
+                }])->findOrFail($request->id);
+
+                return response()->json([
+                    'status' => 'success',
+                    'data'   => $surat
+                ], 200);
+            }
+
+            // JIKA INGIN LIST DENGAN SEARCH & PAGINATION
+            $query = SuratDomisili::with(['history' => function ($q) {
+                $q->where('tabel_surat', 'surat_keterangans');
+            }]);
+
+            // Filter berdasarkan NIK (wajib untuk warga)
+            if ($request->has('nik')) {
+                $query->where('nik', $request->nik);
+            }
+
+            // Fitur Search (berdasarkan keterangan atau peruntukan)
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('keterangan', 'like', "%{$search}%")
+                        ->orWhere('peruntukan', 'like', "%{$search}%")
+                        ->orWhere('nik', 'like', "%{$search}%");
+                });
+            }
+
+            // Urutkan terbaru
+            $query->orderBy('id', 'desc');
+
+            // Pagination (default 10 data per halaman)
+            $perPage = $request->get('limit', 10);
+            $surat = $query->paginate($perPage);
+
+            return response()->json([
+                'status'     => 'success',
+                'message'    => 'Data berhasil diambil',
+                'data'       => $surat->items(), // Mengambil list data saja
+                'pagination' => [
+                    'total'        => $surat->total(),
+                    'count'        => $surat->count(),
+                    'per_page'     => $surat->perPage(),
+                    'current_page' => $surat->currentPage(),
+                    'total_pages'  => $surat->lastPage()
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data tidak ditemukan atau terjadi kesalahan.'
+            ], 404);
         }
-        return response()->json($surat);
     }
 
     public function nilai(Request $request, $id)
@@ -846,10 +907,10 @@ class SkdomController extends Controller
 
         // Ambil waktu nilai dari log_surat (status_surat = 5)
         $log = Log_surat::where('tabel_surat', 'surat_domisilis')
-                    ->where('id_surat', $id)
-                    ->where('status_surat', 5)
-                    ->orderBy('id', 'DESC')
-                    ->first();
+            ->where('id_surat', $id)
+            ->where('status_surat', 5)
+            ->orderBy('id', 'DESC')
+            ->first();
 
         return response()->json([
             'rating'   => $surat->rating,

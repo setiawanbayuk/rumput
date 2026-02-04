@@ -141,7 +141,7 @@ class SkboroController extends Controller
             $surat->nomor_surat = $this->getNoSrt($surat);
             return $surat;
         });
-        
+
         // ===== TAB: Riwayat (5) =====
         $riwayat = (clone $items)
             ->whereIn('status', [5, 6])
@@ -243,7 +243,8 @@ class SkboroController extends Controller
             'tgl_awal' => $request->tgl_awal,
             'tgl_akhir' => $request->tgl_akhir,
             'peruntukan' => $request->peruntukan,
-            'pengantar' => $fileLocation,        ]);
+            'pengantar' => $fileLocation,
+        ]);
 
         SuratBoroPengikut::where('boro_id', $id)->delete();
         if ($request->add_nik) {
@@ -280,7 +281,7 @@ class SkboroController extends Controller
         $suratKeterangan = SuratBoro::findOrFail($id);
         $pengikut = SuratBoroPengikut::where('boro_id', $id)->get();
 
-        return view('skboro.show', compact('suratKeterangan', 'pengikut','title'));
+        return view('skboro.show', compact('suratKeterangan', 'pengikut', 'title'));
     }
 
     public function add()
@@ -626,7 +627,7 @@ class SkboroController extends Controller
                 }
                 $datavar = serialize($var);
             }
-            
+
             $suratKeterangan->update([
                 'kd_jenis_surat' => $request->kd_jenis_surat,
                 'no_urut_surat' => $request->no_urut_surat,
@@ -802,93 +803,153 @@ class SkboroController extends Controller
             'peruntukan' => ['required', 'max:100'],
             'pengantar' => ['required', 'mimes:jpg,bmp,png'],
         ]);
+        try {
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skboro', 0755);
+            $path = '/public/pengantar/' . date('Y') . '/skboro';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/skboro/' . $fileName;
+            $request->file('pengantar')->storeAs($path, $fileName);
+            $resident = Resident::where('nik', $request->nik)->first();
+            $penduduk = unserialize($resident->data);
+            $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+            $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
 
-        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skboro', 0755);
-        $path = '/public/pengantar/' . date('Y') . '/skboro';
-        $fileName = $request->file('pengantar')->hashName();
-        $fileLocation = '/storage/pengantar/' . date('Y') . '/skboro/' . $fileName;
-        $request->file('pengantar')->storeAs($path, $fileName);
-        $resident = Resident::where('nik', $request->nik)->first();
-        $penduduk = unserialize($resident->data);
-        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-        $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
+            $provinsi_boro = Provinsi::find($request->provinsi_boro);
+            $kabko_boro = Kabko::find($request->kabko_boro);
+            $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
+            $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
 
-        $provinsi_boro = Provinsi::find($request->provinsi_boro);
-        $kabko_boro = Kabko::find($request->kabko_boro);
-        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
-        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
-
-        $suket = SuratBoro::create([
-            'id_kel'    => auth()->user()->id_instansi,
-            'id_rw'    => auth()->user()->id_rw,
-            'id_rt'    => auth()->user()->id_rt,
-            'kd_jenis_surat' => 0,
-            'no_urut_surat' => 0,
-            'id_instansi' => $regional['skpd']->instansi_kode,
-            'tahun' => date('Y'),
-            'tgl_surat' => date('Y-m-d'),
-            'nik' => $request->nik,
-            'prov_boro' => $request->provinsi_boro,
-            'prov_boro_nm' => $provinsi_boro->nama,
-            'kabko_boro' => $request->kabko_boro,
-            'kabko_boro_nm' => $kabko_boro->nama,
-            'kec_boro' => $request->kecamatan_boro,
-            'kec_boro_nm' => $kecamatan_boro->nama,
-            'kel_boro' => $request->kelurahan_boro,
-            'kel_boro_nm' => $kelurahan_boro->nama,
-            'alamat_boro' => $request->alamat_boro,
-            'tgl_awal' => $request->tgl_awal,
-            'tgl_akhir' => $request->tgl_akhir,
-            'peruntukan' => $request->peruntukan,
-            'status' => 0,
-            'pengantar' => $fileLocation
-        ]);
-
-        foreach ($request->add_nik as $key => $value) {
-
-            $gender_pengikut = Gender::find($request->add_jk[$key]);
-            $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
-
-            SuratBoroPengikut::create([
-                'boro_id' => $suket->id,
-                'nik' => $request->add_nik[$key],
-                'nama' => $request->add_nama[$key],
-                'gender' => $request->add_jk[$key],
-                'gender_nm' => $gender_pengikut->nama,
-                'status_kwn' => $request->add_stat[$key],
-                'status_kwn_nm' => $status_kwn_pengikut->nama,
-                'umur' => $request->add_umr[$key],
-                'hubungan' => $request->add_hub[$key],
+            $suket = SuratBoro::create([
+                'id_kel'    => auth()->user()->id_instansi,
+                'id_rw'    => auth()->user()->id_rw,
+                'id_rt'    => auth()->user()->id_rt,
+                'kd_jenis_surat' => 0,
+                'no_urut_surat' => 0,
+                'id_instansi' => $regional['skpd']->instansi_kode,
+                'tahun' => date('Y'),
+                'tgl_surat' => date('Y-m-d'),
+                'nik' => $request->nik,
+                'prov_boro' => $request->provinsi_boro,
+                'prov_boro_nm' => $provinsi_boro->nama,
+                'kabko_boro' => $request->kabko_boro,
+                'kabko_boro_nm' => $kabko_boro->nama,
+                'kec_boro' => $request->kecamatan_boro,
+                'kec_boro_nm' => $kecamatan_boro->nama,
+                'kel_boro' => $request->kelurahan_boro,
+                'kel_boro_nm' => $kelurahan_boro->nama,
+                'alamat_boro' => $request->alamat_boro,
+                'tgl_awal' => $request->tgl_awal,
+                'tgl_akhir' => $request->tgl_akhir,
+                'peruntukan' => $request->peruntukan,
+                'status' => 0,
+                'pengantar' => $fileLocation
             ]);
-        }
 
-        Log_surat::create([
-            'nik' => $suket->nik,
-            'tabel_surat' => 'surat_boros',
-            'nama_surat' => 'SURAT KETERANGAN BORO',
-            'id_surat' => $suket->id,
-            'status_surat' => 0,
-        ]);
-        if ($request->segment(1) == 'api') {
-            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
-        } else {
+            foreach ($request->add_nik as $key => $value) {
+
+                $gender_pengikut = Gender::find($request->add_jk[$key]);
+                $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
+
+                SuratBoroPengikut::create([
+                    'boro_id' => $suket->id,
+                    'nik' => $request->add_nik[$key],
+                    'nama' => $request->add_nama[$key],
+                    'gender' => $request->add_jk[$key],
+                    'gender_nm' => $gender_pengikut->nama,
+                    'status_kwn' => $request->add_stat[$key],
+                    'status_kwn_nm' => $status_kwn_pengikut->nama,
+                    'umur' => $request->add_umr[$key],
+                    'hubungan' => $request->add_hub[$key],
+                ]);
+            }
+
+            Log_surat::create([
+                'nik' => $suket->nik,
+                'tabel_surat' => 'surat_boros',
+                'nama_surat' => 'SURAT KETERANGAN BORO',
+                'id_surat' => $suket->id,
+                'status_surat' => 0,
+            ]);
+            if ($request->segment(1) == 'api') {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Pengajuan Surat Keterangan Berhasil!',
+                    'data'    => $suket
+                ], 201); // 201 Created
+            }
 
             return redirect()->route('skboro.warga');
+        } catch (\Exception $e) {
+            if ($request->segment(1) == 'api') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->with('error', 'Gagal menyimpan data.');
         }
     }
 
     public function get(Request $request)
     {
-        if (isset($request->nik)) {
-            $surat = SuratBoro::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_boros');
-            }])->where('nik', $request->nik)->orderBy('id', 'desc')->get();
-        } else if (isset($request->id)) {
-            $surat = SuratBoro::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_boros');
-            }])->findOrFail($request->id);
+        try {
+            // JIKA INGIN DETAIL BERDASARKAN ID
+            if ($request->has('id')) {
+                $surat = SuratBoro::with(['history' => function ($query) {
+                    $query->where('tabel_surat', 'surat_keterangans');
+                }])->findOrFail($request->id);
+
+                return response()->json([
+                    'status' => 'success',
+                    'data'   => $surat
+                ], 200);
+            }
+
+            // JIKA INGIN LIST DENGAN SEARCH & PAGINATION
+            $query = SuratBoro::with(['history' => function ($q) {
+                $q->where('tabel_surat', 'surat_keterangans');
+            }]);
+
+            // Filter berdasarkan NIK (wajib untuk warga)
+            if ($request->has('nik')) {
+                $query->where('nik', $request->nik);
+            }
+
+            // Fitur Search (berdasarkan keterangan atau peruntukan)
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('keterangan', 'like', "%{$search}%")
+                        ->orWhere('peruntukan', 'like', "%{$search}%")
+                        ->orWhere('nik', 'like', "%{$search}%");
+                });
+            }
+
+            // Urutkan terbaru
+            $query->orderBy('id', 'desc');
+
+            // Pagination (default 10 data per halaman)
+            $perPage = $request->get('limit', 10);
+            $surat = $query->paginate($perPage);
+
+            return response()->json([
+                'status'     => 'success',
+                'message'    => 'Data berhasil diambil',
+                'data'       => $surat->items(), // Mengambil list data saja
+                'pagination' => [
+                    'total'        => $surat->total(),
+                    'count'        => $surat->count(),
+                    'per_page'     => $surat->perPage(),
+                    'current_page' => $surat->currentPage(),
+                    'total_pages'  => $surat->lastPage()
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data tidak ditemukan atau terjadi kesalahan.'
+            ], 404);
         }
-        return response()->json($surat);
     }
 
     public function nilai(Request $request, $id)
@@ -937,10 +998,10 @@ class SkboroController extends Controller
 
         // Ambil waktu nilai dari log_surat (status_surat = 5)
         $log = Log_surat::where('tabel_surat', 'surat_boros')
-                    ->where('id_surat', $id)
-                    ->where('status_surat', 5)
-                    ->orderBy('id', 'DESC')
-                    ->first();
+            ->where('id_surat', $id)
+            ->where('status_surat', 5)
+            ->orderBy('id', 'DESC')
+            ->first();
 
         return response()->json([
             'rating'   => $surat->rating,

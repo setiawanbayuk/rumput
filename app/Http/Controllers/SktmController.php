@@ -139,7 +139,7 @@ class SktmController extends Controller
             $surat->nomor_surat = $this->getNoSrt($surat);
             return $surat;
         });
-        
+
         // ===== TAB: Riwayat (5) =====
         $riwayat = (clone $items)
             ->whereIn('status', [5, 6])
@@ -841,73 +841,133 @@ class SktmController extends Controller
             'pengantar' => ['required', 'mimes:jpg,bmp,png']
         ]);
 
-        //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/sktm', 0755);
-        $path = '/public/pengantar/' . date('Y') . '/sktm';
-        $fileName = $request->file('pengantar')->hashName();
-        $fileLocation = '/storage/pengantar/' . date('Y') . '/sktm/' . $fileName;
-        $request->file('pengantar')->storeAs($path, $fileName);
-        $resident = Resident::where('nik', $request->nik)->first();
-        $penduduk = unserialize($resident->data);
-        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-        $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
-        $kepada_gender = Gender::find($request->kepada_gender);
+        try {
+            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/sktm', 0755);
+            $path = '/public/pengantar/' . date('Y') . '/sktm';
+            $fileName = $request->file('pengantar')->hashName();
+            $fileLocation = '/storage/pengantar/' . date('Y') . '/sktm/' . $fileName;
+            $request->file('pengantar')->storeAs($path, $fileName);
+            $resident = Resident::where('nik', $request->nik)->first();
+            $penduduk = unserialize($resident->data);
+            $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+            $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
+            $kepada_gender = Gender::find($request->kepada_gender);
 
-        // dd(isset($kepada_gender) ? $kepada_gender->nama : '');
+            // dd(isset($kepada_gender) ? $kepada_gender->nama : '');
 
-        $suket = SuratSktm::create([
-            'id_kel'    => auth()->user()->id_instansi,
-            'id_rw'    => auth()->user()->id_rw,
-            'id_rt'    => auth()->user()->id_rt,
-            'kd_jenis_surat' => 0,
-            'no_urut_surat' => 0,
-            'id_instansi' => $regional['skpd']->instansi_kode,
-            'tahun' => date('Y'),
-            'tgl_surat' => date('Y-m-d'),
-            'nik' => $request->nik,
-            'peruntukan' => $request->peruntukan,
-            'jenis' => $request->register_as,
-            'kepada' => $request->kepada,
-            'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
-            'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
-            'kepada_gender' => $request->kepada_gender,
-            'kepada_gender_nm' => isset($kepada_gender) ? $kepada_gender->nama : '',
-            'kepada_hubungan' => $request->kepada_hubungan,
-            'kepada_sekolah' => $request->kepada_sekolah,
-            'kepada_kelas' => $request->kepada_kelas,
-            'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
-            'kategori' => $request->kategori,
-            'status' => 0,
-            'pengantar' => $fileLocation
-        ]);
+            $suket = SuratSktm::create([
+                'id_kel'    => auth()->user()->id_instansi,
+                'id_rw'    => auth()->user()->id_rw,
+                'id_rt'    => auth()->user()->id_rt,
+                'kd_jenis_surat' => 0,
+                'no_urut_surat' => 0,
+                'id_instansi' => $regional['skpd']->instansi_kode,
+                'tahun' => date('Y'),
+                'tgl_surat' => date('Y-m-d'),
+                'nik' => $request->nik,
+                'peruntukan' => $request->peruntukan,
+                'jenis' => $request->register_as,
+                'kepada' => $request->kepada,
+                'kepada_tempat_lhr' => $request->kepada_tempat_lhr,
+                'kepada_tgl_lhr' => $request->kepada_tgl_lhr,
+                'kepada_gender' => $request->kepada_gender,
+                'kepada_gender_nm' => isset($kepada_gender) ? $kepada_gender->nama : '',
+                'kepada_hubungan' => $request->kepada_hubungan,
+                'kepada_sekolah' => $request->kepada_sekolah,
+                'kepada_kelas' => $request->kepada_kelas,
+                'kepada_alamat_sekolah' => $request->kepada_alamat_sekolah,
+                'kategori' => $request->kategori,
+                'status' => 0,
+                'pengantar' => $fileLocation
+            ]);
 
-        Log_surat::create([
-            'nik' => $suket->nik,
-            'tabel_surat' => 'surat_sktms',
-            'nama_surat' => 'SURAT KETERANGAN MISKIN',
-            'id_surat' => $suket->id,
-            'status_surat' => 0,
-        ]);
-        if ($request->segment(1) == 'api') {
-            return response()->json(['message' => 'Pengajuan Surat Keterangan Berhasil!'], 200);
-        } else {
+            Log_surat::create([
+                'nik' => $suket->nik,
+                'tabel_surat' => 'surat_sktms',
+                'nama_surat' => 'SURAT KETERANGAN MISKIN',
+                'id_surat' => $suket->id,
+                'status_surat' => 0,
+            ]);
+            if ($request->segment(1) == 'api') {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Pengajuan Surat Keterangan Berhasil!',
+                    'data'    => $suket
+                ], 201); // 201 Created
+            }
 
             return redirect()->route('sktm.warga');
+        } catch (\Exception $e) {
+            if ($request->segment(1) == 'api') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->with('error', 'Gagal menyimpan data.');
         }
     }
 
     public function get(Request $request)
     {
-        if (isset($request->nik)) {
-            $surat = SuratSktm::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_sktms');
-            }])->where('nik', $request->nik)->orderBy('id', 'desc')->get();
-        } else if (isset($request->id)) {
-            $surat = SuratSktm::with(['history' => function ($query) {
-                return $query->where('tabel_surat', 'surat_sktms');
-            }])->findOrFail($request->id);
-        }
+        try {
+            // JIKA INGIN DETAIL BERDASARKAN ID
+            if ($request->has('id')) {
+                $surat = SuratSktm::with(['history' => function ($query) {
+                    $query->where('tabel_surat', 'surat_keterangans');
+                }])->findOrFail($request->id);
 
-        return response()->json($surat);
+                return response()->json([
+                    'status' => 'success',
+                    'data'   => $surat
+                ], 200);
+            }
+
+            // JIKA INGIN LIST DENGAN SEARCH & PAGINATION
+            $query = SuratSktm::with(['history' => function ($q) {
+                $q->where('tabel_surat', 'surat_keterangans');
+            }]);
+
+            // Filter berdasarkan NIK (wajib untuk warga)
+            if ($request->has('nik')) {
+                $query->where('nik', $request->nik);
+            }
+
+            // Fitur Search (berdasarkan keterangan atau peruntukan)
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('keterangan', 'like', "%{$search}%")
+                        ->orWhere('peruntukan', 'like', "%{$search}%")
+                        ->orWhere('nik', 'like', "%{$search}%");
+                });
+            }
+
+            // Urutkan terbaru
+            $query->orderBy('id', 'desc');
+
+            // Pagination (default 10 data per halaman)
+            $perPage = $request->get('limit', 10);
+            $surat = $query->paginate($perPage);
+
+            return response()->json([
+                'status'     => 'success',
+                'message'    => 'Data berhasil diambil',
+                'data'       => $surat->items(), // Mengambil list data saja
+                'pagination' => [
+                    'total'        => $surat->total(),
+                    'count'        => $surat->count(),
+                    'per_page'     => $surat->perPage(),
+                    'current_page' => $surat->currentPage(),
+                    'total_pages'  => $surat->lastPage()
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data tidak ditemukan atau terjadi kesalahan.'
+            ], 404);
+        }
     }
 
 
@@ -957,10 +1017,10 @@ class SktmController extends Controller
 
         // Ambil waktu nilai dari log_surat (status_surat = 5)
         $log = Log_surat::where('tabel_surat', 'surat_sktms')
-                    ->where('id_surat', $id)
-                    ->where('status_surat', 5)
-                    ->orderBy('id', 'DESC')
-                    ->first();
+            ->where('id_surat', $id)
+            ->where('status_surat', 5)
+            ->orderBy('id', 'DESC')
+            ->first();
 
         return response()->json([
             'rating'   => $surat->rating,
