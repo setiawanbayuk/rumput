@@ -50,8 +50,6 @@
                             <label class="form-check-label text-dark" style="font-size: 12px;" for="remember">Ingat
                                 Saya</label>
                         </div>
-                        <a href="{{ route('password.request') }}" class="text-dark" style="font-size: 12px;">Lupa
-                            Password?</a>
                     </div>
 
                     <!-- Tombol Login -->
@@ -68,9 +66,6 @@
                     <i class="ri-fingerprint-2-line"></i> Log In SSO
                 </a>
 
-                <!-- Registrasi -->
-                <div class="text-center my-2" style="font-size: 11px;">Belum Punya Akun?</div>
-                <a href="{{ route('register') }}" class="btn-register mb-3">Register</a>
                 <img src="{{ asset('assets/bgcard-clean.png') }}" alt="Petugas" class="login-figure d-none d-lg-block">
             </div>
         </div>
