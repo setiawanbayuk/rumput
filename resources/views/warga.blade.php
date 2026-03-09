@@ -196,7 +196,7 @@
                                 </article>
                             </a>
                         </div>
-                    @endforeach 
+                    @endforeach
                 </div>
 
                 {{-- Posisikan tombol & pagination di dalam .news, bukan di .d-flex --}}
@@ -249,15 +249,15 @@
                     <div class="d-flex text-center align-items-center justify-content-center mb-3">
                         {{-- KOTAK FOTO --}}
                         @php
-                            $avatar = Auth::user()->avatar 
-                                    ? asset('storage/' . Auth::user()->avatar) 
+                            $avatar = Auth::user()->avatar
+                                    ? asset('storage/' . Auth::user()->avatar)
                                     : asset('assets/default-avatar.png');
                         @endphp
 
                         <div class="id-photo-box me-3 mb-1">
                             <img id="avatarPreview"
                                 src="{{ $avatar }}"
-                                alt="Foto profil" 
+                                alt="Foto profil"
                                 style="width:100%; height:100%; object-fit:cover;">
                         </div>
 
@@ -328,7 +328,7 @@
                         slidesPerView: 3
                     },
                 }
-            }); 
+            });
         </script>
     @endpush
 @endsection

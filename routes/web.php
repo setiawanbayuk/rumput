@@ -31,18 +31,21 @@ use App\Models\SuratUsaha;
 // });
 
 Auth::routes();
-
-Route::get('/', function () {
-    if (auth()->check()) {
-        if (auth()->user()->role_id == 2) {
-            return redirect()->route('warga');
-        } else {
-            return redirect()->route('home');
-        }
-    }
-    return redirect()->route('login');
-    // return view('welcome');
-});
+Route::get('/', [HomeController::class, 'landing'])->name('landing');
+Route::get('/login-admin', function () {
+    return view('auth.login');
+})->name('login.admin');
+// Route::get('/', function () {
+//     if (auth()->check()) {
+//         if (auth()->user()->role_id == 2) {
+//             return redirect()->route('warga');
+//         } else {
+//             return redirect()->route('home');
+//         }
+//     }
+//     return redirect()->route('login');
+//     // return view('welcome');
+// });
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->name('home');
 Route::get('/chart/surat', [HomeController::class, 'chartDrilldown']);
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
@@ -74,7 +77,6 @@ Route::middleware(['auth', 'role:1,3,4,7,8,9'])->prefix('skbn')->group(function 
     Route::get('/preview/{id}', [SkbnController::class, 'preview'])->name('skbn.preview');
     Route::get('/cetak/{id}', [SkbnController::class, 'cetak'])->name('skbn.cetak');
     Route::post('/tolak/{id}', [SkbnController::class, 'tolak'])->name('skbn.tolak');
-
 });
 
 Route::middleware(['auth', 'role:1,3,4,7,8,9'])->prefix('suket')->group(function () {

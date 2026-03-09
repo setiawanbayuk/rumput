@@ -37,7 +37,7 @@ class HomeController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['landing']);
     }
 
     /**
@@ -123,9 +123,31 @@ class HomeController extends Controller
         }
 
         $title = "Dashboard";
-        return view('home', compact('title', 'rt', 'rw', 'kelurahan','kecamatan'));
+        return view('home', compact('title', 'rt', 'rw', 'kelurahan', 'kecamatan'));
     }
 
+    public function landing()
+    {
+        $title = "E-Suket Kota Kediri";
+        $url = 'https://api-splp.layanan.go.id/t/kedirikota.go.id/web_kediri_kota/1.0/api/berita';
+        try {
+            // Tambahkan timeout 5 detik agar user tidak menunggu terlalu lama jika API down
+            $response = Http::withoutVerifying()->timeout(5)->get($url);
+
+            if ($response->successful()) {
+                $berita = json_decode($response->json()['berita'], true);
+                foreach ($berita as &$item) {
+                    $item['deskripsi'] = strip_tags($item['deskripsi']);
+                }
+            } else {
+                $berita = [];
+            }
+        } catch (\Exception $e) {
+            $berita = []; // Jika API mati, tampilkan halaman tanpa berita agar tetap bisa diakses
+        }
+
+        return view('landing', compact('berita', 'title'));
+    }
     public function warga()
     {
         $url = 'https://api-splp.layanan.go.id/t/kedirikota.go.id/web_kediri_kota/1.0/api/berita';
@@ -180,13 +202,15 @@ class HomeController extends Controller
 
         $items = $items->sortByDesc(fn($i) => $i->raw->created_at)->values();
 
-        $sedangProses = $items->filter(fn($i) =>
+        $sedangProses = $items->filter(
+            fn($i) =>
             in_array($i->raw->status, [0, 1, 2, 3, 4, 8, 9])
         );
 
         $sedangProses = paginate_collection($sedangProses, 5, 'proses_page');
 
-        $riwayat = $items->filter(fn($i) =>
+        $riwayat = $items->filter(
+            fn($i) =>
             in_array($i->raw->status, [5, 6])
         );
 
@@ -263,8 +287,8 @@ class HomeController extends Controller
 
         $step = match (true) {
             $status <= 0                        => 1,
-            in_array($status, [1,2,3])          => 2,
-            $isSKTM && in_array($status, [4,8]) => 2,
+            in_array($status, [1, 2, 3])          => 2,
+            $isSKTM && in_array($status, [4, 8]) => 2,
             $status == 4                        => 3,
             $isSKTM && $status == 9             => 3,
             $status == 5                        => 4,
@@ -293,12 +317,25 @@ class HomeController extends Controller
 
         if (view()->exists("tracking.$jenisSurat.warga")) {
             return view("tracking.$jenisSurat.warga", compact(
-                'logs', 'step', 'bar', 'times', 'alias', 'id', 'nomorSurat'
+                'logs',
+                'step',
+                'bar',
+                'times',
+                'alias',
+                'id',
+                'nomorSurat'
             ));
         }
 
         return view('tracking', compact(
-            'jenisSurat', 'logs', 'step', 'bar', 'times', 'alias', 'id', 'nomorSurat'
+            'jenisSurat',
+            'logs',
+            'step',
+            'bar',
+            'times',
+            'alias',
+            'id',
+            'nomorSurat'
         ));
     }
 
@@ -347,8 +384,8 @@ class HomeController extends Controller
 
             // Hitung status yang ada
             $statusCounts = $items->groupBy('status')
-                                ->map(fn($r) => $r->count())
-                                ->toArray();
+                ->map(fn($r) => $r->count())
+                ->toArray();
 
             $data = [];
 
