@@ -9,7 +9,7 @@
                 <div class="col-lg-8">
                     <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
                         <div class="card-body p-4">
-                            <h4 class="fw-bold mb-3 text-primary">
+                            <h4 class="fw-bold mb-3 text-custom">
                                 <i class="ri-information-line me-2"></i>Tentang E-Suket
                             </h4>
                             <p class="text-muted leading-relaxed">
@@ -22,21 +22,21 @@
                             <div class="row g-2">
                                 <div class="col-md-4">
                                     <div class="p-3 border rounded-3 bg-light h-100">
-                                        <i class="ri-download-cloud-2-line fs-3 text-primary mb-2 d-block"></i>
+                                        <i class="ri-download-cloud-2-line fs-3 text-custom mb-2 d-block"></i>
                                         <small class="fw-bold d-block mb-1">1. Unduh Aplikasi</small>
                                         <span class="small text-muted">Download Super App Kota Kediri di Store.</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="p-3 border rounded-3 bg-light h-100">
-                                        <i class="ri-user-shared-line fs-3 text-primary mb-2 d-block"></i>
+                                        <i class="ri-user-shared-line fs-3 text-custom mb-2 d-block"></i>
                                         <small class="fw-bold d-block mb-1">2. Login SSO</small>
                                         <span class="small text-muted">Masuk menggunakan akun SSO Kediri Anda.</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="p-3 border rounded-3 bg-light h-100">
-                                        <i class="ri-file-list-3-line fs-3 text-primary mb-2 d-block"></i>
+                                        <i class="ri-file-list-3-line fs-3 text-custom mb-2 d-block"></i>
                                         <small class="fw-bold d-block mb-1">3. Pilih Layanan</small>
                                         <span class="small text-muted">Pilih jenis surat dan lengkapi data yang
                                             diminta.</span>
@@ -49,7 +49,6 @@
                     <div class="rounded-4 p-3 shadow-sm" style="background-color:rgba(255, 255, 255, 0.9)">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="fw-bold small">Berita Terkini</span>
-                            <span class="badge bg-primary">Kediri Kota</span>
                         </div>
 
                         @if (count($berita) > 0)
@@ -147,7 +146,7 @@
                                 <a href="https://sso.kedirikota.go.id" target="_blank"
                                     class="d-flex align-items-center bg-light rounded-4 p-3 text-decoration-none border border-light transition-up shadow-sm">
                                     <div class="bg-white p-2 rounded-3 me-3 shadow-sm border">
-                                        <i class="ri-fingerprint-line fs-4 text-primary"></i>
+                                        <i class="ri-fingerprint-line fs-4 text-custom"></i>
                                     </div>
                                     <div class="text-start">
                                         <div class="fw-bold text-dark small">Daftar SSO Kediri</div>
@@ -205,6 +204,19 @@
 
         .x-small {
             font-size: 0.7rem;
+        }
+
+        .text-custom {
+            color: #AB9C71;
+        }
+
+        .swiper-pagination-bullet {
+            background: #ccc;
+            opacity: 1;
+        }
+
+        .swiper-pagination-bullet-active {
+            background: #AB9C71;
         }
     </style>
 @endpush
