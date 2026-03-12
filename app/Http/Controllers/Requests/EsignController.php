@@ -119,550 +119,717 @@ class EsignController extends Controller
         return response()->json($res, 200);
     }
 
+    // public function sign(Request $request)
+    // {
+    //     $outputPdf = "";
+    //     parse_str($request->getContent(), $output);
+    //     if ($output['jenis'] == 'suket') {
+    //         $surat = SuratKeterangan::find($output['_id']);
+    //         $tabel_surat = 'surat_keterangans';
+    //         $nama_surat = 'SURAT KETERANGAN';
+    //     } else if ($output['jenis'] == 'skbn') {
+    //         $surat = SuratSkbn::find($output['_id']);
+    //         $tabel_surat = 'surat_skbns';
+    //         $nama_surat = 'SURAT KETERANGAN BELUM MENIKAH';
+    //     } else if ($output['jenis'] == 'sktm') {
+    //         $surat = SuratSktm::find($output['_id']);
+    //         $surat['kepada_tgl_lhr'] = Carbon::parse($surat['kepada_tgl_lhr'])->isoFormat('D MMMM Y');
+    //         $tabel_surat = 'surat_sktms';
+    //         $nama_surat = 'SURAT KETERANGAN MISKIN';
+    //     } else if ($output['jenis'] == 'skdom') {
+    //         $surat = SuratDomisili::find($output['_id']);
+    //         $surat['tgl_berlaku'] = Carbon::parse($surat['tgl_berlaku'])->isoFormat('D MMMM Y');
+    //         $tabel_surat = 'surat_domisilis';
+    //         $nama_surat = 'SURAT KETERANGAN DOMISILI';
+    //     } else if ($output['jenis'] == 'skhsl') {
+    //         $surat = SuratPenghasilan::find($output['_id']);
+    //         $tabel_surat = 'surat_penghasilans';
+    //         $nama_surat = 'SURAT KETERANGAN PENGHASILAN';
+    //     } else if ($output['jenis'] == 'skusaha') {
+    //         $surat = SuratUsaha::find($output['_id']);
+    //         $tabel_surat = 'surat_usahas';
+    //         $nama_surat = 'SURAT KETERANGAN USAHA';
+    //     } else if ($output['jenis'] == 'skkelahiran') {
+    //         $surat = SuratKelahiran::find($output['_id']);
+    //         $tabel_surat = 'surat_kelahirans';
+    //         $nama_surat = 'SURAT KETERANGAN KELAHIRAN';
+    //     } else if ($output['jenis'] == 'skkematian') {
+    //         $surat = SuratKematian::find($output['_id']);
+    //         $tabel_surat = 'surat_kematians';
+    //         $nama_surat = 'SURAT KETERANGAN KEMATIAN';
+    //     } else if ($output['jenis'] == 'skboro') {
+    //         $surat = SuratBoro::find($output['_id']);
+    //         $tabel_surat = 'surat_boros';
+    //         $nama_surat = 'SURAT KETERANGAN BORO';
+    //     }
+
+    //     $skpd = new Skpd_resource(Skpd::find($surat->id_kel));
+    //     $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $surat->id_kel)->first());
+    //     $tahunSrt = DateTime::createFromFormat('Y-m-d', $surat->tgl_surat);
+    //     $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
+    //     $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $skpd->instansi_kode . '/' . $tahunSrt->format('Y');
+    //     // $nomorSurat = $this->getNoSrt($surat);
+    //     $verify = env('APP_URL', 'http://rumput.test') . '/verify/' . $output['jenis'] . '/' . $output['_id'];
+    //     $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
+    //     // dd($url);
+
+    //     if ($output['jenis'] == 'skkelahiran' || $output['jenis'] == 'skkematian') {
+    //         $nik = $surat->nik_pelapor;
+    //     } else {
+    //         $nik = $surat->nik;
+    //     }
+
+    //     // dd($nik);
+    //     $resident = Resident::where('nik', $nik)->first();
+    //     $penduduk = $resident->data;
+    //     $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+
+    // if ($output['jenis'] == 'suket') {
+    //     $data = [
+    //         'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //         'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //         'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //         'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //         'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //         'skpd_kepala' => $pejabat->nama,
+    //         'skpd_nip_kepala' => $pejabat->nip,
+    //         'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //         'surat_no' => $nomorSurat,
+    //         'surat_nama' => $penduduk['name'],
+    //         'surat_nik' => $surat->nik,
+    //         'surat_tmpl' => $penduduk['tempat_lhr'],
+    //         'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //         'surat_gender' => $penduduk['gender_nm'],
+    //         'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //         'surat_agama' => $penduduk['agama_nm'],
+    //         'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //         'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //         'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //         'surat_keterangan' => $surat->keterangan,
+    //         'surat_kepada' => $surat->kepada,
+    //         'surat_peruntukan' => $surat->peruntukan,
+    //         'surat_tgl' => $tglSurat,
+    //         'link' => $verify
+    //     ];
+    //     // dd($data);
+
+    //     // Path template .docx
+    //     $templateFile = public_path('templates/SUKET.docx');
+    //     $outputPdf = hash('sha256', 'SUKET_' . $output['_id']) . '_signed';
+    //     // Generate PDF dari template
+    //     $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+    // } else if ($output['jenis'] == 'skbn') {
+    //     $data = [
+    //         'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //         'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //         'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //         'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //         'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //         'skpd_kepala' => $pejabat->nama,
+    //         'skpd_nip_kepala' => $pejabat->nip,
+    //         'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //         'surat_no' => $nomorSurat,
+    //         'surat_nama' => $penduduk['name'],
+    //         'surat_nik' => $surat->nik,
+    //         'surat_tmpl' => $penduduk['tempat_lhr'],
+    //         'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //         'surat_gender' => $penduduk['gender_nm'],
+    //         'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //         'surat_agama' => $penduduk['agama_nm'],
+    //         'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //         'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //         'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //         'surat_keterangan' => 'Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.',
+    //         'surat_kepada' => $surat->kepada,
+    //         'surat_peruntukan' => $surat->peruntukan,
+    //         'surat_tgl' => $tglSurat,
+    //         'link' => $verify
+    //     ];
+
+    //     // Path template .docx
+    //     $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => 'skbn'])->first();
+    //     if (isset($template) && ($surat->variable != "")) {
+    //         $var = $surat->variable;
+    //         $templateFile = public_path($template->path_docs);
+    //         $data = array_merge($data, $var);
+    //     } else {
+    //         $templateFile = public_path('templates/SKBN.docx');
+    //     }
+    //     $outputPdf = hash('sha256', 'SKBN_' . $output['_id']) . '_signed';
+    //     // Generate PDF dari template
+    //     $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+    //     // dd($pdfPath);
+    // } else if ($output['jenis'] == 'skboro') {
+    //     $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
+    //     $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
+    //     $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $output['_id'])->count();
+    //     $pengikut = SuratBoroPengikut::where('boro_id', $output['_id'])->get();
+    //     $data = [
+    //         'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //         'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //         'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //         'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //         'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //         'skpd_kepala' => $pejabat->nama,
+    //         'skpd_nip_kepala' => $pejabat->nip,
+    //         'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //         'surat_no' => $nomorSurat,
+    //         'surat_nama' => $penduduk['name'],
+    //         'surat_nik' => $surat->nik,
+    //         'surat_tmpl' => $penduduk['tempat_lhr'],
+    //         'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //         'surat_gender' => $penduduk['gender_nm'],
+    //         'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //         'surat_agama' => $penduduk['agama_nm'],
+    //         'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //         'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //         'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //         'surat_tgl' => $tglSurat,
+    //         'surat_tgl_berlaku' =>  $surat['tgl_awal'] . ' s/d ' .  $surat['tgl_akhir'],
+    //         'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
+    //         'surat_keperluan' => $surat->peruntukan,
+    //         'surat_jml_pengikut' => $surat->pengikut,
+    //         'detail_pengikut' => collect($pengikut)->toArray(),
+    //         'link' => $verify
+    //     ];
+    //     // dd($data);
+
+    //     // Path template .docx
+    //     $templateFile = public_path('templates/SKBORO.docx');
+    //     $outputPdf = hash('sha256', 'SKBORO_' . $output['_id']) . '_signed';
+    //     // Generate PDF dari template
+    //     $pdfPath = $this->generatePdfTable($data, $templateFile, $outputPdf);
+    // } else if ($output['jenis'] == 'skdom') {
+    //     $data = [
+    //         'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //         'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //         'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //         'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //         'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //         'skpd_kepala' => $pejabat->nama,
+    //         'skpd_nip_kepala' => $pejabat->nip,
+    //         'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //         'surat_no' => $nomorSurat,
+    //         'surat_nama' => $penduduk['name'],
+    //         'surat_nik' => $surat->nik,
+    //         'surat_tmpl' => $penduduk['tempat_lhr'],
+    //         'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //         'surat_gender' => $penduduk['gender_nm'],
+    //         'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //         'surat_agama' => $penduduk['agama_nm'],
+    //         'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //         'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //         'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //         'surat_keterangan' => $surat['jenis'] == 'perorangan' ?
+    //             'Bahwa nama tersebut di atas benar - benar berdomisili di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) :
+    //             'Pendiri / pemilik usaha ' . $surat['nama_perusahaan'] . ' yang bertempat di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) . ' yang berstatus bangunan ' . $surat['status_bangunan'] . ' dengan karyawan berjumlah ' . $surat['jumlah_karyawan'] . ' orang.',
+    //         'surat_kepada' => $surat->kepada,
+    //         'surat_peruntukan' => $surat->peruntukan,
+    //         'surat_tgl' => $tglSurat,
+    //         'link' => $verify
+    //     ];
+    //     // dd($data);
+
+    //     // Path template .docx
+    //     $templateFile = public_path('templates/SKDOM.docx');
+    //     $outputPdf = hash('sha256', 'SKDOM_' . $output['_id']) . '_signed';
+    //     // Generate PDF dari template
+    //     $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+    // } else if ($output['jenis'] == 'skkelahiran') {
+    //     $nik = $surat->nik_pelapor;
+    //     $tgl_lhr_ayah = explode('-', $surat->tgl_lhr_ayah);
+    //     $y_lhr_ayah = $tgl_lhr_ayah[0];
+    //     $m_lhr_ayah = $tgl_lhr_ayah[1];
+    //     $d_lhr_ayah = $tgl_lhr_ayah[2];
+
+    //     $tgl_lhr_ibu = explode('-', $surat->tgl_lhr_ibu);
+
+    //     $y_lhr_ibu = $tgl_lhr_ibu[0];
+    //     $m_lhr_ibu = $tgl_lhr_ibu[1];
+    //     $d_lhr_ibu = $tgl_lhr_ibu[2];
+
+
+    //     $tgl_lhr_anak = explode('-', $surat->tgl_lhr_anak);
+
+    //     $y_lhr_anak = $tgl_lhr_anak[0];
+    //     $m_lhr_anak = $tgl_lhr_anak[1];
+    //     $d_lhr_anak = $tgl_lhr_anak[2];
+
+
+    //     $jam_lhr_anak = explode(':', $surat->jam_lhr_anak);
+
+    //     $hh_lhr_anak = $jam_lhr_anak[0];
+    //     $mm_lhr_anak = $jam_lhr_anak[1];
+
+
+    //     $num = $surat->klhr_ke_anak;
+    //     $num_padded = sprintf("%02d", $num);
+
+    //     $pdf = Pdf::loadView('skkelahiran.pdf', compact(
+    //         'surat',
+    //         'nomorSurat',
+    //         'pejabat',
+    //         'tglSurat',
+    //         'url',
+    //         'y_lhr_ayah',
+    //         'm_lhr_ayah',
+    //         'd_lhr_ayah',
+    //         'y_lhr_ibu',
+    //         'm_lhr_ibu',
+    //         'd_lhr_ibu',
+    //         'y_lhr_anak',
+    //         'm_lhr_anak',
+    //         'd_lhr_anak',
+    //         'hh_lhr_anak',
+    //         'mm_lhr_anak',
+    //         'num_padded'
+    //     ))->setPaper('legal', 'portrait');
+    //     $path = '/public/pdf/';
+    //     $content = $pdf->download()->getOriginalContent();
+    //     $outputPdf = hash('sha256', 'SKKELAHIRAN_' . $output['_id']) . '_signed';
+    //     Storage::put($path . '/' . $outputPdf . '.pdf', $content);
+    //     $pdfPath = storage_path('app/public/pdf') . '/' . $outputPdf . '.pdf';
+    // } else if ($output['jenis'] == 'skkematian') {
+    //     $nik = $surat->nik_pelapor;
+
+    //     $tgl_lhr_ayah = explode('-', $surat->tgl_lhr_ayah);
+
+    //     $y_lhr_ayah = $tgl_lhr_ayah[0];
+    //     $m_lhr_ayah = $tgl_lhr_ayah[1];
+    //     $d_lhr_ayah = $tgl_lhr_ayah[2];
+
+    //     $tgl_lhr_ibu = explode('-', $surat->tgl_lhr_ibu);
+
+    //     $y_lhr_ibu = $tgl_lhr_ibu[0];
+    //     $m_lhr_ibu = $tgl_lhr_ibu[1];
+    //     $d_lhr_ibu = $tgl_lhr_ibu[2];
+
+    //     $tgl_kematian = explode('-', $surat->tgl_kematian);
+    //     $y_kematian = $tgl_kematian[0];
+    //     $m_kematian = $tgl_kematian[1];
+    //     $d_kematian = $tgl_kematian[2];
+
+
+    //     $jam_kematian = explode(':', $surat->jam_kematian);
+
+    //     $hh_kematian = $jam_kematian[0];
+    //     $mm_kematian = $jam_kematian[1];
+
+    //     $pdf = Pdf::loadView('skkematian.pdf', compact(
+    //         'surat',
+    //         'nomorSurat',
+    //         'pejabat',
+    //         'tglSurat',
+    //         'url',
+    //         'y_lhr_ayah',
+    //         'm_lhr_ayah',
+    //         'd_lhr_ayah',
+    //         'y_lhr_ibu',
+    //         'm_lhr_ibu',
+    //         'd_lhr_ibu',
+    //         'y_kematian',
+    //         'm_kematian',
+    //         'd_kematian',
+    //         'hh_kematian',
+    //         'mm_kematian',
+    //     ))->setPaper('legal', 'portrait');
+    //     $path = '/public/pdf/';
+    //     $content = $pdf->download()->getOriginalContent();
+    //     $outputPdf = hash('sha256', 'SKKEMATIAN_' . $output['_id']) . '_signed';
+    //     Storage::put($path . '/' . $outputPdf . '.pdf', $content);
+    //     $pdfPath = storage_path('app/public/pdf') . '/' . $outputPdf . '.pdf';
+    // } else if ($output['jenis'] == 'skhsl') {
+    //     $data = [
+    //         'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //         'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //         'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //         'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //         'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //         'skpd_kepala' => $pejabat->nama,
+    //         'skpd_nip_kepala' => $pejabat->nip,
+    //         'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //         'surat_no' => $nomorSurat,
+    //         'surat_nama' => $penduduk['name'],
+    //         'surat_nik' => $surat->nik,
+    //         'surat_tmpl' => $penduduk['tempat_lhr'],
+    //         'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //         'surat_gender' => $penduduk['gender_nm'],
+    //         'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //         'surat_agama' => $penduduk['agama_nm'],
+    //         'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //         'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //         'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //         'surat_keterangan' => 'Adalah benar-benar dengan penghasilan perbulan sebesar Rp. ' . number_format($surat['penghasilan'], 2, ',', '.') . ' (' . $surat['terbilang'] . ').',
+    //         'surat_kepada' => $surat->kepada,
+    //         'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
+    //         'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
+    //         'surat_kepada_sekolah' => $surat->kepada_sekolah,
+    //         'surat_kepada_kelas' => $surat->kepada_kelas,
+    //         'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
+    //         'surat_kepada_hubungan' => $surat->kepada_hubungan,
+    //         'surat_peruntukan' => $surat->peruntukan,
+    //         'surat_tgl' => $tglSurat,
+    //         'link' => $verify
+    //     ];
+    //     // dd($data);
+    //     $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => 'skhsl'])->first();
+    //     if (isset($template) && ($surat->variable != "")) {
+    //         $var = $surat->variable;
+    //         $templateFile = public_path($template->path_docs);
+    //         $data = array_merge($data, $var);
+    //     } else {
+    //         $templateFile = public_path('templates/SKHSL.docx');
+    //     }
+    //     $outputPdf = hash('sha256', 'SKHSL_' . $output['_id']) . '_signed';
+    //     // Generate PDF dari template
+    //     $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+    // } else if ($output['jenis'] == 'sktm') {
+    //     if ($output['role'] == 5) {
+    //         // $pdfPath = asset($surat->file);
+    //         $flname = explode('/', $surat->file);
+    //         $outputPdf = end($flname);
+    //         $pdfPath = storage_path('app/public/pdf/') . $outputPdf;
+    //         // dd($pdfPath);
+    //     } else {
+    //         if ($surat->jenis == 'sekolah') {
+    //             $data = [
+    //                 'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //                 'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //                 'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //                 'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //                 'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //                 'skpd_kepala' => $pejabat->nama,
+    //                 'skpd_nip_kepala' => $pejabat->nip,
+    //                 'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //                 'surat_no' => $nomorSurat,
+    //                 'surat_nama' => $penduduk['name'],
+    //                 'surat_nik' => $surat->nik,
+    //                 'surat_tmpl' => $penduduk['tempat_lhr'],
+    //                 'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //                 'surat_gender' => $penduduk['gender_nm'],
+    //                 'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //                 'surat_agama' => $penduduk['agama_nm'],
+    //                 'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //                 'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //                 'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //                 'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
+    //                 'surat_kepada' => $surat->kepada,
+    //                 'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
+    //                 'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
+    //                 'surat_kepada_sekolah' => $surat->kepada_sekolah,
+    //                 'surat_kepada_kelas' => $surat->kepada_kelas,
+    //                 'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
+    //                 'surat_kepada_hubungan' => $surat->kepada_hubungan,
+    //                 'surat_peruntukan' => $surat->peruntukan,
+    //                 'surat_tgl' => $tglSurat,
+    //                 'surat_kategori' => $surat->kategori,
+    //                 'link' => $verify
+    //             ];
+    //             // Path template .docx
+    //             $templateFile = public_path('templates/SKTM_SEKOLAH.docx');
+    //         } else {
+    //             $data = [
+    //                 'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //                 'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //                 'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //                 'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //                 'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //                 'skpd_kepala' => $pejabat->nama,
+    //                 'skpd_nip_kepala' => $pejabat->nip,
+    //                 'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //                 'surat_no' => $nomorSurat,
+    //                 'surat_nama' => $penduduk['name'],
+    //                 'surat_nik' => $surat->nik,
+    //                 'surat_tmpl' => $penduduk['tempat_lhr'],
+    //                 'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //                 'surat_gender' => $penduduk['gender_nm'],
+    //                 'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //                 'surat_agama' => $penduduk['agama_nm'],
+    //                 'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //                 'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //                 'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //                 'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
+    //                 'surat_peruntukan' => $surat->peruntukan,
+    //                 'surat_tgl' => $tglSurat,
+    //                 'surat_kategori' => $surat->kategori,
+    //                 'link' => $verify
+    //             ];
+    //             // Path template .docx
+    //             $templateFile = public_path('templates/SKTM_PERORANGAN.docx');
+    //         }
+    //         $outputPdf = hash('sha256', 'SKTM_' . $output['_id']) . '_signed';
+    //         // Generate PDF dari template
+    //         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+    //     }
+    // } else if ($output['jenis'] == 'skusaha') {
+    //     $data = [
+    //         'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
+    //         'skpd_kel' => strtoupper($pejabat->skpd->nama),
+    //         'skpd_alamat' => $pejabat->skpd->instansi_alamat,
+    //         'skpd_telp' => $pejabat->skpd->instansi_telp,
+    //         'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
+    //         'skpd_kepala' => $pejabat->nama,
+    //         'skpd_nip_kepala' => $pejabat->nip,
+    //         'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+    //         'surat_no' => $nomorSurat,
+    //         'surat_nama' => $penduduk['name'],
+    //         'surat_nik' => $surat->nik,
+    //         'surat_tmpl' => $penduduk['tempat_lhr'],
+    //         'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
+    //         'surat_gender' => $penduduk['gender_nm'],
+    //         'surat_perkawinan' => $penduduk['status_kwn_nm'],
+    //         'surat_agama' => $penduduk['agama_nm'],
+    //         'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+    //         'surat_pendidikan' => $penduduk['pendidikan_nm'],
+    //         'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+    //         'surat_keterangan' => 'Menurut pernyataannya memiliki kegiatan / usaha ' . $surat['nama_usaha'] . ' yang beralamat di ' . $surat['alamat_usaha'],
+    //         'surat_kepada' => $surat->kepada,
+    //         'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
+    //         'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
+    //         'surat_kepada_sekolah' => $surat->kepada_sekolah,
+    //         'surat_kepada_kelas' => $surat->kepada_kelas,
+    //         'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
+    //         'surat_kepada_hubungan' => $surat->kepada_hubungan,
+    //         'surat_peruntukan' => $surat->peruntukan,
+    //         'surat_tgl' => $tglSurat,
+    //         'link' => $verify
+    //     ];
+    //     // dd($data);
+
+    //     // Path template .docx
+    //     $templateFile = public_path('templates/SKUSAHA.docx');
+    //     $outputPdf = hash('sha256', 'SKUSAHA_' . $output['_id']) . '_signed';
+    //     // Generate PDF dari template
+    //     $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+    // } else {
+    //     $nik = $surat->nik;
+    //     $resident = Resident::where('nik', $surat->nik)->first();
+    //     $penduduk = $resident->data;
+    //     $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+    //     $pdf = Pdf::loadView($output['jenis'] . '.pdf', compact(
+    //         'surat',
+    //         'penduduk',
+    //         'nomorSurat',
+    //         'pejabat',
+    //         'tglSurat',
+    //         'url'
+    //     ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
+    // }
+
+    //     if ($output['role'] == 5) {
+    //         $kec = new Skpd_resource(Skpd::where('id_region', $pejabat->skpd->kecamatan->id)->first());
+    //         $camat = new Pejabat_resource(Pejabat::where('id_skpd', $kec->id)->first());
+    //         // dd($surat);
+    //         $imgTte = $this->generateTte($camat, true, $surat->no_register);
+    //     } else {
+    //         $imgTte = $this->generateTte($pejabat);
+    //     }
+    //     $request = [
+    //         'path' => $pdfPath,
+    //         'file_name' => $output['role'] == 5 ? $outputPdf : $outputPdf . '.pdf',
+    //         'nik' => $output['nik'],
+    //         'passphrase' => $output['passphrase'],
+    //         'qr_loc' => $output['role'] == 5 ? 'qr_camat' : 'qr_here',
+    //         'verify' => $verify,
+    //         'is_visible' => true,
+    //         'type' => 'image',
+    //         'image_path' => $imgTte['filename']
+    //     ];
+    //     if ($output['jenis'] == 'skkelahiran') {
+    //         $request2 = [
+    //             'jenis' => 'skkelahiran',
+    //         ];
+    //         $request = array_merge($request, $request2);
+    //     } else if ($output['jenis'] == 'skkematian') {
+    //         $request2 = [
+    //             'jenis' => 'skkematian',
+    //         ];
+    //         $request = array_merge($request, $request2);
+    //     }
+    //     // dd($request);
+    //     $res = $this->TTE_sign($request);
+    //     // dd($res);
+    //     unlink(public_path($imgTte['path']));
+    //     // dd($outputPdf);
+    //     $surat->update(['status' => ($output['role'] == 5 ? 6 : 3), 'file' => 'storage/pdf/' . ($output['role'] == 5 ? $outputPdf : $outputPdf . '.pdf')]);
+
+    //     Log_surat::create([
+    //         'nik' => $nik,
+    //         'tabel_surat' => $tabel_surat,
+    //         'nama_surat' => $nama_surat,
+    //         'id_surat' => $surat->id,
+    //         'status_surat' => 3,
+    //     ]);
+
+    //     ///Notif WA ke Pengaju
+
+    //     return response()->json(['message' => 'Esign done successfully.', 'status' => 'success'], 200);
+    // }
+
     public function sign(Request $request)
     {
-        $outputPdf = "";
         parse_str($request->getContent(), $output);
-        if ($output['jenis'] == 'suket') {
-            $surat = SuratKeterangan::find($output['_id']);
-            $tabel_surat = 'surat_keterangans';
-            $nama_surat = 'SURAT KETERANGAN';
-        } else if ($output['jenis'] == 'skbn') {
-            $surat = SuratSkbn::find($output['_id']);
-            $tabel_surat = 'surat_skbns';
-            $nama_surat = 'SURAT KETERANGAN BELUM MENIKAH';
-        } else if ($output['jenis'] == 'sktm') {
-            $surat = SuratSktm::find($output['_id']);
-            $surat['kepada_tgl_lhr'] = Carbon::parse($surat['kepada_tgl_lhr'])->isoFormat('D MMMM Y');
-            $tabel_surat = 'surat_sktms';
-            $nama_surat = 'SURAT KETERANGAN MISKIN';
-        } else if ($output['jenis'] == 'skdom') {
-            $surat = SuratDomisili::find($output['_id']);
-            $surat['tgl_berlaku'] = Carbon::parse($surat['tgl_berlaku'])->isoFormat('D MMMM Y');
-            $tabel_surat = 'surat_domisilis';
-            $nama_surat = 'SURAT KETERANGAN DOMISILI';
-        } else if ($output['jenis'] == 'skhsl') {
-            $surat = SuratPenghasilan::find($output['_id']);
-            $tabel_surat = 'surat_penghasilans';
-            $nama_surat = 'SURAT KETERANGAN PENGHASILAN';
-        } else if ($output['jenis'] == 'skusaha') {
-            $surat = SuratUsaha::find($output['_id']);
-            $tabel_surat = 'surat_usahas';
-            $nama_surat = 'SURAT KETERANGAN USAHA';
-        } else if ($output['jenis'] == 'skkelahiran') {
-            $surat = SuratKelahiran::find($output['_id']);
-            $tabel_surat = 'surat_kelahirans';
-            $nama_surat = 'SURAT KETERANGAN KELAHIRAN';
-        } else if ($output['jenis'] == 'skkematian') {
-            $surat = SuratKematian::find($output['_id']);
-            $tabel_surat = 'surat_kematians';
-            $nama_surat = 'SURAT KETERANGAN KEMATIAN';
-        } else if ($output['jenis'] == 'skboro') {
-            $surat = SuratBoro::find($output['_id']);
-            $tabel_surat = 'surat_boros';
-            $nama_surat = 'SURAT KETERANGAN BORO';
-        }
+        $id = $output['_id'];
+        $jenisSurat = $output['jenis'];
 
-        $skpd = new Skpd_resource(Skpd::find($surat->id_kel));
-        $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $surat->id_kel)->first());
-        $tahunSrt = DateTime::createFromFormat('Y-m-d', $surat->tgl_surat);
-        $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
-        $nomorSurat = $surat->kd_jenis_surat . '/' . $surat->no_urut_surat . '/' . $skpd->instansi_kode . '/' . $tahunSrt->format('Y');
-        // $nomorSurat = $this->getNoSrt($surat);
-        $verify = env('APP_URL', 'http://rumput.test') . '/verify/' . $output['jenis'] . '/' . $output['_id'];
-        $url = base64_encode(QrCode::format('png')->size(256)->generate($verify));
-        // dd($url);
+        // 1. Ambil Data Surat & Konfigurasi Berdasarkan Jenis
+        [$surat, $tabelSurat, $namaSurat, $templateDefault] = match ($jenisSurat) {
+            'suket'       => [SuratKeterangan::find($id), 'surat_keterangans', 'SURAT KETERANGAN', 'SUKET.docx'],
+            'skbn'        => [SuratSkbn::find($id), 'surat_skbns', 'SURAT KETERANGAN BELUM MENIKAH', 'SKBN.docx'],
+            'sktm'        => [SuratSktm::find($id), 'surat_sktms', 'SURAT KETERANGAN MISKIN', 'SKTM_PERORANGAN.docx'],
+            'skdom'       => [SuratDomisili::find($id), 'surat_domisilis', 'SURAT KETERANGAN DOMISILI', 'SKDOM.docx'],
+            'skhsl'       => [SuratPenghasilan::find($id), 'surat_penghasilans', 'SURAT KETERANGAN PENGHASILAN', 'SKHSL.docx'],
+            'skusaha'     => [SuratUsaha::find($id), 'surat_usahas', 'SURAT KETERANGAN USAHA', 'SKUSAHA.docx'],
+            'skkelahiran' => [SuratKelahiran::find($id), 'surat_kelahirans', 'SURAT KETERANGAN KELAHIRAN', null],
+            'skkematian'  => [SuratKematian::find($id), 'surat_kematians', 'SURAT KETERANGAN KEMATIAN', null],
+            'skboro'      => [SuratBoro::find($id), 'surat_boros', 'SURAT KETERANGAN BORO', 'SKBORO.docx'],
+            default       => abort(404, "Jenis surat tidak dikenali"),
+        };
 
-        if ($output['jenis'] == 'skkelahiran' || $output['jenis'] == 'skkematian') {
-            $nik = $surat->nik_pelapor;
-        } else {
-            $nik = $surat->nik;
-        }
+        // 2. Persiapan Identitas & Pejabat
+        $skpd    = Skpd::find($surat->id_kel);
+        $pejabat = Pejabat::where('id_skpd', $surat->id_kel)->first();
+        $tahun   = Carbon::parse($surat->tgl_surat)->format('Y');
 
-        // dd($nik);
+        $nomorSurat = "{$surat->kd_jenis_surat}/{$surat->no_urut_surat}/{$skpd->instansi_kode}/{$tahun}";
+        $verifyUrl  = config('app.url') . "/verify/{$jenisSurat}/{$id}";
+
+        // 3. Ambil Data Penduduk (JSON Casting)
+        $nik      = in_array($jenisSurat, ['skkelahiran', 'skkematian']) ? $surat->nik_pelapor : $surat->nik;
         $resident = Resident::where('nik', $nik)->first();
-        $penduduk = unserialize($resident->data);
-        $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+        $penduduk = $resident->data;
+        $tglLhr   = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
 
-        if ($output['jenis'] == 'suket') {
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_keterangan' => $surat->keterangan,
-                'surat_kepada' => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-                'surat_tgl' => $tglSurat,
-                'link' => $verify
-            ];
-            // dd($data);
-
-            // Path template .docx
-            $templateFile = public_path('templates/SUKET.docx');
-            $outputPdf = hash('sha256', 'SUKET_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
-        } else if ($output['jenis'] == 'skbn') {
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_keterangan' => 'Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.',
-                'surat_kepada' => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-                'surat_tgl' => $tglSurat,
-                'link' => $verify
-            ];
-
-            // Path template .docx
-            $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => 'skbn'])->first();
-            if (isset($template) && ($surat->variable != "")) {
-                $var = unserialize($surat->variable);
-                $templateFile = public_path($template->path_docs);
-                $data = array_merge($data, $var);
-            } else {
-                $templateFile = public_path('templates/SKBN.docx');
-            }
-            $outputPdf = hash('sha256', 'SKBN_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
-            // dd($pdfPath);
-        } else if ($output['jenis'] == 'skboro') {
-            $surat['tgl_awal'] = Carbon::parse($surat['tgl_awal'])->isoFormat('D MMMM Y');
-            $surat['tgl_akhir'] = Carbon::parse($surat['tgl_akhir'])->isoFormat('D MMMM Y');
-            $surat['pengikut'] = SuratBoroPengikut::where('boro_id', $output['_id'])->count();
-            $pengikut = SuratBoroPengikut::where('boro_id', $output['_id'])->get();
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_tgl' => $tglSurat,
-                'surat_tgl_berlaku' =>  $surat['tgl_awal'] . ' s/d ' .  $surat['tgl_akhir'],
-                'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
-                'surat_keperluan' => $surat->peruntukan,
-                'surat_jml_pengikut' => $surat->pengikut,
-                'detail_pengikut' => collect($pengikut)->toArray(),
-                'link' => $verify
-            ];
-            // dd($data);
-
-            // Path template .docx
-            $templateFile = public_path('templates/SKBORO.docx');
-            $outputPdf = hash('sha256', 'SKBORO_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdfTable($data, $templateFile, $outputPdf);
-        } else if ($output['jenis'] == 'skdom') {
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_keterangan' => $surat['jenis'] == 'perorangan' ?
-                    'Bahwa nama tersebut di atas benar - benar berdomisili di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) :
-                    'Pendiri / pemilik usaha ' . $surat['nama_perusahaan'] . ' yang bertempat di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) . ' yang berstatus bangunan ' . $surat['status_bangunan'] . ' dengan karyawan berjumlah ' . $surat['jumlah_karyawan'] . ' orang.',
-                'surat_kepada' => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-                'surat_tgl' => $tglSurat,
-                'link' => $verify
-            ];
-            // dd($data);
-
-            // Path template .docx
-            $templateFile = public_path('templates/SKDOM.docx');
-            $outputPdf = hash('sha256', 'SKDOM_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
-        } else if ($output['jenis'] == 'skkelahiran') {
-            $nik = $surat->nik_pelapor;
-            $tgl_lhr_ayah = explode('-', $surat->tgl_lhr_ayah);
-            $y_lhr_ayah = $tgl_lhr_ayah[0];
-            $m_lhr_ayah = $tgl_lhr_ayah[1];
-            $d_lhr_ayah = $tgl_lhr_ayah[2];
-
-            $tgl_lhr_ibu = explode('-', $surat->tgl_lhr_ibu);
-
-            $y_lhr_ibu = $tgl_lhr_ibu[0];
-            $m_lhr_ibu = $tgl_lhr_ibu[1];
-            $d_lhr_ibu = $tgl_lhr_ibu[2];
-
-
-            $tgl_lhr_anak = explode('-', $surat->tgl_lhr_anak);
-
-            $y_lhr_anak = $tgl_lhr_anak[0];
-            $m_lhr_anak = $tgl_lhr_anak[1];
-            $d_lhr_anak = $tgl_lhr_anak[2];
-
-
-            $jam_lhr_anak = explode(':', $surat->jam_lhr_anak);
-
-            $hh_lhr_anak = $jam_lhr_anak[0];
-            $mm_lhr_anak = $jam_lhr_anak[1];
-
-
-            $num = $surat->klhr_ke_anak;
-            $num_padded = sprintf("%02d", $num);
-
-            $pdf = Pdf::loadView('skkelahiran.pdf', compact(
-                'surat',
-                'nomorSurat',
-                'pejabat',
-                'tglSurat',
-                'url',
-                'y_lhr_ayah',
-                'm_lhr_ayah',
-                'd_lhr_ayah',
-                'y_lhr_ibu',
-                'm_lhr_ibu',
-                'd_lhr_ibu',
-                'y_lhr_anak',
-                'm_lhr_anak',
-                'd_lhr_anak',
-                'hh_lhr_anak',
-                'mm_lhr_anak',
-                'num_padded'
-            ))->setPaper('legal', 'portrait');
-            $path = '/public/pdf/';
-            $content = $pdf->download()->getOriginalContent();
-            $outputPdf = hash('sha256', 'SKKELAHIRAN_' . $output['_id']) . '_signed';
-            Storage::put($path . '/' . $outputPdf . '.pdf', $content);
-            $pdfPath = storage_path('app/public/pdf') . '/' . $outputPdf . '.pdf';
-        } else if ($output['jenis'] == 'skkematian') {
-            $nik = $surat->nik_pelapor;
-
-            $tgl_lhr_ayah = explode('-', $surat->tgl_lhr_ayah);
-
-            $y_lhr_ayah = $tgl_lhr_ayah[0];
-            $m_lhr_ayah = $tgl_lhr_ayah[1];
-            $d_lhr_ayah = $tgl_lhr_ayah[2];
-
-            $tgl_lhr_ibu = explode('-', $surat->tgl_lhr_ibu);
-
-            $y_lhr_ibu = $tgl_lhr_ibu[0];
-            $m_lhr_ibu = $tgl_lhr_ibu[1];
-            $d_lhr_ibu = $tgl_lhr_ibu[2];
-
-            $tgl_kematian = explode('-', $surat->tgl_kematian);
-            $y_kematian = $tgl_kematian[0];
-            $m_kematian = $tgl_kematian[1];
-            $d_kematian = $tgl_kematian[2];
-
-
-            $jam_kematian = explode(':', $surat->jam_kematian);
-
-            $hh_kematian = $jam_kematian[0];
-            $mm_kematian = $jam_kematian[1];
-
-            $pdf = Pdf::loadView('skkematian.pdf', compact(
-                'surat',
-                'nomorSurat',
-                'pejabat',
-                'tglSurat',
-                'url',
-                'y_lhr_ayah',
-                'm_lhr_ayah',
-                'd_lhr_ayah',
-                'y_lhr_ibu',
-                'm_lhr_ibu',
-                'd_lhr_ibu',
-                'y_kematian',
-                'm_kematian',
-                'd_kematian',
-                'hh_kematian',
-                'mm_kematian',
-            ))->setPaper('legal', 'portrait');
-            $path = '/public/pdf/';
-            $content = $pdf->download()->getOriginalContent();
-            $outputPdf = hash('sha256', 'SKKEMATIAN_' . $output['_id']) . '_signed';
-            Storage::put($path . '/' . $outputPdf . '.pdf', $content);
-            $pdfPath = storage_path('app/public/pdf') . '/' . $outputPdf . '.pdf';
-        } else if ($output['jenis'] == 'skhsl') {
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_keterangan' => 'Adalah benar-benar dengan penghasilan perbulan sebesar Rp. ' . number_format($surat['penghasilan'], 2, ',', '.') . ' (' . $surat['terbilang'] . ').',
-                'surat_kepada' => $surat->kepada,
-                'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
-                'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
-                'surat_kepada_sekolah' => $surat->kepada_sekolah,
-                'surat_kepada_kelas' => $surat->kepada_kelas,
-                'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
-                'surat_kepada_hubungan' => $surat->kepada_hubungan,
-                'surat_peruntukan' => $surat->peruntukan,
-                'surat_tgl' => $tglSurat,
-                'link' => $verify
-            ];
-            // dd($data);
-            $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => 'skhsl'])->first();
-            if (isset($template) && ($surat->variable != "")) {
-                $var = unserialize($surat->variable);
-                $templateFile = public_path($template->path_docs);
-                $data = array_merge($data, $var);
-            } else {
-                $templateFile = public_path('templates/SKHSL.docx');
-            }
-            $outputPdf = hash('sha256', 'SKHSL_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
-        } else if ($output['jenis'] == 'sktm') {
-            if ($output['role'] == 5) {
-                // $pdfPath = asset($surat->file);
-                $flname = explode('/', $surat->file);
-                $outputPdf = end($flname);
-                $pdfPath = storage_path('app/public/pdf/') . $outputPdf;
-                // dd($pdfPath);
-            } else {
-                if ($surat->jenis == 'sekolah') {
-                    $data = [
-                        'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                        'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                        'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                        'skpd_telp' => $pejabat->skpd->instansi_telp,
-                        'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                        'skpd_kepala' => $pejabat->nama,
-                        'skpd_nip_kepala' => $pejabat->nip,
-                        'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                        'surat_no' => $nomorSurat,
-                        'surat_nama' => $penduduk['name'],
-                        'surat_nik' => $surat->nik,
-                        'surat_tmpl' => $penduduk['tempat_lhr'],
-                        'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                        'surat_gender' => $penduduk['gender_nm'],
-                        'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                        'surat_agama' => $penduduk['agama_nm'],
-                        'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                        'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                        'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                        'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
-                        'surat_kepada' => $surat->kepada,
-                        'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
-                        'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
-                        'surat_kepada_sekolah' => $surat->kepada_sekolah,
-                        'surat_kepada_kelas' => $surat->kepada_kelas,
-                        'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
-                        'surat_kepada_hubungan' => $surat->kepada_hubungan,
-                        'surat_peruntukan' => $surat->peruntukan,
-                        'surat_tgl' => $tglSurat,
-                        'surat_kategori' => $surat->kategori,
-                        'link' => $verify
-                    ];
-                    // Path template .docx
-                    $templateFile = public_path('templates/SKTM_SEKOLAH.docx');
-                } else {
-                    $data = [
-                        'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                        'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                        'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                        'skpd_telp' => $pejabat->skpd->instansi_telp,
-                        'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                        'skpd_kepala' => $pejabat->nama,
-                        'skpd_nip_kepala' => $pejabat->nip,
-                        'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                        'surat_no' => $nomorSurat,
-                        'surat_nama' => $penduduk['name'],
-                        'surat_nik' => $surat->nik,
-                        'surat_tmpl' => $penduduk['tempat_lhr'],
-                        'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                        'surat_gender' => $penduduk['gender_nm'],
-                        'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                        'surat_agama' => $penduduk['agama_nm'],
-                        'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                        'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                        'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                        'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
-                        'surat_peruntukan' => $surat->peruntukan,
-                        'surat_tgl' => $tglSurat,
-                        'surat_kategori' => $surat->kategori,
-                        'link' => $verify
-                    ];
-                    // Path template .docx
-                    $templateFile = public_path('templates/SKTM_PERORANGAN.docx');
-                }
-                $outputPdf = hash('sha256', 'SKTM_' . $output['_id']) . '_signed';
-                // Generate PDF dari template
-                $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
-            }
-        } else if ($output['jenis'] == 'skusaha') {
-            $data = [
-                'skpd_kec' => strtoupper($pejabat->skpd->kecamatan->nama),
-                'skpd_kel' => strtoupper($pejabat->skpd->nama),
-                'skpd_alamat' => $pejabat->skpd->instansi_alamat,
-                'skpd_telp' => $pejabat->skpd->instansi_telp,
-                'skpd_pos' => $pejabat->skpd->instansi_kode_pos,
-                'skpd_kepala' => $pejabat->nama,
-                'skpd_nip_kepala' => $pejabat->nip,
-                'skpd_jabatan' => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
-                'surat_no' => $nomorSurat,
-                'surat_nama' => $penduduk['name'],
-                'surat_nik' => $surat->nik,
-                'surat_tmpl' => $penduduk['tempat_lhr'],
-                'surat_tgll' => strtoupper($penduduk['tgl_lhr']),
-                'surat_gender' => $penduduk['gender_nm'],
-                'surat_perkawinan' => $penduduk['status_kwn_nm'],
-                'surat_agama' => $penduduk['agama_nm'],
-                'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-                'surat_pendidikan' => $penduduk['pendidikan_nm'],
-                'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
-                'surat_keterangan' => 'Menurut pernyataannya memiliki kegiatan / usaha ' . $surat['nama_usaha'] . ' yang beralamat di ' . $surat['alamat_usaha'],
-                'surat_kepada' => $surat->kepada,
-                'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
-                'surat_kepada_tgl_lhr' => $surat->kepada_tgl_lhr,
-                'surat_kepada_sekolah' => $surat->kepada_sekolah,
-                'surat_kepada_kelas' => $surat->kepada_kelas,
-                'surat_kepada_gender_nm' => ucfirst(strtolower($surat->kepada_gender_nm)),
-                'surat_kepada_hubungan' => $surat->kepada_hubungan,
-                'surat_peruntukan' => $surat->peruntukan,
-                'surat_tgl' => $tglSurat,
-                'link' => $verify
-            ];
-            // dd($data);
-
-            // Path template .docx
-            $templateFile = public_path('templates/SKUSAHA.docx');
-            $outputPdf = hash('sha256', 'SKUSAHA_' . $output['_id']) . '_signed';
-            // Generate PDF dari template
-            $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
-        } else {
-            $nik = $surat->nik;
-            $resident = Resident::where('nik', $surat->nik)->first();
-            $penduduk = unserialize($resident->data);
-            $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-            $pdf = Pdf::loadView($output['jenis'] . '.pdf', compact(
-                'surat',
-                'penduduk',
-                'nomorSurat',
-                'pejabat',
-                'tglSurat',
-                'url'
-            ))->setPaper(array(0, 0, 609.4488, 935.433), 'portrait');
-        }
-
-        if ($output['role'] == 5) {
-            $kec = new Skpd_resource(Skpd::where('id_region', $pejabat->skpd->kecamatan->id)->first());
-            $camat = new Pejabat_resource(Pejabat::where('id_skpd', $kec->id)->first());
-            // dd($surat);
-            $imgTte = $this->generateTte($camat, true, $surat->no_register);
-        } else {
-            $imgTte = $this->generateTte($pejabat);
-        }
-        $request = [
-            'path' => $pdfPath,
-            'file_name' => $output['role'] == 5 ? $outputPdf : $outputPdf . '.pdf',
-            'nik' => $output['nik'],
-            'passphrase' => $output['passphrase'],
-            'qr_loc' => $output['role'] == 5 ? 'qr_camat' : 'qr_here',
-            'verify' => $verify,
-            'is_visible' => true,
-            'type' => 'image',
-            'image_path' => $imgTte['filename']
+        // 4. Inisialisasi Data Dasar (Base Data)
+        $data = [
+            'skpd_kec'        => strtoupper($pejabat->skpd->kecamatan->nama),
+            'skpd_kel'        => strtoupper($pejabat->skpd->nama),
+            'skpd_alamat'     => $pejabat->skpd->instansi_alamat,
+            'skpd_telp'       => $pejabat->skpd->instansi_telp,
+            'skpd_pos'        => $pejabat->skpd->instansi_kode_pos,
+            'skpd_kepala'     => $pejabat->nama,
+            'skpd_nip_kepala' => $pejabat->nip,
+            'skpd_jabatan'    => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+            'surat_no'        => $nomorSurat,
+            'surat_nama'      => $penduduk['name'],
+            'surat_nik'       => $nik,
+            'surat_tmpl'      => $penduduk['tempat_lhr'],
+            'surat_tgll'      => strtoupper($tglLhr),
+            'surat_gender'    => $penduduk['gender_nm'],
+            'surat_perkawinan' => $penduduk['status_kwn_nm'],
+            'surat_agama'     => $penduduk['agama_nm'],
+            'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
+            'surat_pendidikan' => $penduduk['pendidikan_nm'],
+            'surat_alamat'    => "{$penduduk['alamat']} KEL. {$penduduk['kelurahan_nm']} KEC. {$penduduk['kecamatan_nm']} {$penduduk['kabko_nm']}",
+            'surat_tgl'       => Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y'),
+            'link'            => $verifyUrl
         ];
-        if ($output['jenis'] == 'skkelahiran') {
-            $request2 = [
-                'jenis' => 'skkelahiran',
-            ];
-            $request = array_merge($request, $request2);
-        } else if ($output['jenis'] == 'skkematian') {
-            $request2 = [
-                'jenis' => 'skkematian',
-            ];
-            $request = array_merge($request, $request2);
-        }
-        // dd($request);
-        $res = $this->TTE_sign($request);
-        // dd($res);
-        unlink(public_path($imgTte['path']));
-        // dd($outputPdf);
-        $surat->update(['status' => ($output['role'] == 5 ? 6 : 3), 'file' => 'storage/pdf/' . ($output['role'] == 5 ? $outputPdf : $outputPdf . '.pdf')]);
 
-        Log_surat::create([
-            'nik' => $nik,
-            'tabel_surat' => $tabel_surat,
-            'nama_surat' => $nama_surat,
-            'id_surat' => $surat->id,
-            'status_surat' => 3,
+        // 5. Akomodasi Logika Keperluan Spesifik
+        $data = match ($jenisSurat) {
+            'suket' => array_merge($data, [
+                'surat_keterangan' => $surat->keterangan,
+                'surat_kepada'     => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+            ]),
+            'skbn' => array_merge($data, [
+                'surat_keterangan' => 'Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.',
+                'surat_kepada'     => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+            ]),
+            'skboro' => array_merge($data, [
+                'surat_tgl_berlaku'  => Carbon::parse($surat->tgl_awal)->isoFormat('D MMMM Y') . ' s/d ' . Carbon::parse($surat->tgl_akhir)->isoFormat('D MMMM Y'),
+                'surat_tujuan'       => "Desa/Kel: {$surat->kel_boro_nm} Kec: {$surat->kec_boro_nm} Kab: {$surat->kabko_boro_nm} Prov: {$surat->prov_boro_nm}",
+                'surat_keperluan'    => $surat->peruntukan,
+                'surat_jml_pengikut' => SuratBoroPengikut::where('boro_id', $id)->count(),
+                'detail_pengikut'    => SuratBoroPengikut::where('boro_id', $id)->get()->toArray(),
+            ]),
+            'skdom' => array_merge($data, [
+                'surat_keterangan' => $surat->jenis == 'perorangan'
+                    ? "Bahwa nama tersebut di atas benar-benar berdomisili di {$surat->alamat_domisili}..."
+                    : "Pendiri/pemilik usaha {$surat->nama_perusahaan} yang bertempat di {$surat->alamat_domisili}...",
+                'surat_kepada'     => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+            ]),
+            'skhsl' => array_merge($data, [
+                'surat_keterangan' => "Adalah benar-benar dengan penghasilan perbulan sebesar Rp. " . number_format($surat->penghasilan, 2, ',', '.') . " ({$surat->terbilang}).",
+                'surat_kepada'     => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+                // Tambahkan field kepangkatan/sekolah jika ada di model skhsl
+            ]),
+            'skusaha' => array_merge($data, [
+                'surat_keterangan' => "Menurut pernyataannya memiliki kegiatan / usaha {$surat->nama_usaha} yang beralamat di {$surat->alamat_usaha}",
+                'surat_kepada'     => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+            ]),
+            'sktm' => array_merge($data, [
+                'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
+                'surat_kepada'     => $surat->kepada,
+                'surat_peruntukan' => $surat->peruntukan,
+                'surat_kategori'   => $surat->kategori,
+            ]),
+            default => $data
+        };
+
+        // 6. Penanganan Template File & Generate PDF
+        $outputPdfName = strtoupper($jenisSurat) . "_{$id}_signed";
+
+        if (in_array($jenisSurat, ['skkelahiran', 'skkematian'])) {
+            // Gunakan fungsi generate PDF khusus DomPDF Anda
+            $pdfPath = $this->generateSpecialPdf($surat, $jenisSurat, $nomorSurat, $pejabat, $verifyUrl, $id);
+        } else {
+            $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => $jenisSurat])->first();
+
+            if ($template && !empty($surat->variable)) {
+                $templateFile = public_path($template->path_docs);
+                $data = array_merge($data, $surat->variable);
+            } else {
+                // Penyesuaian template default khusus SKTM
+                if ($jenisSurat == 'sktm') {
+                    $templateFile = $surat->jenis == 'sekolah' ? public_path('templates/SKTM_SEKOLAH.docx') : public_path('templates/SKTM_PERORANGAN.docx');
+                } else {
+                    $templateFile = public_path("templates/{$templateDefault}");
+                }
+            }
+
+            $pdfPath = ($jenisSurat === 'skboro')
+                ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
+                : $this->generatePdf($data, $templateFile, $outputPdfName);
+        }
+
+        // 7. Proses TTE (Logic TTE Anda tetap sama)
+        $isCamat = ($output['role'] == 5);
+        $imgTte = $isCamat ? $this->generateTte($this->getCamat($pejabat), true, $surat->no_register) : $this->generateTte($pejabat);
+
+        $res = $this->TTE_sign([
+            'path'       => $pdfPath,
+            'file_name'  => $outputPdfName . '.pdf',
+            'nik'        => $output['nik'],
+            'passphrase' => $output['passphrase'],
+            'qr_loc'     => $isCamat ? '|' : '~',
+            'image_path' => $imgTte['path']
         ]);
 
-        ///Notif WA ke Pengaju
+        // 8. Cleanup & Update
+        if (file_exists(public_path($imgTte['path']))) unlink(public_path($imgTte['path']));
 
-        return response()->json(['message' => 'Esign done successfully.', 'status' => 'success'], 200);
+        if ($res['status'] == 'success') {
+            $surat->update([
+                'status' => $isCamat ? 6 : 4,
+                'file'   => 'storage/pdf/' . $outputPdfName . '.pdf'
+            ]);
+
+            Log_surat::create([
+                'nik' => $nik,
+                'tabel_surat' => $tabelSurat,
+                'id_surat' => $id,
+                'status_surat' => $isCamat ? 6 : 4,
+                'nama_surat' => $namaSurat
+            ]);
+
+            return response()->json(['message' => 'Esign berhasil.', 'status' => 'success'], 200);
+        }
+
+        return response()->json($res, 500);
     }
 }
