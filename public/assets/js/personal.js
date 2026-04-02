@@ -1,106 +1,69 @@
 function checkNIK() {
     let nik = document.getElementById("nik").value;
-    console.log(nik);
+
+    // Validasi sederhana sebelum kirim request
+    if (nik.length < 16) {
+        Swal.fire("Peringatan", "NIK harus 16 digit!", "warning");
+        return;
+    }
 
     $.ajax({
         url: window.location.origin + "/api/personal?nik=" + nik,
+        type: "GET",
         success: function (response) {
-            $("#kk").val(response.kk);
-            $("#name").val(response.name);
-            $("#tempat_lhr").val(response.tempat_lhr);
-            $("#tgl_lhr").val(response.tgl_lhr);
-            $("#alamat").val(response.alamat);
-            $("#gender").select2("trigger", "select", {
-                data: {
-                    id: response.gender,
-                    text: response.gender_nm,
-                },
-            });
-            $("#status_kwn").select2("trigger", "select", {
-                data: {
-                    id: response.status_kwn,
-                    text: response.status_kwn_nm,
-                },
-            });
-            $("#kewarganegaraan").select2("trigger", "select", {
-                data: {
-                    id: response.kewarganegaraan,
-                    text: response.kewarganegaraan_nm,
-                },
-            });
-            $("#agama").select2("trigger", "select", {
-                data: {
-                    id: response.agama,
-                    text: response.agama_nm,
-                },
-            });
-            $("#pendidikan").select2("trigger", "select", {
-                data: {
-                    id: response.pendidikan,
-                    text: response.pendidikan_nm,
-                },
-            });
-            $("#pekerjaan").select2("trigger", "select", {
-                data: {
-                    id: response.pekerjaan,
-                    text: response.pekerjaan_nm,
-                },
-            });
-            $("#provinsi").select2("trigger", "select", {
-                data: {
-                    id: response.provinsi,
-                    text: response.provinsi_nm,
-                },
-            });
-            $("#kabko").select2("trigger", "select", {
-                data: {
-                    id: response.kabko,
-                    text: response.kabko_nm,
-                },
-            });
-            $("#kecamatan").select2("trigger", "select", {
-                data: {
-                    id: response.kecamatan,
-                    text: response.kecamatan_nm,
-                },
-            });
-            $("#kelurahan").select2("trigger", "select", {
-                data: {
-                    id: response.kelurahan,
-                    text: response.kelurahan_nm,
-                },
-            });
-            $("#rw").select2("trigger", "select", {
-                data: {
-                    id: response.rw,
-                    text: response.rw_nm,
-                },
-            });
-            $("#rt").select2("trigger", "select", {
-                data: {
-                    id: response.rt,
-                    text: response.rt_nm,
-                },
-            });
+            // PENYESUAIAN: Karena respon API baru adalah { status: 'success', data: {...} }
+            // Maka kita ambil object di dalam response.data
+            const res = response.data;
+
+            $("#kk").val(res.kk);
+            $("#name").val(res.name);
+            $("#tempat_lhr").val(res.tempat_lhr);
+            $("#tgl_lhr").val(res.tgl_lhr);
+            $("#alamat").val(res.alamat);
+
+            // Fungsi pembantu agar kode lebih bersih (DRY)
+            const updateSelect2 = (id, value, text) => {
+                if ($(id).length) {
+                    $(id).select2("trigger", "select", {
+                        data: { id: value, text: text },
+                    });
+                }
+            };
+
+            updateSelect2("#gender", res.gender, res.gender_nm);
+            updateSelect2("#status_kwn", res.status_kwn, res.status_kwn_nm);
+            updateSelect2("#kewarganegaraan", res.kewarganegaraan, res.kewarganegaraan_nm);
+            updateSelect2("#agama", res.agama, res.agama_nm);
+            updateSelect2("#pendidikan", res.pendidikan, res.pendidikan_nm);
+            updateSelect2("#pekerjaan", res.pekerjaan, res.pekerjaan_nm);
+            updateSelect2("#provinsi", res.provinsi, res.provinsi_nm);
+            updateSelect2("#kabko", res.kabko, res.kabko_nm);
+            updateSelect2("#kecamatan", res.kecamatan, res.kecamatan_nm);
+            updateSelect2("#kelurahan", res.kelurahan, res.kelurahan_nm);
+            updateSelect2("#rw", res.rw, res.rw_nm);
+            updateSelect2("#rt", res.rt, res.rt_nm);
 
             Toastify({
                 text: "Data ditemukan!",
-                duration: 1000,
+                duration: 2000,
                 close: true,
-                gravity: "top", // `top` or `bottom`
-                position: "center", // `left`, `center` or `right`
-                stopOnFocus: true, // Prevents dismissing of toast on hover
+                gravity: "top",
+                position: "center",
                 style: {
                     background: "rgba(25, 135, 84, 1)",
                 },
             }).showToast();
         },
         error: function (xhr) {
-            const response = JSON.parse(xhr.responseText);
-            // console.log('hey error', response.message);
+            let message = "Terjadi kesalahan sistem";
+            try {
+                const response = JSON.parse(xhr.responseText);
+                message = response.message;
+            } catch (e) {}
+
             Swal.fire({
                 title: "Ooopppsss...",
-                text: response.message,
+                text: message,
                 icon: "error",
                 confirmButtonText: "OK",
             });

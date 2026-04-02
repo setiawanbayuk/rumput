@@ -5,6 +5,7 @@
         data-action="proses"
         data-method="POST"
         data-confirm="Proses pengajuan ini?"
-        data-success="Berhasil diproses">
+        data-success="Berhasil diproses"
+        data-bs-title="Proses" title="Proses">
     <i class="ri-arrow-up-double-fill"></i>
 </button>

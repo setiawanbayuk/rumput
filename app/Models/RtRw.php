@@ -10,24 +10,23 @@ class RtRw extends Model
 {
     protected $table = 'rt_rws';   // nama tabel
     protected $fillable = [
-        'id_kel',
-        'kode_kelurahan', 
-        'rw', 
+        'kode_kelurahan',
+        'rw',
         'rt'];
     public $timestamps = false;    // karena di tabel kamu nggak ada created_at / updated_at
-    
+
     /**
      * Relasi: RT/RW ini milik satu SKPD (kelurahan).
      * FK: rt_rws.id_kel → skpds.id
      */
     public function skpd(): BelongsTo
     {
-        return $this->belongsTo(Skpd::class, 'id_kel', 'id');
+        return $this->belongsTo(Skpd::class, 'kode_kelurahan', 'id_region');
     }
 
     public function kelurahan(): BelongsTo
     {
-        return $this->belongsTo(RtRw::class, 'kode_kelurahan', 'id');
+        return $this->belongsTo(RtRw::class, 'kode_kelurahan', 'id_region');
     }
 
     /**

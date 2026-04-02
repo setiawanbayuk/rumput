@@ -116,6 +116,12 @@
                         {{-- SECTION: MENU LAYANAN --}}
                         @if (auth()->user()->role_id != 2)
                             <li class="sidebar-item">
+                                <a class="sidebar-link" href="{{ url('admin/surat') }}">
+                                    <i class="ri-file-edit-line"></i>
+                                    <span class="sidebar-text">Pelayanan Warga</span>
+                                </a>
+                            </li>
+                            {{-- <li class="sidebar-item">
                                 <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
                                     data-bs-target="#pelayanan" aria-expanded="false" aria-controls="pelayanan">
                                     <i class="ri-file-edit-line"></i>
@@ -125,7 +131,6 @@
                                 <ul id="pelayanan" class="sidebar-dropdown list-unstyled collapse"
                                     data-bs-parent="#sidebar">
                                     @if (auth()->user()->role_id == 5 || auth()->user()->role_id == 6)
-                                        {{-- SKTM KHUSUS ROLE 5 & 6 --}}
                                         <li class="sidebar-item">
                                             <a href="{{ route('sktm.index') }}" class="sidebar-link">
                                                 <span class="nav-icon-wrapper">
@@ -247,7 +252,7 @@
                                         </li>
                                     @endif
                                 </ul>
-                            </li>
+                            </li> --}}
                         @endif
 
                         {{-- SECTION: PENGATURAN / TOOLS --}}
@@ -362,7 +367,7 @@
         const sidebar = document.querySelector("#sidebar");
         const hamBurger = document.querySelector(".toggle-btn");
 
-        hamBurger.addEventListener("click", function () {
+        hamBurger.addEventListener("click", function() {
             sidebar.classList.toggle("expand");
 
             const chartContainer = document.getElementById("chartSuratDrill");
@@ -383,7 +388,6 @@
                 if (chartContainer) chartContainer.classList.remove("animating");
             }
         });
-
     </script>
 
     <script>

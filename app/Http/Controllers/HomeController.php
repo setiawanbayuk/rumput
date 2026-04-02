@@ -57,17 +57,12 @@ class HomeController extends Controller
 
         $resident = Resident::where('nik', $user->nik)->first();
         if ($user->role_id != 2) {
-            if (!$resident) {
-                // Redirect jika data resident tidak ditemukan
-                return redirect()
-                    ->route('profile')
-                    ->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
-            }
+            // if (!$resident) {
+            //     return redirect()
+            //         ->route('profile')
+            //         ->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
+            // }
         }
-        $penduduk = unserialize($resident->data);
-        $kelurahan = $penduduk['kelurahan_nm'];
-        $kecamatan = $penduduk['kecamatan_nm'];
-
         if ($user->role_id == 2) {
             return redirect()->route('warga');
         }
@@ -123,7 +118,7 @@ class HomeController extends Controller
         }
 
         $title = "Dashboard";
-        return view('home', compact('title', 'rt', 'rw', 'kelurahan', 'kecamatan'));
+        return view('home', compact('title'));
     }
 
     public function landing()

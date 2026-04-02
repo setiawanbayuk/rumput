@@ -29,6 +29,6 @@ class Skpd extends Model
      */
     public function rtrw(): HasMany
     {
-        return $this->hasMany(RtRw::class, 'id_kel', 'id');
+        return $this->hasMany(RtRw::class, 'kode_kelurahan', 'id_region');
     }
 }

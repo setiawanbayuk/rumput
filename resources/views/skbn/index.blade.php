@@ -7,7 +7,7 @@
         <link href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.css" rel="stylesheet">
         <style>
             .card input:focus,
-            .card select:focus  {
+            .card select:focus {
                 box-shadow: none !important;
                 outline: none !important;
                 border-color: #AEA07A;
@@ -22,17 +22,60 @@
             }
 
             /* warna-warna */
-            .status-pengajuan  { background: #e0e0e0; color: #6C757D }
-            .status-proses  { background: #e8f2ff; color: #1e63ff }
-            .status-dinaikkan-ke-sekkel  { background: #ffe9d7; color: #F4A261 } 
-            .status-dinaikkan-ke-lurah  { background: #ffe9d7; color:  #F4A261 }
-            .status-dinaikkan-ke-camat  { background: #b4b1af; color:  #B2784A } 
-            .status-disetujui   { background: #e6f6ee;color: #0e8a5f }
-            .status-disetujui-lurah   { background: #e6f6ee;color: #0e8a5f }
-            .status-disetujui-camat   { background: #ebe7f5;color: #A78BFA }
-            .status-ditolak   { background: #fde4e6; color: #d2353c }
-            .status-dihapus   { background: #fde4e6; color: #d2353c } 
-            .status-dinilai   { background: #f6f1dd;color: #8b6f1d }  
+            .status-pengajuan {
+                background: #e0e0e0;
+                color: #6C757D
+            }
+
+            .status-proses {
+                background: #e8f2ff;
+                color: #1e63ff
+            }
+
+            .status-dinaikkan-ke-sekkel {
+                background: #ffe9d7;
+                color: #F4A261
+            }
+
+            .status-dinaikkan-ke-lurah {
+                background: #ffe9d7;
+                color: #F4A261
+            }
+
+            .status-dinaikkan-ke-camat {
+                background: #b4b1af;
+                color: #B2784A
+            }
+
+            .status-disetujui {
+                background: #e6f6ee;
+                color: #0e8a5f
+            }
+
+            .status-disetujui-lurah {
+                background: #e6f6ee;
+                color: #0e8a5f
+            }
+
+            .status-disetujui-camat {
+                background: #ebe7f5;
+                color: #A78BFA
+            }
+
+            .status-ditolak {
+                background: #fde4e6;
+                color: #d2353c
+            }
+
+            .status-dihapus {
+                background: #fde4e6;
+                color: #d2353c
+            }
+
+            .status-dinilai {
+                background: #f6f1dd;
+                color: #8b6f1d
+            }
         </style>
     @endpush
 
@@ -42,22 +85,13 @@
                 <h3 class="mb-0 fw-bold">{{ $title }}</h3>
             </div>
             <div class="col-md-12 d-flex align-items-center justify-content-between">
-                @if (auth()->user()->role_id == 8)
-                    <h6 class="text-muted mb-0">
-                        Daftar pengajuan surat keterangan belum menikah warga <b>RT {{ $rt }}/RW {{ $rw }}, Kelurahan {{ $kelurahan }}.</b>
-                    </h6>
-                @elseif (auth()->user()->role_id == 1 ||  auth()->user()->role_id == 9)
-                    <h6 class="text-muted mb-0">
-                        Daftar seluruh pengajuan surat keterangan belum menikah warga <b>Kota Kediri.</b>
-                    </h6>
-                @else
-                    <h6 class="text-muted mb-0">
-                        Daftar pengajuan surat keterangan belum menikah warga <b>Kelurahan {{ $kelurahan }}.</b>
-                    </h6>
-                @endif
+                <h6 class="text-muted mb-0">
+                    Daftar seluruh pengajuan surat keterangan belum menikah warga <b>Kota Kediri.</b>
+                </h6>
                 <div class="d-flex gap-2">
                     @if (auth()->user()->role_id == 1 || auth()->user()->role_id == 8 || auth()->user()->role_id == 9)
-                        <a class="btn btn-primary btn-sm shadow-sm" style="border-radius: 6px" href="{{ route('skbn.add') }}">
+                        <a class="btn btn-primary btn-sm shadow-sm" style="border-radius: 6px"
+                            href="{{ route('skbn.add') }}">
                             <i class="ri-add-fill me-2"></i>
                             <span>Tambah</span>
                         </a>
@@ -350,9 +384,9 @@
 
 
             // script esign tetap
-            $(function () {
+            $(function() {
                 // Saat modal dibuka → isi hidden field dari tombol pemicu
-                $('#esignModal').on('show.bs.modal', function (e) {
+                $('#esignModal').on('show.bs.modal', function(e) {
 
                     let btn = $(e.relatedTarget);
                     let id = btn.data('id');
@@ -368,7 +402,7 @@
                 });
 
                 // Saat modal ditutup → reset form
-                $('#esignModal').on('hidden.bs.modal', function () {
+                $('#esignModal').on('hidden.bs.modal', function() {
 
                     $('#clientsForm')[0].reset();
                     $("#status").empty();

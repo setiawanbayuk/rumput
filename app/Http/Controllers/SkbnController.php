@@ -46,37 +46,33 @@ class SkbnController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $rt = $user->id_rt;
-        $rw = $user->id_rw;
-        $resident = Resident::where('nik', $user->nik)->first();
-        $penduduk = unserialize($resident->data);
-        $kelurahan = $penduduk['kelurahan_nm'];
+
         if (request()->ajax()) {
             $query = SuratSkbn::query();
 
-            // Kalau role RT → filter berdasarkan id_kel, id_rw, dan id_rt
-            if ($user->role_id == 8) { // contoh: RT
+            // Filter berdasarkan Role
+            if ($user->role_id == 8) { // Role RT
                 $query->where('id_kel', $user->id_instansi)
                     ->where('id_rw', $user->id_rw)
                     ->where('id_rt', $user->id_rt);
-            }
-            // Kalau role Sekkel, Lurah, Sekcam, atau Camat → filter berdasarkan id_kel
-            elseif (in_array($user->role_id, [3, 4, 5, 6])) { // sesuaikan ID role-mu
+            } elseif (in_array($user->role_id, [3, 4, 5, 6])) { // Role Kelurahan/Kecamatan
                 $query->where('id_kel', $user->id_instansi);
             }
-            // Role lain (admin, warga, dll) → tanpa filter tambahan
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->addColumn('no_surat', function ($row) {
+                    return $this->getNoSrt($row);
+                })
                 ->addColumn('action', function ($row) use ($user) {
+                    $id         = $row->id;
+                    $status     = $row->status;
+                    $role       = $user->role_id;
                     $nomorSurat = $this->getNoSrt($row);
-                    $id = $row->id;
-                    $route = 'skbn.edit';
-                    $status = $row->status;
-                    $jenis = 'skbn';
-                    $role = $user->role_id;
+                    $route      = 'skbn.edit';
+                    $jenis      = 'skbn';
 
-                    if (in_array($role, [1, 8, 9])) {
+                    if ($role == 1) {
                         return view('includes.button-admin', compact('id', 'route', 'status'));
                     } elseif (in_array($role, [3, 5])) {
                         return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route'));
@@ -84,14 +80,18 @@ class SkbnController extends Controller
                         return view('includes.button-verifikator', compact('id', 'status', 'role', 'route'));
                     }
                 })
-                ->addColumn('no_surat', function ($row) {
-                    return $this->getNoSrt($row);
-                })
-                ->rawColumns(['action', 'no_surat'])
+                ->rawColumns(['action'])
                 ->make(true);
-        };
+        }
+
         $title = "Surat Keterangan Belum Menikah";
-        return view('skbn.index', compact('title', 'rt', 'rw', 'kelurahan'));
+
+        // Kirim data user yang diperlukan saja untuk header view
+        return view('skbn.index', [
+            'title' => $title,
+            'rt'    => $user->id_rt,
+            'rw'    => $user->id_rw,
+        ]);
     }
 
     public function warga()
@@ -254,13 +254,13 @@ class SkbnController extends Controller
         $no_urut_surat = SuratSkbn::where('id_kel', $currentUser->id_instansi)->whereYear('tgl_surat', date('Y'))->max('no_urut_surat');
         $no_urut_surat = intval($no_urut_surat) + 1;
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
+        $var = [];
+
         if (isset($template)) {
-            $var = unserialize($template->variable);
-            // dd($var);
-            return view('skbn.add', compact('title', 'currentUser', 'no_urut_surat', 'var'));
-        } else {
-            return view('skbn.add', compact('title', 'currentUser', 'no_urut_surat'));
+            $var = $template->variable;
         }
+
+        return view('skbn.add', compact('title', 'currentUser', 'no_urut_surat', 'var'));
     }
 
     public function store(Request $request)
@@ -295,7 +295,6 @@ class SkbnController extends Controller
         ]);
 
         if ($request->file('pengantar')) {
-            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skbn', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skbn';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skbn/' . $fileName;
@@ -313,7 +312,7 @@ class SkbnController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $datapemohon = serialize([
+        $datapemohon = [
             'kk' => $request->kk,
             'name' => $request->name,
             'gender' => $request->gender,
@@ -343,45 +342,25 @@ class SkbnController extends Controller
             'rt' => $request->rt,
             'rt_nm' => 'RT ' . $request->rt,
             'alamat' => $request->alamat
-        ]);
+        ];
 
-        $resident = Resident::where('nik', $request->nik)->first();
-
-        if (!$resident) {
-            Resident::create([
-                'nik' => $request->nik,
-                'kk' => $request->kk,
-                'data' => $datapemohon
-            ]);
-        } else {
-            if ($datapemohon != $resident->data) {
-                $resident->update([
-                    'nik' => $request->nik,
-                    'kk' => $request->kk,
-                    'data' => $datapemohon
-                ]);
-            }
-        }
-
+        Resident::updateOrCreate(
+            ['nik' => $request->nik],
+            ['kk' => $request->kk, 'data' => $datapemohon]
+        );
+        $datavar = [];
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
-        if (isset($template)) {
-            $templateFile = public_path($template->path_docs);
-            $templateProcessor = new TemplateProcessor($templateFile);
+        if ($template) {
+            $templateProcessor = new TemplateProcessor(public_path($template->path_docs));
             $inputword = $templateProcessor->getVariables();
-            $inputpost = [];
-            foreach ($request->all() as $key => $in) {
-                $inputpost[] = $key;
+
+            foreach ($inputword as $value) {
+                if ($request->has($value)) {
+                    $datavar[$value] = $request->input($value);
+                }
             }
-            $arr_intersect = array_values(array_intersect($inputword, $inputpost));
-            $var = array();
-            foreach ($arr_intersect as $key => $value) {
-                $var[$value] = $request[$value];
-            }
-            $datavar = serialize($var);
         }
-
-        // dd($datavar);
-
+        // dd($request, $datavar, $fileLocation);
         $suket = SuratSkbn::create([
             'id_kel' => auth()->user()->id_instansi,
             'kd_jenis_surat' => $request->kd_jenis_surat,
@@ -390,9 +369,9 @@ class SkbnController extends Controller
             'nik' => $request->nik,
             'peruntukan' => $request->peruntukan,
             'kepada' => $request->kepada,
-            'variable' => isset($template) ? $datavar : '',
+            'variable' => $datavar, // Langsung Array (Otomatis jadi JSON)
             'status' => 1,
-            'pengantar' => $request->file('pengantar') ? $fileLocation : ''
+            'pengantar' => $fileLocation
         ]);
 
         Log_surat::create([
@@ -416,22 +395,15 @@ class SkbnController extends Controller
             $suratKeterangan->no_urut_surat = intval($no_urut_surat) + 1;
         }
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
-        // if (isset($template)) {
-        //     $var = unserialize($template->variable);
-        //     $var_value = unserialize($suratKeterangan->variable);
-        //     return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
-        // } else {
-        //     return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan'));
-        // }
+
+        $var = [];
+        $var_value = is_array($suratKeterangan->variable) ? $suratKeterangan->variable : [];
+
         if ($template) {
-            $var = @unserialize($template->variable);
-            $var = is_array($var) ? $var : [];
-
-            $var_value = @unserialize($suratKeterangan->variable);
-            $var_value = is_array($var_value) ? $var_value : [];
-
-            return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
+            $var = is_array($template->variable) ? $template->variable : [];
         }
+
+        return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
     }
 
     public function update(Request $request, $id)
@@ -464,9 +436,10 @@ class SkbnController extends Controller
             'kepada' => ['required', 'string'],
             'pengantar' => ['mimes:jpg,jpeg,bmp,png']
         ]);
+        $suratKeterangan = SuratSkbn::findOrFail($id);
+        $fileLocation = $suratKeterangan->pengantar;
 
         if ($request->file('pengantar')) {
-            //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skbn', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skbn';
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skbn/' . $fileName;
@@ -484,93 +457,68 @@ class SkbnController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $suratKeterangan = SuratSkbn::find($id);
+        $datapemohon = [
+            'kk' => $request->kk,
+            'name' => $request->name,
+            'gender' => $request->gender,
+            'gender_nm' => $gender->nama,
+            'status_kwn' => $request->status_kwn,
+            'status_kwn_nm' => $status_kwn->nama,
+            'kewarganegaraan' => $request->kewarganegaraan,
+            'kewarganegaraan_nm' => $kewarganegaraan->nama,
+            'tempat_lhr' => $request->tempat_lhr,
+            'tgl_lhr' =>  $request->tgl_lhr,
+            'agama' => $request->agama,
+            'agama_nm' => $agama->nama,
+            'pendidikan' => $request->pendidikan,
+            'pendidikan_nm' => $pendidikan->nama,
+            'pekerjaan' => $request->pekerjaan,
+            'pekerjaan_nm' => $pekerjaan->nama,
+            'provinsi' => $request->provinsi,
+            'provinsi_nm' => $provinsi->nama,
+            'kabko' => $request->kabko,
+            'kabko_nm' => $kabko->nama,
+            'kecamatan' => $request->kecamatan,
+            'kecamatan_nm' => $kecamatan->nama,
+            'kelurahan' => $request->kelurahan,
+            'kelurahan_nm' => $kelurahan->nama,
+            'rw' => $request->rw,
+            'rw_nm' => 'RW ' . $request->rw,
+            'rt' => $request->rt,
+            'rt_nm' => 'RT ' . $request->rt,
+            'alamat' => $request->alamat
+        ];
 
-        if ($suratKeterangan) {
-
-            $datapemohon = serialize([
-                'kk' => $request->kk,
-                'name' => $request->name,
-                'gender' => $request->gender,
-                'gender_nm' => $gender->nama,
-                'status_kwn' => $request->status_kwn,
-                'status_kwn_nm' => $status_kwn->nama,
-                'kewarganegaraan' => $request->kewarganegaraan,
-                'kewarganegaraan_nm' => $kewarganegaraan->nama,
-                'tempat_lhr' => $request->tempat_lhr,
-                'tgl_lhr' =>  $request->tgl_lhr,
-                'agama' => $request->agama,
-                'agama_nm' => $agama->nama,
-                'pendidikan' => $request->pendidikan,
-                'pendidikan_nm' => $pendidikan->nama,
-                'pekerjaan' => $request->pekerjaan,
-                'pekerjaan_nm' => $pekerjaan->nama,
-                'provinsi' => $request->provinsi,
-                'provinsi_nm' => $provinsi->nama,
-                'kabko' => $request->kabko,
-                'kabko_nm' => $kabko->nama,
-                'kecamatan' => $request->kecamatan,
-                'kecamatan_nm' => $kecamatan->nama,
-                'kelurahan' => $request->kelurahan,
-                'kelurahan_nm' => $kelurahan->nama,
-                'rw' => $request->rw,
-                'rw_nm' => 'RW ' . $request->rw,
-                'rt' => $request->rt,
-                'rt_nm' => 'RT ' . $request->rt,
-                'alamat' => $request->alamat
-            ]);
-
-            $resident = Resident::where('nik', $request->nik)->first();
-
-            if (!$resident) {
-                Resident::create([
-                    'nik' => $request->nik,
-                    'kk' => $request->kk,
-                    'data' => $datapemohon
-                ]);
-            } else {
-                if ($datapemohon != $resident->data) {
-                    $resident->update([
-                        'nik' => $request->nik,
-                        'kk' => $request->kk,
-                        'data' => $datapemohon
-                    ]);
+        Resident::updateOrCreate(
+            ['nik' => $request->nik],
+            ['kk' => $request->kk, 'data' => $datapemohon]
+        );
+        $datavar = $suratKeterangan->variable;
+        $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
+        if ($template) {
+            $templateProcessor = new TemplateProcessor(public_path($template->path_docs));
+            $inputword = $templateProcessor->getVariables();
+            $newVar = [];
+            foreach ($inputword as $value) {
+                if ($request->has($value)) {
+                    $newVar[$value] = $request->input($value);
                 }
             }
-
-            $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
-            if (isset($template)) {
-                $templateFile = public_path($template->path_docs);
-                $templateProcessor = new TemplateProcessor($templateFile);
-                $inputword = $templateProcessor->getVariables();
-                $inputpost = [];
-                foreach ($request->all() as $key => $in) {
-                    $inputpost[] = $key;
-                }
-                $arr_intersect = array_values(array_intersect($inputword, $inputpost));
-                $var = array();
-                foreach ($arr_intersect as $key => $value) {
-                    $var[$value] = $request[$value];
-                }
-                $datavar = serialize($var);
-            }
-
-            $suratKeterangan->update([
-                'kd_jenis_surat' => $request->kd_jenis_surat,
-                'no_urut_surat' => $request->no_urut_surat,
-                'tgl_surat' => $request->tgl_surat,
-                'nik' => $request->nik,
-                'peruntukan' => $request->peruntukan,
-                'kepada' => $request->kepada,
-                // 'variable' => isset($template) ? $datavar : '',
-                'variable' => isset($template) ? $datavar : $suratKeterangan->variable,
-                'pengantar' => $request->file('pengantar') ? $fileLocation : $suratKeterangan->pengantar
-            ]);
-
-            return redirect()->route('skbn.index');
-        } else {
-            return redirect()->route('skbn.index');
+            $datavar = $newVar;
         }
+
+        $suratKeterangan->update([
+            'kd_jenis_surat' => $request->kd_jenis_surat,
+            'no_urut_surat' => $request->no_urut_surat,
+            'tgl_surat' => $request->tgl_surat,
+            'nik' => $request->nik,
+            'peruntukan' => $request->peruntukan,
+            'kepada' => $request->kepada,
+            'variable' => $datavar,
+            'pengantar' => $fileLocation
+        ]);
+
+        return redirect()->route('skbn.index');
     }
 
     public function proses($id)
@@ -631,7 +579,7 @@ class SkbnController extends Controller
     {
         $surat = SuratSkbn::find($id);
         $resident = Resident::where('nik', $surat->nik)->first();
-        $penduduk = unserialize($resident->data);
+        $penduduk = $resident->data;
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $user = new User_resource(User::with('skpd')->find(Auth::id()));
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
@@ -668,11 +616,12 @@ class SkbnController extends Controller
         ];
         // Path template .docx
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skbn'])->first();
-        if (isset($template) && ($surat->variable != "")) {
-            $var = unserialize($surat->variable);
+        if ($template && !empty($surat->variable)) {
+            // variable sudah berupa array karena casting di model SuratSkbn
             $templateFile = public_path($template->path_docs);
-            $data = array_merge($data, $var);
+            $data = array_merge($data, $surat->variable);
         } else {
+            // Fallback ke template default jika tidak ada template custom
             $templateFile = public_path('templates/SKBN.docx');
         }
         $outputPdf = hash('sha256', 'SKBN_' . $id);
@@ -703,7 +652,7 @@ class SkbnController extends Controller
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skbn/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
             $resident = Resident::where('nik', $request->nik)->first();
-            $penduduk = unserialize($resident->data);
+            $penduduk = $resident->data;
             $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
             // dd($penduduk);
             $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));

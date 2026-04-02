@@ -19,6 +19,9 @@ class SuratTemplate extends Model
         'state',
         'variable',
     ];
+    protected $casts = [
+        'variable' => 'array', // Otomatis mengubah JSON di DB menjadi Array PHP
+    ];
 
     public function getActivitylogOptions(): LogOptions
     {

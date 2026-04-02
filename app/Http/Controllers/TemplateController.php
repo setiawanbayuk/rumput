@@ -73,15 +73,14 @@ class TemplateController extends Controller
             $variable = $templateProcessor->getVariables();
 
             $array_diff = array_values(array_diff($variable, $defaultVariable));
-            // dd($arr_intersect);
 
             SuratTemplate::create([
-                'id_kel' => auth()->user()->id_instansi,
-                'name' => $request->name,
+                'id_kel'    => auth()->user()->id_instansi,
+                'name'      => $request->name,
                 'path_docs' => $request->file('file') ? $fileLocation : '',
-                'jenis' => $request->jenis,
-                'state' => 'custom',
-                'variable' => serialize($array_diff)
+                'jenis'     => $request->jenis,
+                'state'     => 'custom',
+                'variable'  => $array_diff // Cukup masukkan array-nya saja, jangan di-serialize
             ]);
 
             return redirect()->route('template.index');

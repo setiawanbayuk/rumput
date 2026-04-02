@@ -5,8 +5,8 @@
             <div class="input-group">
                 <input type="text" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik"
                     placeholder="Masukkan 16 digit NIK" aria-label="NIK" aria-describedby="basic-addon2">
-                {{-- <button type="button" class="input-group-text btn btn-subtle-primary"
-                    onclick="checkNIK()">CARI</button> --}}
+                <button type="button" class="input-group-text btn btn-subtle-primary"
+                    onclick="checkNIK()">CARI</button>
 
                 @error('nik')
                     <span class="invalid-feedback" role="alert">

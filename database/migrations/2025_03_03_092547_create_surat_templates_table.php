@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('path_docs');
             $table->string('jenis');
             $table->string('state');
-            $table->text('variable');
+            $table->json('variable');
             $table->timestamps();
         });
     }

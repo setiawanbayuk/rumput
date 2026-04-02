@@ -23,7 +23,7 @@
             #chartSuratDrill text {
                 font-family: 'Poppins', sans-serif !important;
             }
-            
+
             #chartSuratDrill.animating {
                 opacity: 0.4;
                 transform: scale(.98);
@@ -40,15 +40,15 @@
             /* warna-warna */
             .status-pengajuan  { background: #e0e0e0; color: #6C757D }
             .status-proses  { background: #e8f2ff; color: #1e63ff }
-            .status-dinaikkan-ke-sekkel  { background: #ffe9d7; color: #F4A261 } 
+            .status-dinaikkan-ke-sekkel  { background: #ffe9d7; color: #F4A261 }
             .status-dinaikkan-ke-lurah  { background: #ffe9d7; color:  #F4A261 }
-            .status-dinaikkan-ke-camat  { background: #b4b1af; color:  #B2784A } 
+            .status-dinaikkan-ke-camat  { background: #b4b1af; color:  #B2784A }
             .status-disetujui   { background: #e6f6ee;color: #0e8a5f }
             .status-disetujui-lurah   { background: #e6f6ee;color: #0e8a5f }
             .status-disetujui-camat   { background: #ebe7f5;color: #A78BFA }
             .status-ditolak   { background: #fde4e6; color: #d2353c }
-            .status-dihapus   { background: #fde4e6; color: #d2353c } 
-            .status-dinilai   { background: #f6f1dd;color: #8b6f1d }  
+            .status-dihapus   { background: #fde4e6; color: #d2353c }
+            .status-dinilai   { background: #f6f1dd;color: #8b6f1d }
         </style>
     @endpush
 
@@ -73,7 +73,7 @@
             @endif
 
             <div class="col-md-12 d-flex align-items-center justify-content-between">
-                @if (auth()->user()->role_id == 8)
+                {{-- @if (auth()->user()->role_id == 8)
                     <h6 class="text-muted mb-0">
                         Daftar seluruh pengajuan surat keterangan warga <b>RT {{ $rt }}/RW {{ $rw }}, Kelurahan {{ $kelurahan }}.</b>
                     </h6>
@@ -89,7 +89,7 @@
                     <h6 class="text-muted mb-0">
                         Daftar seluruh pengajuan surat keterangan warga <b>Kelurahan {{ $kelurahan }}.</b>
                     </h6>
-                @endif
+                @endif --}}
 
                 <div class="d-flex gap-2">
                     @if (auth()->user()->role_id == 1 || auth()->user()->role_id == 8 || auth()->user()->role_id == 9)
@@ -290,7 +290,7 @@
                 window.chartSurat = Highcharts.chart("chartSuratDrill", {
                     chart: { type: "column" },
                     colors: [
-                        '#7896B2', '#AEA07A', '#B2784A', '#FF9B9B', '#D8CFC4', 
+                        '#7896B2', '#AEA07A', '#B2784A', '#FF9B9B', '#D8CFC4',
                         '#A8B6BF', '#E2B84C', '#92A8A1', '#7A9E7E'
                     ],
                     title: { text: "Statistik Semua Surat E-SUKET" },

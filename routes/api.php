@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SuratApiController;
 use App\Http\Controllers\Requests\AgamaController;
 use App\Http\Controllers\Requests\EsignController;
 use App\Http\Controllers\Requests\GenderController;
@@ -36,7 +37,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
-Route::prefix('auth')->group(function(){
+Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('/login_sso', [AuthController::class, 'loginWithSSO']);
@@ -44,64 +45,64 @@ Route::prefix('auth')->group(function(){
 });
 
 Route::post('/resident/simpan', [ResidentController::class, 'simpan']);
-Route::post('/registermobile',[RegisterController::class, 'registermobile']);
-Route::get('/agama/splp',[AgamaController::class, 'splp']);
-Route::get('/gender/splp',[GenderController::class, 'splp']);
-Route::get('/provinsi/splp',[ProvinsiController::class, 'splp']);
-Route::get('/kabko/splp',[KabkoController::class, 'splp']);
-Route::get('/kecamatan/splp',[KecamatanController::class, 'splp']);
-Route::get('/kelurahan/splp',[KelurahanController::class, 'splp']);
-Route::get('/esign/check/{nik}',[EsignController::class, 'check']);
-Route::post('/esign/sign',[EsignController::class, 'sign']);
-Route::post('/register',[SktmController::class, 'register']);
-Route::get('/regional/kelurahan',[RegionalController::class, 'kelurahan'])->name('regional.kelurahan');
-Route::get('/regional/kecamatan',[RegionalController::class, 'kecamatan'])->name('regional.kecamatan');
+Route::post('/registermobile', [RegisterController::class, 'registermobile']);
+Route::get('/agama/splp', [AgamaController::class, 'splp']);
+Route::get('/gender/splp', [GenderController::class, 'splp']);
+Route::get('/provinsi/splp', [ProvinsiController::class, 'splp']);
+Route::get('/kabko/splp', [KabkoController::class, 'splp']);
+Route::get('/kecamatan/splp', [KecamatanController::class, 'splp']);
+Route::get('/kelurahan/splp', [KelurahanController::class, 'splp']);
+Route::get('/esign/check/{nik}', [EsignController::class, 'check']);
+Route::post('/esign/sign', [EsignController::class, 'sign']);
+Route::post('/register', [SktmController::class, 'register']);
+Route::get('/regional/kelurahan', [RegionalController::class, 'kelurahan'])->name('regional.kelurahan');
+Route::get('/regional/kecamatan', [RegionalController::class, 'kecamatan'])->name('regional.kecamatan');
 Route::get('/regional/rw/{idKel}', [RegionalController::class, 'rw'])->name('regional.rw');
 Route::get('/regional/rt/{idKel}/{rw}', [RegionalController::class, 'rt'])->name('regional.rt');
 
-Route::middleware('auth:sanctum')->prefix('suket')->group(function(){
+Route::middleware('auth:sanctum')->prefix('suket')->group(function () {
     Route::get('/', [SuketController::class, 'get']);
     Route::post('/', [SuketController::class, 'save']);
 });
-Route::middleware('auth:sanctum')->prefix('skbn')->group(function(){
+Route::middleware('auth:sanctum')->prefix('skbn')->group(function () {
     Route::get('/', [SkbnController::class, 'get']);
     Route::post('/', [SkbnController::class, 'save']);
 });
-Route::middleware('auth:sanctum')->prefix('sktm')->group(function(){
+Route::middleware('auth:sanctum')->prefix('sktm')->group(function () {
     Route::get('/', [SktmController::class, 'get']);
     Route::post('/', [SktmController::class, 'save']);
 });
-Route::middleware('auth:sanctum')->prefix('skdom')->group(function(){
+Route::middleware('auth:sanctum')->prefix('skdom')->group(function () {
     Route::get('/', [SkdomController::class, 'get']);
     Route::post('/', [SkdomController::class, 'save']);
 });
 
-Route::middleware('auth:sanctum')->prefix('skhsl')->group(function(){
+Route::middleware('auth:sanctum')->prefix('skhsl')->group(function () {
     Route::get('/', [SkhslController::class, 'get']);
     Route::post('/', [SkhslController::class, 'save']);
 });
 
-Route::middleware('auth:sanctum')->prefix('skusaha')->group(function(){
+Route::middleware('auth:sanctum')->prefix('skusaha')->group(function () {
     Route::get('/', [SkusahaController::class, 'get']);
     Route::post('/', [SkusahaController::class, 'save']);
 });
 
-Route::middleware('auth:sanctum')->prefix('skboro')->group(function(){
+Route::middleware('auth:sanctum')->prefix('skboro')->group(function () {
     Route::get('/', [SkboroController::class, 'get']);
     Route::post('/', [SkboroController::class, 'save']);
 });
 
-Route::middleware('auth:sanctum')->prefix('skelahiran')->group(function(){
+Route::middleware('auth:sanctum')->prefix('skelahiran')->group(function () {
     Route::get('/', [SkkelahiranController::class, 'get']);
     Route::post('/', [SkkelahiranController::class, 'save']);
 });
 
-Route::middleware('auth:sanctum')->prefix('skkematian')->group(function(){
+Route::middleware('auth:sanctum')->prefix('skkematian')->group(function () {
     Route::get('/', [SkkematianController::class, 'get']);
     Route::post('/', [SkkematianController::class, 'save']);
 });
 
-Route::middleware('auth:sanctum')->prefix('resident')->group(function(){
+Route::middleware('auth:sanctum')->prefix('resident')->group(function () {
     Route::post('/simpan', [ResidentController::class, 'simpan']);
 });
 
@@ -122,3 +123,7 @@ Route::resource('kelurahan', KelurahanController::class);
 Route::resource('skpd', SkpdController::class);
 Route::resource('rw', RwController::class);
 Route::resource('rt', RtController::class);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/surat/store', [SuratApiController::class, 'store']);
+});

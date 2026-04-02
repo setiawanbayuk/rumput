@@ -31,7 +31,9 @@ class SuratSkbn extends Model
         'file',
         'pengantar'
     ];
-
+    protected $casts = [
+        'variable' => 'array', // Otomatis mengubah JSON di DB menjadi Array PHP
+    ];
     public function history(): HasMany
     {
         return $this->hasMany(Log_surat::class, ['nik', 'id_surat'], ['nik', 'id']);
@@ -44,7 +46,8 @@ class SuratSkbn extends Model
     }
     protected $appends = ['st', 'nomor_surat'];
 
-    public function getNomorSuratAttribute(){
+    public function getNomorSuratAttribute()
+    {
         return $this->getNoSrt($this);
     }
 

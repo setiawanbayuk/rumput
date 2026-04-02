@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\SuratAdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JenisController;
@@ -293,3 +294,26 @@ Route::middleware(['auth'])->prefix('profile')->group(function () {
 Route::get('phpmyinfo', function () {
     phpinfo();
 })->name('phpmyinfo');
+
+Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' => ['auth']], function () {
+    // Tampilan Utama & DataTables
+    Route::get('/', [SuratAdminController::class, 'index'])->name('index');
+
+    // Input Data (Web Admin)
+    Route::get('/create/{jenis}', [SuratAdminController::class, 'create'])->name('create');
+    Route::post('/store', [SuratAdminController::class, 'store'])->name('store');
+
+    // Edit & Update
+    Route::get('/edit/{id}', [SuratAdminController::class, 'edit'])->name('edit');
+    Route::post('/update/{id}', [SuratAdminController::class, 'update'])->name('update');
+
+    // Alur Persetujuan (Workflow)
+    Route::post('/proses/{id}', [SuratAdminController::class, 'proses'])->name('proses');
+    Route::post('/naik/{id}', [SuratAdminController::class, 'naik'])->name('naik');
+    Route::post('/naik-lurah/{id}', [SuratAdminController::class, 'naikLurah'])->name('naikLurah');
+    Route::post('/tolak/{id}', [SuratAdminController::class, 'tolak'])->name('tolak');
+
+    // Preview & Dokumen Akhir (TTE)
+    Route::get('/preview/{id}', [SuratAdminController::class, 'preview'])->name('preview');
+    Route::get('/cetak/{id}', [SuratAdminController::class, 'cetak'])->name('cetak');
+});
