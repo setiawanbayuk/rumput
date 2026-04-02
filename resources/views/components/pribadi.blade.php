@@ -3,8 +3,21 @@
         <label for="nik" class="col-md-3 col-form-label text-md-start ms-2">{{ __('NIK') }}</label>
         <div class="col-md-8">
             <div class="input-group">
-                <input type="text" class="form-control @error('nik') is-invalid @enderror" id="nik" name="nik"
-                    placeholder="Masukkan 16 digit NIK" aria-label="NIK" aria-describedby="basic-addon2">
+                <input
+    type="text"
+    class="form-control @error('nik') is-invalid @enderror"
+    id="nik"
+    name="nik"
+    value="{{ old('nik') }}"
+    placeholder="Masukkan 16 digit NIK"
+    aria-label="NIK"
+    aria-describedby="basic-addon2"
+    maxlength="16"
+    minlength="16"
+    inputmode="numeric"
+    pattern="[0-9]{16}"
+    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,16)"
+>
                 <button type="button" class="input-group-text btn btn-subtle-primary"
                     onclick="checkNIK()">CARI</button>
 
@@ -20,8 +33,20 @@
         <label for="kk" class="col-md-3 col-form-label text-md-start ms-2">{{ __('No. KK') }}</label>
 
         <div class="col-md-8">
-            <input id="kk" type="text" class="form-control @error('kk') is-invalid @enderror" name="kk"
-                value="{{ old('kk') }}" autocomplete="kk" autofocus>
+            <input
+    id="kk"
+    type="text"
+    class="form-control @error('kk') is-invalid @enderror"
+    name="kk"
+    value="{{ old('kk') }}"
+    autocomplete="kk"
+    autofocus
+    maxlength="16"
+    minlength="16"
+    inputmode="numeric"
+    pattern="[0-9]{16}"
+    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,16)"
+>
 
             @error('kk')
                 <span class="invalid-feedback" role="alert">
@@ -251,4 +276,16 @@
             @enderror
         </div>
     </div>
+<input type="hidden" name="gender_nm" id="gender_nm" value="{{ old('gender_nm') }}">
+<input type="hidden" name="status_kwn_nm" id="status_kwn_nm" value="{{ old('status_kwn_nm') }}">
+<input type="hidden" name="kewarganegaraan_nm" id="kewarganegaraan_nm" value="{{ old('kewarganegaraan_nm') }}">
+<input type="hidden" name="agama_nm" id="agama_nm" value="{{ old('agama_nm') }}">
+<input type="hidden" name="pendidikan_nm" id="pendidikan_nm" value="{{ old('pendidikan_nm') }}">
+<input type="hidden" name="pekerjaan_nm" id="pekerjaan_nm" value="{{ old('pekerjaan_nm') }}">
+<input type="hidden" name="provinsi_nm" id="provinsi_nm" value="{{ old('provinsi_nm') }}">
+<input type="hidden" name="kabko_nm" id="kabko_nm" value="{{ old('kabko_nm') }}">
+<input type="hidden" name="kecamatan_nm" id="kecamatan_nm" value="{{ old('kecamatan_nm') }}">
+<input type="hidden" name="kelurahan_nm" id="kelurahan_nm" value="{{ old('kelurahan_nm') }}">
+<input type="hidden" name="rw_nm" id="rw_nm" value="{{ old('rw_nm') }}">
+<input type="hidden" name="rt_nm" id="rt_nm" value="{{ old('rt_nm') }}">	
 </div>

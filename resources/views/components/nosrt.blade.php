@@ -3,18 +3,18 @@
         <label for="no_surat"
             class="col-md-3 col-form-label text-md-start ms-2">{{ __('No Surat') }}</label>
 
-        <div class="col-md-2">
-            <input id="kd_jenis_surat" type="text"
-                class="form-control @error('kd_jenis_surat') is-invalid @enderror"
-                name="kd_jenis_surat" value="{{ old('kd_jenis_surat', $kd_jenis_surat) }}"
-                autocomplete="kd_jenis_surat" autofocus>
-
-            @error('kd_jenis_surat')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
-            @enderror
-        </div>
+			<div class="col-md-2">
+			<input id="kd_jenis_surat" type="text"
+				class="form-control @error('kd_jenis_surat') is-invalid @enderror"
+				name="kd_jenis_surat" value="{{ old('kd_jenis_surat', '') }}"
+				autocomplete="kd_jenis_surat" autofocus>
+		
+			@error('kd_jenis_surat')
+				<span class="invalid-feedback" role="alert">
+					<strong>{{ $message }}</strong>
+				</span>
+			@enderror
+		</div>
         <div class="col-md-2">
             <input id="no_urut_surat" type="text"
                 class="form-control @error('no_urut_surat') is-invalid @enderror"
