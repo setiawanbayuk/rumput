@@ -3,6 +3,41 @@
 @section('title', $title)
 
 @section('content')
+@php
+    $variableData = [];
+    if (isset($surat->variable)) {
+        if (is_array($surat->variable)) {
+            $variableData = $surat->variable;
+        } elseif (is_string($surat->variable)) {
+            $decoded = json_decode($surat->variable, true);
+            $variableData = is_array($decoded) ? $decoded : [];
+        }
+    }
+
+    $residentData = $residentData ?? [];
+    $resident = $resident ?? null;
+    $jenis = $jenis ?? ($surat->jenis_surat ?? '');
+    $kdJenisSurat = old('kd_jenis_surat', $surat->kd_jenis_surat ?? ($kd_jenis_surat ?? ''));
+    $noUrutSurat = old('no_urut_surat', $surat->no_urut_surat ?? ($no_urut_surat ?? ''));
+    $tglSuratValue = old('tgl_surat', !empty($surat->tgl_surat) ? \Carbon\Carbon::parse($surat->tgl_surat)->format('Y-m-d') : '');
+    $peruntukanValue = old('peruntukan', $surat->peruntukan ?? '');
+    $kepadaValue = old('kepada', $surat->kepada ?? '');
+    $keperluanLainnyaValue = old('keperluan_lainnya', data_get($variableData, 'keperluan_lainnya', ''));
+
+    $suratDataJs = [
+        'jenis_surat'    => $surat->jenis_surat ?? '',
+        'kd_jenis_surat' => $kdJenisSurat ?? '',
+        'no_urut_surat'  => $noUrutSurat ?? '',
+        'nik'            => old('nik', $surat->nik ?? ''),
+        'kk'             => old('kk', $resident->kk ?? ''),
+        'tgl_surat'      => $tglSuratValue ?? '',
+        'kepada'         => $kepadaValue ?? '',
+        'peruntukan'     => $peruntukanValue ?? '',
+        'pengantar'      => $surat->pengantar ?? '',
+        'keperluan_lainnya' => $keperluanLainnyaValue ?? '',
+    ];
+@endphp
+
 <div class="container mt-2">
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -12,8 +47,9 @@
                 </div>
 
                 <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data" action="{{ route('admin.surat.store') }}">
+                    <form method="POST" enctype="multipart/form-data" action="{{ route('admin.surat.update', $surat->id) }}">
                         @csrf
+                        @method('PUT')
                         <input type="hidden" name="jenis_surat" value="{{ $jenis }}">
 
                         <div class="row" style="min-height: 500px;">
@@ -21,10 +57,10 @@
                                 <div class="card h-100 border-1 shadow-sm rounded-4" style="background: #fff; border-color: #AEA07A">
                                     <div class="card-body">
                                         <x-nosrt>
-                                            <x-slot:kd_jenis_surat>{{ $kd_jenis_surat ?? '' }}</x-slot:kd_jenis_surat>
-                                            <x-slot:no_urut_surat>{{ $no_urut_surat ?? '' }}</x-slot:no_urut_surat>
+                                            <x-slot:kd_jenis_surat>{{ $kdJenisSurat }}</x-slot:kd_jenis_surat>
+                                            <x-slot:no_urut_surat>{{ $noUrutSurat }}</x-slot:no_urut_surat>
                                             <x-slot:instansi_kode>{{ $currentUser->skpd->instansi_kode ?? '' }}</x-slot:instansi_kode>
-                                            <x-slot:tgl_surat></x-slot:tgl_surat>
+                                            <x-slot:tgl_surat>{{ $tglSuratValue }}</x-slot:tgl_surat>
                                         </x-nosrt>
 
                                         <x-pribadi></x-pribadi>
@@ -47,7 +83,7 @@
                                                             class="form-control @error('bin_binti') is-invalid @enderror"
                                                             name="bin_binti"
                                                             id="bin_binti"
-                                                            value="{{ old('bin_binti') }}">
+                                                            value="{{ old('bin_binti', data_get($variableData, 'bin_binti', '')) }}">
 
                                                         @error('bin_binti')
                                                             <span class="invalid-feedback" role="alert">
@@ -78,7 +114,7 @@
                                                                 class="form-control @error($item) is-invalid @enderror"
                                                                 name="{{ $item }}"
                                                                 id="{{ $item }}"
-                                                                value="{{ old($item) }}"
+                                                                value="{{ old($item, data_get($variableData, $item, '')) }}"
                                                                 @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
 
                                                             @error($item)
@@ -103,7 +139,7 @@
                                                                 class="form-control @error($item) is-invalid @enderror"
                                                                 name="{{ $item }}"
                                                                 id="{{ $item }}"
-                                                                value="{{ old($item) }}"
+                                                                value="{{ old($item, data_get($variableData, $item, '')) }}"
                                                                 @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
 
                                                             @error($item)
@@ -117,8 +153,13 @@
                                             @endisset
                                         @endif
 
-                                        <x-kepada><x-slot:kepada></x-slot:kepada></x-kepada>
-                                        <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
+                                        <x-kepada>
+                                            <x-slot:kepada>{{ $kepadaValue }}</x-slot:kepada>
+                                        </x-kepada>
+
+                                        <x-peruntukan>
+                                            <x-slot:peruntukan>{{ $peruntukanValue }}</x-slot:peruntukan>
+                                        </x-peruntukan>
 
                                         <div id="field-keperluan-lainnya" style="display:none;">
                                             <div class="row mb-3">
@@ -130,7 +171,7 @@
                                                         class="form-control @error('keperluan_lainnya') is-invalid @enderror"
                                                         name="keperluan_lainnya"
                                                         id="keperluan_lainnya"
-                                                        value="{{ old('keperluan_lainnya') }}"
+                                                        value="{{ $keperluanLainnyaValue }}"
                                                         placeholder="Contoh: Beasiswa, Administrasi Bank, Visa">
 
                                                     @error('keperluan_lainnya')
@@ -143,6 +184,17 @@
                                         </div>
 
                                         <x-pengantar></x-pengantar>
+
+                                        @if (!empty($surat->pengantar))
+                                            <div class="row mb-3">
+                                                <label class="col-md-3 col-form-label text-md-start ms-2">File Lama</label>
+                                                <div class="col-md-8 d-flex align-items-center">
+                                                    <a href="{{ asset($surat->pengantar) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        Lihat Pengantar Lama
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -154,7 +206,7 @@
 
                                     <button type="submit" class="btn text-white py-2 px-4" style="background: #7896B2; border-radius: 8px;">
                                         <i class="ri-save-3-fill me-1"></i>
-                                        <span>Simpan</span>
+                                        <span>Update</span>
                                     </button>
                                 </div>
                             </div>
@@ -170,7 +222,166 @@
 <script type="text/javascript" src="{{ asset('assets/js/personal.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const peruntukan = document.getElementById('peruntukan');
+    const residentData = @json($residentData ?? []);
+    const suratData = @json($suratDataJs);
+
+    function appendAndSelect(selector, value, text) {
+        const $el = window.jQuery ? $(selector) : null;
+        if (!$el || !$el.length || value === null || value === undefined || value === '') return false;
+
+        const label = (text !== null && text !== undefined && text !== '') ? text : value;
+        const exists = $el.find('option').filter(function () {
+            return String($(this).val()) === String(value);
+        }).length > 0;
+
+        if (!exists) {
+            const option = new Option(label, value, true, true);
+            $el.append(option);
+        }
+
+        $el.val(String(value)).trigger('change');
+        return true;
+    }
+
+    function setInputValue(id, value) {
+        const el = document.getElementById(id) || document.querySelector(`[name="${id}"]`);
+        if (!el || value === null || value === undefined || value === '') return;
+        el.value = value;
+    }
+
+    function syncHidden(id, value) {
+        const el = document.getElementById(id);
+        if (el && value !== null && value !== undefined) {
+            el.value = value;
+        }
+    }
+
+    setInputValue('kd_jenis_surat', suratData.kd_jenis_surat);
+    setInputValue('no_urut_surat', suratData.no_urut_surat);
+    setInputValue('tgl_surat', suratData.tgl_surat);
+    setInputValue('nik', suratData.nik);
+    setInputValue('kk', suratData.kk);
+    setInputValue('name', @json(old('name', $residentData['name'] ?? '')));
+    setInputValue('tempat_lhr', @json(old('tempat_lhr', $residentData['tempat_lhr'] ?? '')));
+    setInputValue('tgl_lhr', @json(old('tgl_lhr', $residentData['tgl_lhr'] ?? '')));
+    setInputValue('alamat', @json(old('alamat', $residentData['alamat'] ?? '')));
+    setInputValue('kepada', suratData.kepada);
+    setInputValue('peruntukan', suratData.peruntukan);
+    setInputValue('keperluan_lainnya', suratData.keperluan_lainnya);
+
+    const selects = {
+        gender: {
+            value: @json(old('gender', $residentData['gender'] ?? '')),
+            text: @json(old('gender_nm', $residentData['gender_nm'] ?? '')),
+            hidden: 'gender_nm'
+        },
+        status_kwn: {
+            value: @json(old('status_kwn', $residentData['status_kwn'] ?? '')),
+            text: @json(old('status_kwn_nm', $residentData['status_kwn_nm'] ?? '')),
+            hidden: 'status_kwn_nm'
+        },
+        kewarganegaraan: {
+            value: @json(old('kewarganegaraan', $residentData['kewarganegaraan'] ?? '')),
+            text: @json(old('kewarganegaraan_nm', $residentData['kewarganegaraan_nm'] ?? '')),
+            hidden: 'kewarganegaraan_nm'
+        },
+        agama: {
+            value: @json(old('agama', $residentData['agama'] ?? '')),
+            text: @json(old('agama_nm', $residentData['agama_nm'] ?? '')),
+            hidden: 'agama_nm'
+        },
+        pendidikan: {
+            value: @json(old('pendidikan', $residentData['pendidikan'] ?? '')),
+            text: @json(old('pendidikan_nm', $residentData['pendidikan_nm'] ?? '')),
+            hidden: 'pendidikan_nm'
+        },
+        pekerjaan: {
+            value: @json(old('pekerjaan', $residentData['pekerjaan'] ?? '')),
+            text: @json(old('pekerjaan_nm', $residentData['pekerjaan_nm'] ?? '')),
+            hidden: 'pekerjaan_nm'
+        }
+    };
+
+    Object.keys(selects).forEach(function (key) {
+        appendAndSelect('#' + key, selects[key].value, selects[key].text);
+        syncHidden(selects[key].hidden, selects[key].text);
+    });
+
+    const regionData = {
+        provinsi: {
+            value: @json(old('provinsi', $residentData['provinsi'] ?? '')),
+            text: @json(old('provinsi_nm', $residentData['provinsi_nm'] ?? '')),
+            hidden: 'provinsi_nm'
+        },
+        kabko: {
+            value: @json(old('kabko', $residentData['kabko'] ?? '')),
+            text: @json(old('kabko_nm', $residentData['kabko_nm'] ?? '')),
+            hidden: 'kabko_nm'
+        },
+        kecamatan: {
+            value: @json(old('kecamatan', $residentData['kecamatan'] ?? '')),
+            text: @json(old('kecamatan_nm', $residentData['kecamatan_nm'] ?? '')),
+            hidden: 'kecamatan_nm'
+        },
+        kelurahan: {
+            value: @json(old('kelurahan', $residentData['kelurahan'] ?? '')),
+            text: @json(old('kelurahan_nm', $residentData['kelurahan_nm'] ?? '')),
+            hidden: 'kelurahan_nm'
+        },
+        rw: {
+            value: @json(old('rw', $residentData['rw'] ?? '')),
+            text: @json(old('rw_nm', $residentData['rw_nm'] ?? '')),
+            hidden: 'rw_nm'
+        },
+        rt: {
+            value: @json(old('rt', $residentData['rt'] ?? '')),
+            text: @json(old('rt_nm', $residentData['rt_nm'] ?? '')),
+            hidden: 'rt_nm'
+        }
+    };
+
+    function waitSetRegion(key, nextCallback, tries = 0) {
+        const item = regionData[key];
+        if (!item || !item.value) {
+            if (typeof nextCallback === 'function') nextCallback();
+            return;
+        }
+
+        const $el = $('#' + key);
+        if ($el.length) {
+            appendAndSelect('#' + key, item.value, item.text);
+            syncHidden(item.hidden, item.text);
+            setTimeout(function () {
+                if (typeof nextCallback === 'function') nextCallback();
+            }, 500);
+            return;
+        }
+
+        if (tries > 20) {
+            if (typeof nextCallback === 'function') nextCallback();
+            return;
+        }
+
+        setTimeout(function () {
+            waitSetRegion(key, nextCallback, tries + 1);
+        }, 300);
+    }
+
+    setTimeout(function () {
+        waitSetRegion('provinsi', function () {
+            waitSetRegion('kabko', function () {
+                waitSetRegion('kecamatan', function () {
+                    waitSetRegion('kelurahan', function () {
+                        waitSetRegion('rw', function () {
+                            waitSetRegion('rt');
+                        });
+                    });
+                });
+            });
+        });
+    }, 800);
+
+    const peruntukan = document.getElementById('peruntukan') || document.querySelector('[name="peruntukan"]');
     const fieldPasangan = document.getElementById('field-pasangan');
     const fieldBinBinti = document.getElementById('field-bin-binti');
     const fieldKeperluanLainnya = document.getElementById('field-keperluan-lainnya');
@@ -193,13 +404,15 @@ document.addEventListener('DOMContentLoaded', function () {
             fieldPasangan.style.display = isMenikah ? 'block' : 'none';
 
             if (!isMenikah) {
-                fieldPasangan.querySelectorAll('input, select, textarea').forEach(el => {
-                    el.value = '';
+                fieldPasangan.querySelectorAll('input, select, textarea').forEach(function (el) {
+                    if (!el.dataset.keepOnLoad) {
+                        el.value = '';
+                    }
                 });
             }
         }
 
-        if (!isMenikah && binBinti) {
+        if (!isMenikah && binBinti && !binBinti.dataset.keepOnLoad) {
             binBinti.value = '';
         }
 
@@ -208,7 +421,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 nikPasangan.setAttribute('required', 'required');
             } else {
                 nikPasangan.removeAttribute('required');
-                nikPasangan.value = '';
             }
         }
 
@@ -221,9 +433,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 keperluanLainnya.setAttribute('required', 'required');
             } else {
                 keperluanLainnya.removeAttribute('required');
-                keperluanLainnya.value = '';
+                if (!keperluanLainnya.dataset.keepOnLoad) {
+                    keperluanLainnya.value = '';
+                }
             }
         }
+    }
+
+    [binBinti, nikPasangan, keperluanLainnya].forEach(function (el) {
+        if (el && el.value) {
+            el.dataset.keepOnLoad = '1';
+        }
+    });
+
+    if (fieldPasangan) {
+        fieldPasangan.querySelectorAll('input, select, textarea').forEach(function (el) {
+            if (el.value) {
+                el.dataset.keepOnLoad = '1';
+            }
+        });
     }
 
     if (nikPasangan) {
@@ -233,7 +461,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (peruntukan) {
-        peruntukan.addEventListener('change', toggleFieldPasangan);
+        peruntukan.addEventListener('change', function () {
+            if (fieldPasangan) {
+                fieldPasangan.querySelectorAll('input, select, textarea').forEach(function (el) {
+                    delete el.dataset.keepOnLoad;
+                });
+            }
+            if (binBinti) delete binBinti.dataset.keepOnLoad;
+            if (keperluanLainnya) delete keperluanLainnya.dataset.keepOnLoad;
+            toggleFieldPasangan();
+        });
         toggleFieldPasangan();
     }
 });

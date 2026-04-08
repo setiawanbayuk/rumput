@@ -16,7 +16,6 @@
                 name="peruntukan">
                 <option value="">-- Pilih Peruntukan --</option>
                 <option value="menikah" {{ old('peruntukan', $peruntukan) == 'menikah' ? 'selected' : '' }}>Menikah</option>
-                <option value="umum" {{ old('peruntukan', $peruntukan) == 'umum' ? 'selected' : '' }}>Umum</option>
                 <option value="rumah" {{ old('peruntukan', $peruntukan) == 'rumah' ? 'selected' : '' }}>Pengajuan Rumah</option>
                 <option value="kendaraan" {{ old('peruntukan', $peruntukan) == 'kendaraan' ? 'selected' : '' }}>Kendaraan</option>
                 <option value="lainnya" {{ old('peruntukan', $peruntukan) == 'lainnya' ? 'selected' : '' }}>Lainnya</option>

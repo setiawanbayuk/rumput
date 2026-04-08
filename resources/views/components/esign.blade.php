@@ -9,13 +9,14 @@
 
             <div class="modal-body">
                 <form id="clientsForm" method="post">
+                    @csrf
                     <input type="hidden" name="_id">
                     <input type="hidden" name="jenis">
                     <input type="hidden" name="role">
 
                     <div class="mb-3">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="nik" name="nik" placeholder="Masukkan 16 digit NIK">
+                            <input type="text" class="form-control" id="nik" name="nik" placeholder="Masukkan 16 digit NIK" maxlength="16">
                             <button type="button" class="input-group-text btn btn-subtle-primary" onclick="checkEsign()">Cek</button>
                         </div>
                     </div>
@@ -41,11 +42,9 @@
     </div>
 </div>
 
-
 <script>
     function checkEsign() {
-        let nik = $("#nik").val();
-        let web = '{{ env("APP_URL") }}';
+        let nik = ($("#nik").val() || '').trim();
 
         if (nik.length !== 16) {
             $("#status").html('<span class="text-danger">NIK Tidak Valid</span>');
@@ -53,46 +52,49 @@
             return;
         }
 
-        $("#status").html(`
-            <span class="spinner-border spinner-border-sm"></span> Loading...
-        `);
+        $("#status").html('<span class="spinner-border spinner-border-sm"></span> Loading...');
 
         $.ajax({
             type: "GET",
-            url: `${web}/api/esign/check/${nik}`,
+            url: `/api/esign/check/${nik}`,
             dataType: "json",
-
             success: function (res) {
-                $("#status").html(res.message);
+                $("#status").html(res.message || '');
 
-                if (res.status_code == '1111') {
-                    $("#btn-ttd").removeAttr('disabled');
+                if (String(res.status_code) === '1111') {
+                    $("#btn-ttd").prop("disabled", false);
                 } else {
                     $("#btn-ttd").prop("disabled", true);
                 }
+            },
+            error: function (xhr) {
+                let msg = 'Gagal mengecek sertifikat.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+
+                $("#status").html(`<span class="text-danger">${msg}</span>`);
+                $("#btn-ttd").prop("disabled", true);
             }
         });
     }
 
-
     function handleSubmit(btn) {
         Swal.fire({
             title: 'Apakah Anda Yakin?',
-            text: "Apakah yakin akan membubuhkan TTE pada dokumen ini?!",
+            text: 'Apakah yakin akan membubuhkan TTE pada dokumen ini?!',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Ya',
             cancelButtonText: 'Batal'
         }).then((result) => {
-
             if (!result.isConfirmed) return;
 
-            let web = '{{ env("APP_URL") }}';
             let data = $('#clientsForm').serialize();
 
             $.ajax({
                 type: 'POST',
-                url: `${web}/api/esign/sign`,
+                url: `/api/esign/sign`,
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                 },
@@ -111,25 +113,36 @@
                 },
 
                 success: function (res) {
+                    Swal.fire(
+                        res.message || 'Berhasil',
+                        'Terima kasih!',
+                        res.status || 'success'
+                    ).then(() => {
+                        $('#esignModal').modal('hide');
+                    });
 
-                    Swal.fire(res.message, 'Terima kasih!', res.status)
-                        .then(() => {
-                            $('#esignModal').modal('hide');
-                        });
-
-                    $('#tableSurat').DataTable().ajax.reload();
+                    if ($.fn.DataTable && $('#tableSurat').length) {
+                        $('#tableSurat').DataTable().ajax.reload(null, false);
+                    }
                 },
 
-                error: function () {
+                error: function (xhr) {
+                    let msg = 'Mohon Maaf!';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+
                     Swal.fire(
                         'Tanda Tangan Dokumen Gagal!',
-                        'Mohon Maaf!',
+                        msg,
                         'error'
                     ).then(() => {
                         $('#esignModal').modal('hide');
                     });
 
-                    $('#tableSurat').DataTable().ajax.reload();
+                    if ($.fn.DataTable && $('#tableSurat').length) {
+                        $('#tableSurat').DataTable().ajax.reload(null, false);
+                    }
                 },
             });
         });

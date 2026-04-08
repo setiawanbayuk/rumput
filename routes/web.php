@@ -305,7 +305,7 @@ Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' =>
 
     // Edit & Update
     Route::get('/edit/{id}', [SuratAdminController::class, 'edit'])->name('edit');
-    Route::post('/update/{id}', [SuratAdminController::class, 'update'])->name('update');
+    Route::put('/update/{id}', [SuratAdminController::class, 'update'])->name('update');
 
     // Alur Persetujuan (Workflow)
     Route::post('/proses/{id}', [SuratAdminController::class, 'proses'])->name('proses');

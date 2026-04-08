@@ -252,20 +252,21 @@
             // script esign tetap
             $(function () {
                 // Saat modal dibuka → isi hidden field dari tombol pemicu
-                $('#esignModal').on('show.bs.modal', function (e) {
-
-                    let btn = $(e.relatedTarget);
-                    let id = btn.data('id');
-                    let jenis = btn.data('jenis');
-                    let no_surat = btn.data('no_surat');
-
-                    $(this).find('[name="_id"]').val(id);
-                    $(this).find('[name="jenis"]').val(jenis);
-                    $(this).find('.modal-title').text("Tanda Tangan No Surat : " + no_surat);
-
-                    $("#btn-ttd").prop("disabled", true);
-                    $("#status").html('');
-                });
+					$('#esignModal').on('show.bs.modal', function (e) {
+						let btn = $(e.relatedTarget);
+						let id = btn.data('id');
+						let jenis = btn.data('jenis');
+						let role = btn.data('role');
+						let no_surat = btn.data('no_surat');
+					
+						$(this).find('[name="_id"]').val(id);
+						$(this).find('[name="jenis"]').val(jenis);
+						$(this).find('[name="role"]').val(role);
+						$(this).find('.modal-title').text("Tanda Tangan No Surat : " + no_surat);
+					
+						$("#btn-ttd").prop("disabled", true);
+						$("#status").html('');
+					});
 
                 // Saat modal ditutup → reset form
                 $('#esignModal').on('hidden.bs.modal', function () {
