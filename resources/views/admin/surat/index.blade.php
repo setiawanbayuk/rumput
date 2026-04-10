@@ -25,7 +25,7 @@
 
             /* Warna Status Berdasarkan Slug */
             .status-pengajuan { background: #e0e0e0; color: #6C757D }
-            .status-proses { background: #e8f2ff; color: #1e63ff }
+            .status-draft, .status-proses { background: #e8f2ff; color: #1e63ff }
             .status-dinaikkan-ke-sekkel, .status-dinaikkan-ke-lurah { background: #ffe9d7; color: #F4A261 }
             .status-dinaikkan-ke-camat { background: #b4b1af; color: #B2784A }
             .status-disetujui, .status-disetujui-lurah { background: #e6f6ee; color: #0e8a5f }
@@ -51,7 +51,9 @@
                                 <i class="ri-add-fill me-1"></i> Tambah Surat
                             </button>
                             <ul class="dropdown-menu shadow border-0">
+                                <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'suket') }}">Surat Keterangan</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skbn') }}">SK Belum Menikah</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skboro') }}">SK Boro</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'sktm') }}">SK Miskin (SKTM)</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skdom') }}">SK Domisili</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skusaha') }}">SK Usaha</a></li>
@@ -187,6 +189,7 @@
                 let btn = $(e.relatedTarget);
                 $(this).find('[name="_id"]').val(btn.data('id'));
                 $(this).find('[name="jenis"]').val(btn.data('jenis'));
+                $(this).find('[name="role"]').val(btn.data('role'));
                 $(this).find('.modal-title').text("Tanda Tangan Surat : " + btn.data('no_surat'));
             });
         </script>

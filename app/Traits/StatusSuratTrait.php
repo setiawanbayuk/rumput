@@ -7,7 +7,7 @@ trait StatusSuratTrait
     public function getStAttribute()
     {
         return match ((int) $this->status) {
-            1 => ['name' => 'Proses', 'color' => 'blue'],
+            1 => ['name' => 'Draft', 'color' => 'blue'],
             2 => ['name' => 'Dinaikkan ke Sekkel', 'color' => 'orange'],
             3 => ['name' => 'Dinaikkan ke Lurah', 'color' => 'orange'],
             4 => ['name' => 'Disetujui', 'color' => 'green'],

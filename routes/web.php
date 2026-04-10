@@ -312,6 +312,8 @@ Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' =>
     Route::post('/naik/{id}', [SuratAdminController::class, 'naik'])->name('naik');
     Route::post('/naik-lurah/{id}', [SuratAdminController::class, 'naikLurah'])->name('naikLurah');
     Route::post('/tolak/{id}', [SuratAdminController::class, 'tolak'])->name('tolak');
+    Route::post('/turunkan/{id}', [SuratAdminController::class, 'turunkan'])->name('turunkan');
+    Route::delete('/hapus/{id}', [SuratAdminController::class, 'hapus'])->name('hapus');
 
     // Preview & Dokumen Akhir (TTE)
     Route::get('/preview/{id}', [SuratAdminController::class, 'preview'])->name('preview');

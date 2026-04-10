@@ -2,21 +2,44 @@
 
 namespace App\Traits;
 
-use App\Http\Resources\User_resource;
-use App\Models\User;
+use App\Models\Pejabat;
+use App\Models\Skpd;
 use Carbon\Carbon;
-use DateTime;
-use Illuminate\Support\Facades\Auth;
 
 trait GetNoSurat
 {
-    public function getNoSrt($data)
+    public function getNoSrt($surat): string
     {
-        $user = new User_resource(User::with('skpd')->find(Auth::id()));
-        // $tahunSrt = DateTime::createFromFormat('Y-m-d', $data->tgl_surat);
-        $tgl = $data->tgl_surat ? Carbon::parse($data->tgl_surat) : now();
-        $tahunSrt = $tgl->format('Y');
-        $nomorSurat = $data->kd_jenis_surat . '/' . $data->no_urut_surat . '/' . $user->skpd->instansi_kode . '/' . $tahunSrt;
-        return $nomorSurat;
+        $idKel = (int) ($surat->id_kel ?? 0);
+
+        $skpd = Skpd::with('kecamatan')->find($idKel);
+        if (!$skpd) {
+            throw new \Exception("Data SKPD untuk id_kel {$idKel} tidak ditemukan.");
+        }
+
+        $pejabat = Pejabat::with(['skpd.kecamatan', 'jabatan'])
+            ->where('id_skpd', $idKel)
+            ->first();
+
+        if (!$pejabat) {
+            throw new \Exception("Data pejabat penandatangan untuk SKPD {$idKel} belum disetting.");
+        }
+
+        $tahun = '';
+        if (!empty($surat->tgl_surat)) {
+            try {
+                $tahun = Carbon::parse($surat->tgl_surat)->format('Y');
+            } catch (\Throwable $e) {
+                $tahun = date('Y');
+            }
+        } else {
+            $tahun = date('Y');
+        }
+
+        $kdJenis = trim((string) ($surat->kd_jenis_surat ?? ''));
+        $noUrut = trim((string) ($surat->no_urut_surat ?? ''));
+        $kodeInstansi = trim((string) ($skpd->instansi_kode ?? ''));
+
+        return $kdJenis . '/' . $noUrut . '/' . $kodeInstansi . '/' . $tahun;
     }
 }

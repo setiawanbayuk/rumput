@@ -19,6 +19,7 @@ use App\Models\SuratKelahiran;
 use App\Models\SuratKematian;
 use App\Models\SuratKeterangan;
 use App\Models\SuratPenghasilan;
+use App\Models\SuratPengajuan;
 use App\Models\SuratSkbn;
 use App\Models\SuratSktm;
 use App\Models\SuratTemplate;
@@ -658,6 +659,7 @@ class EsignController extends Controller
     //         'tabel_surat' => $tabel_surat,
     //         'nama_surat' => $nama_surat,
     //         'id_surat' => $surat->id,
+
     //         'status_surat' => 3,
     //     ]);
 
@@ -666,13 +668,270 @@ class EsignController extends Controller
     //     return response()->json(['message' => 'Esign done successfully.', 'status' => 'success'], 200);
     // }
 
+
+    protected function decodeFlexibleValueUniversal($value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+
+            $unserialized = @unserialize($value);
+            if ($unserialized !== false && is_array($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return [];
+    }
+
+    protected function resolveTemplateFileUniversal(string $jenis, int $idKel, array $variableData = []): string
+    {
+        $custom = SuratTemplate::where('id_kel', $idKel)->where('jenis', $jenis)->first();
+        if ($custom && !empty($custom->path_docs)) {
+            $customPath = public_path($custom->path_docs);
+            if (file_exists($customPath)) {
+                return $customPath;
+            }
+        }
+
+        $fallbackMap = [
+            'skbn'    => 'templates/SKBN.docx',
+            'sktm'    => (($variableData['kategori'] ?? null) === 'sekolah' ? 'templates/SKTM_SEKOLAH.docx' : 'templates/SKTM_PERORANGAN.docx'),
+            'skdom'   => 'templates/SKDOM.docx',
+            'skusaha' => 'templates/SKUSAHA.docx',
+            'skhsl'   => 'templates/SKHSL.docx',
+            'skboro'  => 'templates/SKBORO.docx',
+            'suket'   => 'templates/SUKET.docx',
+        ];
+
+        $relative = $fallbackMap[$jenis] ?? null;
+        abort_unless($relative && file_exists(public_path($relative)), 404, 'Template surat tidak ditemukan.');
+        return public_path($relative);
+    }
+
+
+    protected function resolveSignerContext(?SuratPengajuan $surat = null): array
+    {
+        $authUser = Auth::user();
+        $user = null;
+
+        if ($authUser instanceof User) {
+            $user = $authUser->loadMissing('skpd.kecamatan');
+        } elseif ($authUser && isset($authUser->id)) {
+            $user = User::with('skpd.kecamatan')->find($authUser->id);
+        } elseif (auth()->id()) {
+            $user = User::with('skpd.kecamatan')->find(auth()->id());
+        }
+
+        $instansiId = null;
+        if ($user && !empty($user->id_instansi)) {
+            $instansiId = (int) $user->id_instansi;
+        } elseif ($surat && !empty($surat->id_kel)) {
+            $instansiId = (int) $surat->id_kel;
+        }
+
+        $skpd = $instansiId ? Skpd::with('kecamatan')->find($instansiId) : null;
+        $pejabat = $instansiId
+            ? Pejabat::with(['skpd.kecamatan', 'jabatan'])->where('id_skpd', $instansiId)->first()
+            : null;
+
+        return [
+            'user' => $user,
+            'instansi_id' => $instansiId,
+            'skpd' => $skpd,
+            'pejabat' => $pejabat,
+        ];
+    }
+
+    protected function requireUniversalSignerContext(SuratPengajuan $surat): array
+    {
+        $context = $this->resolveSignerContext($surat);
+
+        if (empty($context['instansi_id'])) {
+            throw new \RuntimeException('ID instansi user login tidak ditemukan.');
+        }
+
+        if (!$context['skpd']) {
+            throw new \RuntimeException('Data SKPD untuk instansi user tidak ditemukan.');
+        }
+
+        if (!$context['pejabat']) {
+            throw new \RuntimeException('Data pejabat penandatangan untuk instansi user belum disetting.');
+        }
+
+        return $context;
+    }
+
+    protected function buildPdfDataUniversal(SuratPengajuan $surat): array
+    {
+        $resident = Resident::where('nik', $surat->nik)->first();
+        $residentData = $this->decodeFlexibleValueUniversal(optional($resident)->data);
+        $variableData = $this->decodeFlexibleValueUniversal($surat->variable);
+
+        if (!empty($residentData['tgl_lhr'])) {
+            try {
+                $residentData['tgl_lhr'] = Carbon::parse($residentData['tgl_lhr'])->isoFormat('D MMMM Y');
+            } catch (\Throwable $e) {
+            }
+        }
+
+        $context = $this->requireUniversalSignerContext($surat);
+        $skpd = $context['skpd'];
+        $pejabat = $context['pejabat'];
+
+        $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
+        $nomorSurat = $this->getNoSrt($surat);
+        $verifyUrl = config('app.url') . '/verify/' . $surat->jenis_surat . '/' . $surat->id;
+
+        $alamatLengkap = trim(
+            ($residentData['alamat'] ?? '') .
+            (!empty($residentData['kelurahan_nm']) ? ' KEL. ' . $residentData['kelurahan_nm'] : '') .
+            (!empty($residentData['kecamatan_nm']) ? ' KEC. ' . $residentData['kecamatan_nm'] : '') .
+            (!empty($residentData['kabko_nm']) ? ' ' . $residentData['kabko_nm'] : '')
+        );
+
+        $data = [
+            'skpd_kec'         => strtoupper(optional($skpd->kecamatan)->nama ?? ''),
+            'skpd_kel'         => strtoupper($skpd->nama ?? ''),
+            'skpd_alamat'      => $skpd->instansi_alamat ?? '',
+            'skpd_telp'        => $skpd->instansi_telp ?? '',
+            'skpd_pos'         => $skpd->instansi_kode_pos ?? '',
+            'skpd_kepala'      => $pejabat->nama ?? '',
+            'skpd_nip_kepala'  => $pejabat->nip ?? '',
+            'skpd_jabatan'     => trim(ucfirst(optional($pejabat->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower($skpd->nama ?? ''))),
+            'surat_no'         => $nomorSurat,
+            'surat_tgl'        => $tglSurat,
+            'surat_nama'       => $residentData['name'] ?? '',
+            'surat_nik'        => $surat->nik ?? '',
+            'surat_tmpl'       => $residentData['tempat_lhr'] ?? '',
+            'surat_tgll'       => strtoupper($residentData['tgl_lhr'] ?? ''),
+            'surat_gender'     => $residentData['gender_nm'] ?? '',
+            'surat_perkawinan' => $residentData['status_kwn_nm'] ?? '',
+            'surat_agama'      => $residentData['agama_nm'] ?? '',
+            'surat_pekerjaan'  => $residentData['pekerjaan_nm'] ?? '',
+            'surat_pendidikan' => $residentData['pendidikan_nm'] ?? '',
+            'surat_alamat'     => $alamatLengkap,
+            'surat_kepada'     => $surat->kepada ?? '',
+            'surat_peruntukan' => $surat->peruntukan ?? '',
+            'surat_keterangan' => $variableData['keterangan_tambahan'] ?? $variableData['keperluan'] ?? '',
+            'surat_kategori'   => $variableData['surat_kategori'] ?? '',
+            'surat_catatan'    => $variableData['surat_catatan'] ?? '',
+            'link'             => $verifyUrl,
+        ];
+
+        foreach ($residentData as $key => $value) {
+            if (!is_array($value)) {
+                $data[$key] = $value;
+            }
+        }
+
+        foreach ($variableData as $key => $value) {
+            if (!is_array($value)) {
+                $data[$key] = $value;
+            }
+        }
+
+        switch ($surat->jenis_surat) {
+            case 'skbn':
+                $data['surat_keterangan'] = $data['surat_keterangan'] ?: 'BENAR BAHWA YANG BERSANGKUTAN BELUM MENIKAH.';
+                break;
+            case 'sktm':
+                $data['surat_keterangan'] = $data['surat_keterangan'] ?: 'BENAR-BENAR DALAM KEADAAN MISKIN.';
+                break;
+            case 'skdom':
+                $data['surat_keterangan'] = $data['surat_keterangan'] ?: ('BERDOMISILI DI ' . ($variableData['alamat_domisili'] ?? ''));
+                break;
+            case 'skusaha':
+                $data['surat_keterangan'] = $data['surat_keterangan'] ?: ('MEMILIKI USAHA ' . ($variableData['nama_usaha'] ?? ''));
+                break;
+            case 'skhsl':
+                $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['keperluan'] ?? '');
+                break;
+            case 'skboro':
+                $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['alamat_asal'] ?? '');
+                break;
+            case 'suket':
+                $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['keterangan_tambahan'] ?? '');
+                break;
+        }
+
+        return $data;
+    }
+
     public function sign(Request $request)
     {
         parse_str($request->getContent(), $output);
-        $id = $output['_id'];
-        $jenisSurat = $output['jenis'];
+        $id = $output['_id'] ?? null;
+        $jenisSurat = $output['jenis'] ?? null;
+        $role = (int) ($output['role'] ?? 0);
 
-        // 1. Ambil Data Surat & Konfigurasi Berdasarkan Jenis
+        $suratPengajuan = SuratPengajuan::find($id);
+        if ($suratPengajuan) {
+            if (!(($role === 3 && (int) $suratPengajuan->status === 3) || ($role === 5 && (int) $suratPengajuan->status === 8))) {
+                return response()->json(['message' => 'Status surat belum sesuai untuk TTE pada level ini.', 'status' => 'error'], 422);
+            }
+
+            $variableData = $this->decodeFlexibleValueUniversal($suratPengajuan->variable);
+            $data = $this->buildPdfDataUniversal($suratPengajuan);
+            $templateFile = $this->resolveTemplateFileUniversal($suratPengajuan->jenis_surat, (int) $suratPengajuan->id_kel, $variableData);
+            $outputPdfName = strtoupper($suratPengajuan->jenis_surat) . "_{$suratPengajuan->id}_signed";
+            $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
+                ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
+                : $this->generatePdf($data, $templateFile, $outputPdfName);
+
+            try {
+                $context = $this->requireUniversalSignerContext($suratPengajuan);
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'status' => 'error'
+                ], 422);
+            }
+
+            $pejabat = $context['pejabat'];
+            $imgTte = $role === 5 ? $this->generateTte($pejabat, true, $this->getNoSrt($suratPengajuan)) : $this->generateTte($pejabat);
+
+            $res = $this->TTE_sign([
+                'path'       => $pdfPath,
+                'file_name'  => $outputPdfName . '.pdf',
+                'nik'        => $output['nik'] ?? '',
+                'passphrase' => $output['passphrase'] ?? '',
+                'qr_loc'     => $role === 5 ? '|' : '~',
+                'image_path' => $imgTte['path'],
+            ]);
+
+            if (file_exists(public_path($imgTte['path']))) {
+                @unlink(public_path($imgTte['path']));
+            }
+
+            if ($res['status'] !== 'success') {
+                return response()->json($res, 500);
+            }
+
+            $finalStatus = $role === 5 ? 9 : 4;
+            $suratPengajuan->update([
+                'status' => $finalStatus,
+                'file'   => 'storage/pdf/' . $outputPdfName . '.pdf',
+            ]);
+
+            Log_surat::create([
+                'nik'          => $suratPengajuan->nik,
+                'tabel_surat'  => 'surat_pengajuans',
+                'id_surat'     => $suratPengajuan->id,
+                'status_surat' => $finalStatus,
+                'nama_surat'   => strtoupper($suratPengajuan->jenis_surat),
+            ]);
+
+            return response()->json(['message' => 'Esign berhasil.', 'status' => 'success'], 200);
+        }
+
+        // fallback lama untuk modul surat per-jenis yang masih memakai tabel masing-masing
         [$surat, $tabelSurat, $namaSurat, $templateDefault] = match ($jenisSurat) {
             'suket'       => [SuratKeterangan::find($id), 'surat_keterangans', 'SURAT KETERANGAN', 'SUKET.docx'],
             'skbn'        => [SuratSkbn::find($id), 'surat_skbns', 'SURAT KETERANGAN BELUM MENIKAH', 'SKBN.docx'],
@@ -683,124 +942,93 @@ class EsignController extends Controller
             'skkelahiran' => [SuratKelahiran::find($id), 'surat_kelahirans', 'SURAT KETERANGAN KELAHIRAN', null],
             'skkematian'  => [SuratKematian::find($id), 'surat_kematians', 'SURAT KETERANGAN KEMATIAN', null],
             'skboro'      => [SuratBoro::find($id), 'surat_boros', 'SURAT KETERANGAN BORO', 'SKBORO.docx'],
-            default       => abort(404, "Jenis surat tidak dikenali"),
+            default       => abort(404, 'Jenis surat tidak dikenali'),
         };
 
-        // 2. Persiapan Identitas & Pejabat
-        $skpd    = Skpd::find($surat->id_kel);
-        $pejabat = Pejabat::where('id_skpd', $surat->id_kel)->first();
-        $tahun   = Carbon::parse($surat->tgl_surat)->format('Y');
+        if (!$surat) {
+            return response()->json([
+                'message' => 'Data surat tidak ditemukan untuk proses TTE.',
+                'status' => 'error'
+            ], 404);
+        }
 
+        $skpd = Skpd::with('kecamatan')->find($surat->id_kel);
+        if (!$skpd) {
+            return response()->json([
+                'message' => 'Data SKPD surat tidak ditemukan.',
+                'status' => 'error'
+            ], 422);
+        }
+
+        $pejabat = Pejabat::with(['skpd.kecamatan', 'jabatan'])->where('id_skpd', $surat->id_kel)->first();
+        if (!$pejabat) {
+            return response()->json([
+                'message' => 'Data pejabat penandatangan untuk surat ini belum disetting.',
+                'status' => 'error'
+            ], 422);
+        }
+
+        $tahun   = Carbon::parse($surat->tgl_surat)->format('Y');
         $nomorSurat = "{$surat->kd_jenis_surat}/{$surat->no_urut_surat}/{$skpd->instansi_kode}/{$tahun}";
         $verifyUrl  = config('app.url') . "/verify/{$jenisSurat}/{$id}";
-
-        // 3. Ambil Data Penduduk (JSON Casting)
         $nik      = in_array($jenisSurat, ['skkelahiran', 'skkematian']) ? $surat->nik_pelapor : $surat->nik;
         $resident = Resident::where('nik', $nik)->first();
-        $penduduk = $resident->data;
-        $tglLhr   = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
+        $penduduk = is_array(optional($resident)->data) ? $resident->data : (array) optional($resident)->data;
+        $tglLhr   = !empty($penduduk['tgl_lhr']) ? Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y') : '';
 
-        // 4. Inisialisasi Data Dasar (Base Data)
         $data = [
-            'skpd_kec'        => strtoupper($pejabat->skpd->kecamatan->nama),
-            'skpd_kel'        => strtoupper($pejabat->skpd->nama),
-            'skpd_alamat'     => $pejabat->skpd->instansi_alamat,
-            'skpd_telp'       => $pejabat->skpd->instansi_telp,
-            'skpd_pos'        => $pejabat->skpd->instansi_kode_pos,
-            'skpd_kepala'     => $pejabat->nama,
-            'skpd_nip_kepala' => $pejabat->nip,
-            'skpd_jabatan'    => ucfirst($pejabat->jabatan->nama) . ' ' . ucfirst(strtolower($pejabat->skpd->nama)),
+            'skpd_kec'        => strtoupper(optional($skpd->kecamatan)->nama ?? ''),
+            'skpd_kel'        => strtoupper($skpd->nama ?? ''),
+            'skpd_alamat'     => $skpd->instansi_alamat ?? '',
+            'skpd_telp'       => $skpd->instansi_telp ?? '',
+            'skpd_pos'        => $skpd->instansi_kode_pos ?? '',
+            'skpd_kepala'     => $pejabat->nama ?? '',
+            'skpd_nip_kepala' => $pejabat->nip ?? '',
+            'skpd_jabatan'    => ucfirst(optional($pejabat->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower($skpd->nama ?? '')),
             'surat_no'        => $nomorSurat,
-            'surat_nama'      => $penduduk['name'],
+            'surat_nama'      => $penduduk['name'] ?? '',
             'surat_nik'       => $nik,
-            'surat_tmpl'      => $penduduk['tempat_lhr'],
+            'surat_tmpl'      => $penduduk['tempat_lhr'] ?? '',
             'surat_tgll'      => strtoupper($tglLhr),
-            'surat_gender'    => $penduduk['gender_nm'],
-            'surat_perkawinan' => $penduduk['status_kwn_nm'],
-            'surat_agama'     => $penduduk['agama_nm'],
-            'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
-            'surat_pendidikan' => $penduduk['pendidikan_nm'],
-            'surat_alamat'    => "{$penduduk['alamat']} KEL. {$penduduk['kelurahan_nm']} KEC. {$penduduk['kecamatan_nm']} {$penduduk['kabko_nm']}",
+            'surat_gender'    => $penduduk['gender_nm'] ?? '',
+            'surat_perkawinan' => $penduduk['status_kwn_nm'] ?? '',
+            'surat_agama'     => $penduduk['agama_nm'] ?? '',
+            'surat_pekerjaan' => $penduduk['pekerjaan_nm'] ?? '',
+            'surat_pendidikan' => $penduduk['pendidikan_nm'] ?? '',
+            'surat_alamat'    => trim(($penduduk['alamat'] ?? '') . ' KEL. ' . ($penduduk['kelurahan_nm'] ?? '') . ' KEC. ' . ($penduduk['kecamatan_nm'] ?? '') . ' ' . ($penduduk['kabko_nm'] ?? '')),
             'surat_tgl'       => Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y'),
             'link'            => $verifyUrl
         ];
 
-        // 5. Akomodasi Logika Keperluan Spesifik
         $data = match ($jenisSurat) {
-            'suket' => array_merge($data, [
-                'surat_keterangan' => $surat->keterangan,
-                'surat_kepada'     => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-            ]),
-            'skbn' => array_merge($data, [
-                'surat_keterangan' => 'Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.',
-                'surat_kepada'     => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-            ]),
-            'skboro' => array_merge($data, [
-                'surat_tgl_berlaku'  => Carbon::parse($surat->tgl_awal)->isoFormat('D MMMM Y') . ' s/d ' . Carbon::parse($surat->tgl_akhir)->isoFormat('D MMMM Y'),
-                'surat_tujuan'       => "Desa/Kel: {$surat->kel_boro_nm} Kec: {$surat->kec_boro_nm} Kab: {$surat->kabko_boro_nm} Prov: {$surat->prov_boro_nm}",
-                'surat_keperluan'    => $surat->peruntukan,
-                'surat_jml_pengikut' => SuratBoroPengikut::where('boro_id', $id)->count(),
-                'detail_pengikut'    => SuratBoroPengikut::where('boro_id', $id)->get()->toArray(),
-            ]),
-            'skdom' => array_merge($data, [
-                'surat_keterangan' => $surat->jenis == 'perorangan'
-                    ? "Bahwa nama tersebut di atas benar-benar berdomisili di {$surat->alamat_domisili}..."
-                    : "Pendiri/pemilik usaha {$surat->nama_perusahaan} yang bertempat di {$surat->alamat_domisili}...",
-                'surat_kepada'     => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-            ]),
-            'skhsl' => array_merge($data, [
-                'surat_keterangan' => "Adalah benar-benar dengan penghasilan perbulan sebesar Rp. " . number_format($surat->penghasilan, 2, ',', '.') . " ({$surat->terbilang}).",
-                'surat_kepada'     => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-                // Tambahkan field kepangkatan/sekolah jika ada di model skhsl
-            ]),
-            'skusaha' => array_merge($data, [
-                'surat_keterangan' => "Menurut pernyataannya memiliki kegiatan / usaha {$surat->nama_usaha} yang beralamat di {$surat->alamat_usaha}",
-                'surat_kepada'     => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-            ]),
-            'sktm' => array_merge($data, [
-                'surat_keterangan' => 'Benar-benar dalam keadaan miskin.',
-                'surat_kepada'     => $surat->kepada,
-                'surat_peruntukan' => $surat->peruntukan,
-                'surat_kategori'   => $surat->kategori,
-            ]),
+            'suket' => array_merge($data, ['surat_keterangan' => $surat->keterangan, 'surat_kepada' => $surat->kepada, 'surat_peruntukan' => $surat->peruntukan]),
+            'skbn' => array_merge($data, ['surat_keterangan' => 'Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.', 'surat_kepada' => $surat->kepada, 'surat_peruntukan' => $surat->peruntukan]),
+            'skboro' => array_merge($data, ['surat_tgl_berlaku' => Carbon::parse($surat->tgl_awal)->isoFormat('D MMMM Y') . ' s/d ' . Carbon::parse($surat->tgl_akhir)->isoFormat('D MMMM Y'), 'surat_tujuan' => "Desa/Kel: {$surat->kel_boro_nm} Kec: {$surat->kec_boro_nm} Kab: {$surat->kabko_boro_nm} Prov: {$surat->prov_boro_nm}", 'surat_keperluan' => $surat->peruntukan, 'surat_jml_pengikut' => SuratBoroPengikut::where('boro_id', $id)->count(), 'detail_pengikut' => SuratBoroPengikut::where('boro_id', $id)->get()->toArray()]),
+            'skdom' => array_merge($data, ['surat_keterangan' => $surat->jenis == 'perorangan' ? "Bahwa nama tersebut di atas benar-benar berdomisili di {$surat->alamat_domisili}..." : "Pendiri/pemilik usaha {$surat->nama_perusahaan} yang bertempat di {$surat->alamat_domisili}...", 'surat_kepada' => $surat->kepada, 'surat_peruntukan' => $surat->peruntukan]),
+            'skhsl' => array_merge($data, ['surat_keterangan' => "Adalah benar-benar dengan penghasilan perbulan sebesar Rp. " . number_format($surat->penghasilan, 2, ',', '.') . " ({$surat->terbilang}).", 'surat_kepada' => $surat->kepada, 'surat_peruntukan' => $surat->peruntukan]),
+            'skusaha' => array_merge($data, ['surat_keterangan' => "Menurut pernyataannya memiliki kegiatan / usaha {$surat->nama_usaha} yang beralamat di {$surat->alamat_usaha}", 'surat_kepada' => $surat->kepada, 'surat_peruntukan' => $surat->peruntukan]),
+            'sktm' => array_merge($data, ['surat_keterangan' => 'Benar-benar dalam keadaan miskin.', 'surat_kepada' => $surat->kepada, 'surat_peruntukan' => $surat->peruntukan, 'surat_kategori' => $surat->kategori]),
             default => $data
         };
 
-        // 6. Penanganan Template File & Generate PDF
         $outputPdfName = strtoupper($jenisSurat) . "_{$id}_signed";
-
         if (in_array($jenisSurat, ['skkelahiran', 'skkematian'])) {
-            // Gunakan fungsi generate PDF khusus DomPDF Anda
             $pdfPath = $this->generateSpecialPdf($surat, $jenisSurat, $nomorSurat, $pejabat, $verifyUrl, $id);
         } else {
             $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => $jenisSurat])->first();
-
             if ($template && !empty($surat->variable)) {
                 $templateFile = public_path($template->path_docs);
                 $data = array_merge($data, $surat->variable);
             } else {
-                // Penyesuaian template default khusus SKTM
-                if ($jenisSurat == 'sktm') {
-                    $templateFile = $surat->jenis == 'sekolah' ? public_path('templates/SKTM_SEKOLAH.docx') : public_path('templates/SKTM_PERORANGAN.docx');
-                } else {
-                    $templateFile = public_path("templates/{$templateDefault}");
-                }
+                $templateFile = $jenisSurat == 'sktm'
+                    ? ($surat->jenis == 'sekolah' ? public_path('templates/SKTM_SEKOLAH.docx') : public_path('templates/SKTM_PERORANGAN.docx'))
+                    : public_path("templates/{$templateDefault}");
             }
-
-            $pdfPath = ($jenisSurat === 'skboro')
-                ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
-                : $this->generatePdf($data, $templateFile, $outputPdfName);
+            $pdfPath = ($jenisSurat === 'skboro') ? $this->generatePdfTable($data, $templateFile, $outputPdfName) : $this->generatePdf($data, $templateFile, $outputPdfName);
         }
 
-        // 7. Proses TTE (Logic TTE Anda tetap sama)
-        $isCamat = ($output['role'] == 5);
+        $isCamat = (($output['role'] ?? 0) == 5);
         $imgTte = $isCamat ? $this->generateTte($this->getCamat($pejabat), true, $surat->no_register) : $this->generateTte($pejabat);
-
         $res = $this->TTE_sign([
             'path'       => $pdfPath,
             'file_name'  => $outputPdfName . '.pdf',
@@ -810,8 +1038,9 @@ class EsignController extends Controller
             'image_path' => $imgTte['path']
         ]);
 
-        // 8. Cleanup & Update
-        if (file_exists(public_path($imgTte['path']))) unlink(public_path($imgTte['path']));
+        if (file_exists(public_path($imgTte['path']))) {
+            unlink(public_path($imgTte['path']));
+        }
 
         if ($res['status'] == 'success') {
             $surat->update([
@@ -832,4 +1061,5 @@ class EsignController extends Controller
 
         return response()->json($res, 500);
     }
+
 }

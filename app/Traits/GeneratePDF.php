@@ -91,69 +91,69 @@ trait GeneratePDF
         }
     }
 
-			protected function convertDocxToPdf(string $tempDocxPath, string $outputPdfPath, string $outputPdf): string
-		{
-			$sourcePdfPath = rtrim($outputPdfPath, '\\/') . DIRECTORY_SEPARATOR . pathinfo($tempDocxPath, PATHINFO_FILENAME) . '.pdf';
-			$finalPdfPath  = rtrim($outputPdfPath, '\\/') . DIRECTORY_SEPARATOR . $outputPdf . '.pdf';
-		
-			if (File::exists($sourcePdfPath)) {
-				File::delete($sourcePdfPath);
-			}
-		
-			if (File::exists($finalPdfPath)) {
-				File::delete($finalPdfPath);
-			}
-		
-			$sofficePath = $this->getSofficePath();
-			$profileDir = storage_path('app/libreoffice-profile');
-		
-			if (!File::exists($profileDir)) {
-				File::makeDirectory($profileDir, 0777, true);
-			}
-		
-			$quotedSoffice = '"' . $sofficePath . '"';
-			$quotedOutDir  = '"' . rtrim($outputPdfPath, '\\/') . '"';
-			$quotedDocx    = '"' . $tempDocxPath . '"';
-			$userInstall   = 'file:///' . str_replace('\\', '/', $profileDir);
-		
-			$command =
-				$quotedSoffice .
-				' --headless --norestore --nofirststartwizard --nolockcheck' .
-				' -env:UserInstallation="' . $userInstall . '"' .
-				' --convert-to pdf:writer_pdf_Export --outdir ' . $quotedOutDir . ' ' . $quotedDocx . ' 2>&1';
-		
-			$output = [];
-			$resultCode = 0;
-			exec($command, $output, $resultCode);
-		
-			for ($i = 0; $i < 30; $i++) {
-				clearstatcache(true, $sourcePdfPath);
-		
-				if (File::exists($sourcePdfPath) && filesize($sourcePdfPath) > 0) {
-					break;
-				}
-		
-				usleep(300000);
-			}
-		
-			clearstatcache(true, $sourcePdfPath);
-		
-			if (!File::exists($sourcePdfPath) || filesize($sourcePdfPath) <= 0) {
-				throw new \Exception(
-					"Konversi PDF gagal. Result code: {$resultCode}\nCommand: {$command}\nOutput: " . implode("\n", $output)
-				);
-			}
-		
-			File::move($sourcePdfPath, $finalPdfPath);
-		
-			clearstatcache(true, $finalPdfPath);
-		
-			if (!File::exists($finalPdfPath) || filesize($finalPdfPath) <= 0) {
-				throw new \Exception("PDF berhasil dibuat oleh LibreOffice, tetapi gagal dipindahkan ke nama akhir: {$finalPdfPath}");
-			}
-		
-			return $finalPdfPath;
-		}
+    protected function convertDocxToPdf(string $tempDocxPath, string $outputPdfPath, string $outputPdf): string
+    {
+        $sourcePdfPath = rtrim($outputPdfPath, '\\/') . DIRECTORY_SEPARATOR . pathinfo($tempDocxPath, PATHINFO_FILENAME) . '.pdf';
+        $finalPdfPath  = rtrim($outputPdfPath, '\\/') . DIRECTORY_SEPARATOR . $outputPdf . '.pdf';
+
+        if (File::exists($sourcePdfPath)) {
+            File::delete($sourcePdfPath);
+        }
+
+        if (File::exists($finalPdfPath)) {
+            File::delete($finalPdfPath);
+        }
+
+        $sofficePath = $this->getSofficePath();
+        $profileDir = storage_path('app/libreoffice-profile');
+
+        if (!File::exists($profileDir)) {
+            File::makeDirectory($profileDir, 0777, true);
+        }
+
+        $quotedSoffice = '"' . $sofficePath . '"';
+        $quotedOutDir  = '"' . rtrim($outputPdfPath, '\\/') . '"';
+        $quotedDocx    = '"' . $tempDocxPath . '"';
+        $userInstall   = 'file:///' . str_replace('\\', '/', $profileDir);
+
+        $command =
+            $quotedSoffice .
+            ' --headless --norestore --nofirststartwizard --nolockcheck' .
+            ' -env:UserInstallation="' . $userInstall . '"' .
+            ' --convert-to pdf:writer_pdf_Export --outdir ' . $quotedOutDir . ' ' . $quotedDocx . ' 2>&1';
+
+        $output = [];
+        $resultCode = 0;
+        exec($command, $output, $resultCode);
+
+        for ($i = 0; $i < 30; $i++) {
+            clearstatcache(true, $sourcePdfPath);
+
+            if (File::exists($sourcePdfPath) && filesize($sourcePdfPath) > 0) {
+                break;
+            }
+
+            usleep(300000);
+        }
+
+        clearstatcache(true, $sourcePdfPath);
+
+        if (!File::exists($sourcePdfPath) || filesize($sourcePdfPath) <= 0) {
+            throw new \Exception(
+                "Konversi PDF gagal. Result code: {$resultCode}\nCommand: {$command}\nOutput: " . implode("\n", $output)
+            );
+        }
+
+        File::move($sourcePdfPath, $finalPdfPath);
+
+        clearstatcache(true, $finalPdfPath);
+
+        if (!File::exists($finalPdfPath) || filesize($finalPdfPath) <= 0) {
+            throw new \Exception("PDF berhasil dibuat oleh LibreOffice, tetapi gagal dipindahkan ke nama akhir: {$finalPdfPath}");
+        }
+
+        return $finalPdfPath;
+    }
 
     public function generatePdf($data, $templateFile, $outputPdf)
     {
@@ -165,19 +165,22 @@ trait GeneratePDF
 
         $this->ensurePdfFolders();
 
-        $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
-        if (
-            $qrPath &&
-            file_exists($qrPath) &&
-            filesize($qrPath) > 0 &&
-            @getimagesize($qrPath) !== false
-        ) {
-            $templateProcessor->setImageValue('qr', [
-                'path' => $qrPath,
-                'width' => 100,
-                'height' => 100,
-                'ratio' => true,
-            ]);
+        $qrPath = null;
+        if (!empty($data['show_qr'])) {
+            $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
+            if (
+                $qrPath &&
+                file_exists($qrPath) &&
+                filesize($qrPath) > 0 &&
+                @getimagesize($qrPath) !== false
+            ) {
+                $templateProcessor->setImageValue('qr', [
+                    'path' => $qrPath,
+                    'width' => 100,
+                    'height' => 100,
+                    'ratio' => true,
+                ]);
+            }
         }
 
         $tempDocxPath = storage_path('app/public/doc/' . uniqid('', true) . '.docx');
@@ -189,6 +192,9 @@ trait GeneratePDF
         } finally {
             if (File::exists($tempDocxPath)) {
                 File::delete($tempDocxPath);
+            }
+            if (!empty($qrPath) && File::exists($qrPath)) {
+                File::delete($qrPath);
             }
         }
     }
@@ -249,19 +255,22 @@ trait GeneratePDF
 
         $this->ensurePdfFolders();
 
-        $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
-        if (
-            $qrPath &&
-            file_exists($qrPath) &&
-            filesize($qrPath) > 0 &&
-            @getimagesize($qrPath) !== false
-        ) {
-            $templateProcessor->setImageValue('qr', [
-                'path' => $qrPath,
-                'width' => 100,
-                'height' => 100,
-                'ratio' => true,
-            ]);
+        $qrPath = null;
+        if (!empty($data['show_qr'])) {
+            $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
+            if (
+                $qrPath &&
+                file_exists($qrPath) &&
+                filesize($qrPath) > 0 &&
+                @getimagesize($qrPath) !== false
+            ) {
+                $templateProcessor->setImageValue('qr', [
+                    'path' => $qrPath,
+                    'width' => 100,
+                    'height' => 100,
+                    'ratio' => true,
+                ]);
+            }
         }
 
         $tempDocxPath = storage_path('app/public/doc/' . uniqid('', true) . '.docx');
@@ -273,6 +282,9 @@ trait GeneratePDF
         } finally {
             if (File::exists($tempDocxPath)) {
                 File::delete($tempDocxPath);
+            }
+            if (!empty($qrPath) && File::exists($qrPath)) {
+                File::delete($qrPath);
             }
         }
     }
