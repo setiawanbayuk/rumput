@@ -75,53 +75,60 @@
                                         @if ($jenis === 'skbn')
                                             <div id="field-bin-binti" style="display:none;">
                                                 <div class="row mb-3">
-                                                    <label for="bin_binti" class="col-md-3 col-form-label text-md-start ms-2">
-                                                        Bin/Binti
-                                                    </label>
+                                                    <label for="bin_binti" class="col-md-3 col-form-label text-md-start ms-2">Bin/Binti</label>
                                                     <div class="col-md-8">
-                                                        <input type="text"
-                                                            class="form-control @error('bin_binti') is-invalid @enderror"
-                                                            name="bin_binti"
-                                                            id="bin_binti"
-                                                            value="{{ old('bin_binti', data_get($variableData, 'bin_binti', '')) }}">
-
-                                                        @error('bin_binti')
-                                                            <span class="invalid-feedback" role="alert">
-                                                                <strong>{{ $message }}</strong>
-                                                            </span>
-                                                        @enderror
+                                                        <input type="text" class="form-control @error('bin_binti') is-invalid @enderror" name="bin_binti" id="bin_binti" value="{{ old('bin_binti', data_get($variableData, 'bin_binti', '')) }}">
+                                                        @error('bin_binti')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <div id="field-pasangan" style="display:none;">
-                                                @foreach ([
-                                                    'nama_pasangan',
-                                                    'nik_pasangan',
-                                                    'tempat_lahir_pasangan',
-                                                    'tgl_lahir_pasangan',
-                                                    'agama_pasangan',
-                                                    'pekerjaan_pasangan',
-                                                    'alamat_pasangan'
-                                                ] as $item)
+                                                @foreach (['nama_pasangan','nik_pasangan','tempat_lahir_pasangan','tgl_lahir_pasangan','agama_pasangan','pekerjaan_pasangan','alamat_pasangan'] as $item)
                                                     <div class="row mb-3">
-                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">
-                                                            {{ ucwords(str_replace('_', ' ', $item)) }}
-                                                        </label>
-
+                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ ucwords(str_replace('_', ' ', $item)) }}</label>
                                                         <div class="col-md-8">
-                                                            <input type="text"
-                                                                class="form-control @error($item) is-invalid @enderror"
-                                                                name="{{ $item }}"
-                                                                id="{{ $item }}"
-                                                                value="{{ old($item, data_get($variableData, $item, '')) }}"
-                                                                @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
-
-                                                            @error($item)
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
+                                                            <input type="text" class="form-control @error($item) is-invalid @enderror" name="{{ $item }}" id="{{ $item }}" value="{{ old($item, data_get($variableData, $item, '')) }}" @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
+                                                            @error($item)<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @elseif ($jenis === 'sktm')
+                                            @php
+                                                $registerAsValue = old('register_as', data_get($variableData, 'register_as', 'perorangan'));
+                                            @endphp
+                                            <div class="row mb-3">
+                                                <label class="col-md-3 col-form-label text-md-start ms-2">Jenis SKTM</label>
+                                                <div class="col-md-8 d-flex align-items-center gap-3 pt-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="register_as" id="radioPeroranganAdmin" value="perorangan" {{ $registerAsValue === 'perorangan' ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="radioPeroranganAdmin">Perorangan</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="register_as" id="radioSekolahAdmin" value="sekolah" {{ $registerAsValue === 'sekolah' ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="radioSekolahAdmin">Sekolah</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="field-sktm-perorangan">
+                                                @foreach (['kategori','keterangan'] as $item)
+                                                    <div class="row mb-3">
+                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ ucwords(str_replace('_', ' ', $item)) }}</label>
+                                                        <div class="col-md-8">
+                                                            <input type="text" class="form-control @error($item) is-invalid @enderror" name="{{ $item }}" id="{{ $item }}" value="{{ old($item, data_get($variableData, $item, '')) }}">
+                                                            @error($item)<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <div id="field-sktm-sekolah" style="display:none;">
+                                                @php $fieldMap = ['kepada' => 'Nama Siswa','kepada_tempat_lhr' => 'Tempat Lahir','kepada_tgl_lhr' => 'Tanggal Lahir','kepada_gender' => 'Jenis Kelamin','kepada_hubungan' => 'Hubungan Keluarga','kepada_sekolah' => 'Sekolah','kepada_kelas' => 'Kelas / Semester','kepada_alamat_sekolah' => 'Alamat Sekolah']; @endphp
+                                                @foreach (['kategori','keterangan','kepada','kepada_tempat_lhr','kepada_tgl_lhr','kepada_gender','kepada_hubungan','kepada_sekolah','kepada_kelas','kepada_alamat_sekolah'] as $item)
+                                                    <div class="row mb-3">
+                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ $fieldMap[$item] ?? ucwords(str_replace('_', ' ', $item)) }}</label>
+                                                        <div class="col-md-8">
+                                                            <input type="text" class="form-control @error($item) is-invalid @enderror" name="{{ $item }}" id="{{ $item }}" value="{{ old($item, $item === 'kepada' ? ($surat->kepada ?? data_get($variableData, 'kepada', '')) : data_get($variableData, $item, '')) }}">
+                                                            @error($item)<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                                                         </div>
                                                     </div>
                                                 @endforeach
@@ -130,32 +137,20 @@
                                             @isset($var)
                                                 @foreach ($var as $item)
                                                     <div class="row mb-3">
-                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">
-                                                            {{ ucwords(str_replace('_', ' ', $item)) }}
-                                                        </label>
-
+                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ ucwords(str_replace('_', ' ', $item)) }}</label>
                                                         <div class="col-md-8">
-                                                            <input type="text"
-                                                                class="form-control @error($item) is-invalid @enderror"
-                                                                name="{{ $item }}"
-                                                                id="{{ $item }}"
-                                                                value="{{ old($item, data_get($variableData, $item, '')) }}"
-                                                                @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
-
-                                                            @error($item)
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
+                                                            <input type="text" class="form-control @error($item) is-invalid @enderror" name="{{ $item }}" id="{{ $item }}" value="{{ old($item, data_get($variableData, $item, '')) }}" @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
+                                                            @error($item)<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                                                         </div>
                                                     </div>
                                                 @endforeach
                                             @endisset
                                         @endif
-
-                                        <x-kepada>
-                                            <x-slot:kepada>{{ $kepadaValue }}</x-slot:kepada>
-                                        </x-kepada>
+                                        @if ($jenis !== 'sktm')
+                                            <x-kepada>
+                                                <x-slot:kepada>{{ $kepadaValue }}</x-slot:kepada>
+                                            </x-kepada>
+                                        @endif
 
                                         <x-peruntukan>
                                             <x-slot:peruntukan>{{ $peruntukanValue }}</x-slot:peruntukan>
@@ -189,11 +184,27 @@
                                             <div class="row mb-3">
                                                 <label class="col-md-3 col-form-label text-md-start ms-2">File Lama</label>
                                                 <div class="col-md-8 d-flex align-items-center">
-                                                    <a href="{{ asset($surat->pengantar) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        Lihat Pengantar Lama
-                                                    </a>
+                                                    <a href="{{ asset($surat->pengantar) }}" target="_blank" class="btn btn-sm btn-outline-primary">Lihat Pengantar Lama</a>
                                                 </div>
                                             </div>
+                                        @endif
+                                        @php $showProofField = !empty(data_get($variableData, 'manual_signature')) || !empty(data_get($variableData, 'bukti_ttd_basah')) || data_get($variableData, 'signature_mode') === 'manual'; @endphp
+                                        @if ($showProofField)
+                                            <div class="row mb-3">
+                                                <label class="col-md-3 col-form-label text-md-start ms-2">Bukti TTD Basah</label>
+                                                <div class="col-md-8">
+                                                    <input type="file" name="bukti_ttd_basah" class="form-control @error('bukti_ttd_basah') is-invalid @enderror">
+                                                    @error('bukti_ttd_basah')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                </div>
+                                            </div>
+                                            @if (!empty(data_get($variableData, 'bukti_ttd_basah')))
+                                                <div class="row mb-3">
+                                                    <label class="col-md-3 col-form-label text-md-start ms-2">Bukti Lama</label>
+                                                    <div class="col-md-8 d-flex align-items-center">
+                                                        <a href="{{ asset(data_get($variableData, 'bukti_ttd_basah')) }}" target="_blank" class="btn btn-sm btn-outline-success">Lihat Bukti TTD Basah</a>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -460,6 +471,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function toggleSktmAdminFields() {
+        const selected = document.querySelector('input[name="register_as"]:checked')?.value || 'perorangan';
+        const sekolah = document.getElementById('field-sktm-sekolah');
+        const perorangan = document.getElementById('field-sktm-perorangan');
+        if (!sekolah || !perorangan) return;
+        sekolah.style.display = selected === 'sekolah' ? 'block' : 'none';
+        perorangan.style.display = selected === 'sekolah' ? 'none' : 'block';
+    }
+
+    document.querySelectorAll('input[name="register_as"]').forEach(function(el){
+        el.addEventListener('change', toggleSktmAdminFields);
+    });
+
     if (peruntukan) {
         peruntukan.addEventListener('change', function () {
             if (fieldPasangan) {
@@ -473,6 +497,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         toggleFieldPasangan();
     }
+    toggleSktmAdminFields();
 });
 </script>
 @endpush

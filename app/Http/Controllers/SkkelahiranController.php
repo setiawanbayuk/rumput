@@ -27,13 +27,58 @@ use Yajra\DataTables\DataTables;
 class SkkelahiranController extends Controller
 {
     use GetNoSurat;
+
+    protected function residentData($resident): array
+    {
+        $data = $resident->data ?? [];
+
+        if (is_array($data)) {
+            return $data;
+        }
+
+        if (is_string($data)) {
+            $decoded = json_decode($data, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+
+            $unserialized = @unserialize($data);
+            if (is_array($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return [];
+    }
+
+    protected function suratVariable($value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+
+            $unserialized = @unserialize($value);
+            if (is_array($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return [];
+    }
+
     public function index()
     {
         $user = auth()->user();
         $rt = $user->id_rt;
         $rw = $user->id_rw;
         $resident = Resident::where('nik', $user->nik)->first();
-        $penduduk = unserialize($resident->data);
+        $penduduk = $this->residentData($resident);
         $kelurahan = $penduduk['kelurahan_nm'];
         if (request()->ajax()) {
             $query = SuratKelahiran::query();
@@ -765,7 +810,7 @@ class SkkelahiranController extends Controller
                 return back()->with('error', 'Data pelapor tidak ditemukan di tabel Resident.');
             }
             // $resident = Resident::where('nik', $request->nik)->first();
-            $penduduk = unserialize($resident->data);
+            $penduduk = $this->residentData($resident);
             $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
             $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
 

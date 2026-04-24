@@ -660,6 +660,8 @@ class EsignController extends Controller
     //         'nama_surat' => $nama_surat,
     //         'id_surat' => $surat->id,
 
+
+
     //         'status_surat' => 3,
     //     ]);
 
@@ -716,6 +718,26 @@ class EsignController extends Controller
     }
 
 
+    protected function resolveCamatByDistrictName(?string $districtName): ?Pejabat
+    {
+        $name = strtoupper(trim((string) $districtName));
+
+        $mapping = [
+            'MOJOROTO' => 64,
+            'KOTA' => 65,
+            'PESANTREN' => 66,
+        ];
+
+        $idSkpdCamat = $mapping[$name] ?? null;
+        if (!$idSkpdCamat) {
+            return null;
+        }
+
+        return Pejabat::with(['skpd.kecamatan', 'jabatan'])
+            ->where('id_skpd', $idSkpdCamat)
+            ->first();
+    }
+
     protected function resolveSignerContext(?SuratPengajuan $surat = null): array
     {
         $authUser = Auth::user();
@@ -730,10 +752,10 @@ class EsignController extends Controller
         }
 
         $instansiId = null;
-        if ($user && !empty($user->id_instansi)) {
-            $instansiId = (int) $user->id_instansi;
-        } elseif ($surat && !empty($surat->id_kel)) {
+        if ($surat && !empty($surat->id_kel)) {
             $instansiId = (int) $surat->id_kel;
+        } elseif ($user && !empty($user->id_instansi)) {
+            $instansiId = (int) $user->id_instansi;
         }
 
         $skpd = $instansiId ? Skpd::with('kecamatan')->find($instansiId) : null;
@@ -761,8 +783,13 @@ class EsignController extends Controller
             throw new \RuntimeException('Data SKPD untuk instansi user tidak ditemukan.');
         }
 
+
         if (!$context['pejabat']) {
-            throw new \RuntimeException('Data pejabat penandatangan untuk instansi user belum disetting.');
+            throw new \RuntimeException('Data pejabat penandatangan untuk instansi surat belum disetting.');
+        }
+
+        if (!$context['pejabat']->jabatan) {
+            throw new \RuntimeException('Jabatan pejabat penandatangan belum disetting.');
         }
 
         return $context;
@@ -784,6 +811,7 @@ class EsignController extends Controller
         $context = $this->requireUniversalSignerContext($surat);
         $skpd = $context['skpd'];
         $pejabat = $context['pejabat'];
+        $camat = $this->resolveCamatByDistrictName(optional($skpd->kecamatan)->nama);
 
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
@@ -802,10 +830,13 @@ class EsignController extends Controller
             'skpd_alamat'      => $skpd->instansi_alamat ?? '',
             'skpd_telp'        => $skpd->instansi_telp ?? '',
             'skpd_pos'         => $skpd->instansi_kode_pos ?? '',
-            'skpd_kepala'      => $pejabat->nama ?? '',
-            'skpd_nip_kepala'  => $pejabat->nip ?? '',
-            'skpd_jabatan'     => trim(ucfirst(optional($pejabat->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower($skpd->nama ?? ''))),
-            'surat_no'         => $nomorSurat,
+            'skpd_kepala'         => $pejabat->nama ?? '',
+            'skpd_nip_kepala'     => $pejabat->nip ?? '',
+            'skpd_jabatan'        => trim(ucfirst(optional(optional($pejabat)->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower($skpd->nama ?? ''))),
+            'skpd_camat'          => $camat->nama ?? '',
+            'skpd_nip_camat'      => $camat->nip ?? '',
+            'skpd_jabatan_camat'  => strtoupper(optional(optional($camat)->jabatan)->nama ?? 'CAMAT'),
+            'surat_no'            => $nomorSurat,
             'surat_tgl'        => $tglSurat,
             'surat_nama'       => $residentData['name'] ?? '',
             'surat_nik'        => $surat->nik ?? '',
@@ -877,15 +908,14 @@ class EsignController extends Controller
                 return response()->json(['message' => 'Status surat belum sesuai untuk TTE pada level ini.', 'status' => 'error'], 422);
             }
 
-            $variableData = $this->decodeFlexibleValueUniversal($suratPengajuan->variable);
-            $data = $this->buildPdfDataUniversal($suratPengajuan);
-            $templateFile = $this->resolveTemplateFileUniversal($suratPengajuan->jenis_surat, (int) $suratPengajuan->id_kel, $variableData);
-            $outputPdfName = strtoupper($suratPengajuan->jenis_surat) . "_{$suratPengajuan->id}_signed";
-            $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
-                ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
-                : $this->generatePdf($data, $templateFile, $outputPdfName);
-
             try {
+                $variableData = $this->decodeFlexibleValueUniversal($suratPengajuan->variable);
+                $data = $this->buildPdfDataUniversal($suratPengajuan);
+                $templateFile = $this->resolveTemplateFileUniversal($suratPengajuan->jenis_surat, (int) $suratPengajuan->id_kel, $variableData);
+                $outputPdfName = strtoupper($suratPengajuan->jenis_surat) . "_{$suratPengajuan->id}_signed";
+                $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
+                    ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
+                    : $this->generatePdf($data, $templateFile, $outputPdfName);
                 $context = $this->requireUniversalSignerContext($suratPengajuan);
             } catch (\Throwable $e) {
                 return response()->json([
@@ -895,7 +925,11 @@ class EsignController extends Controller
             }
 
             $pejabat = $context['pejabat'];
-            $imgTte = $role === 5 ? $this->generateTte($pejabat, true, $this->getNoSrt($suratPengajuan)) : $this->generateTte($pejabat);
+            $camat = $this->resolveCamatByDistrictName(optional($context['skpd']->kecamatan)->nama);
+            $signer = ($role === 5 && $camat) ? $camat : $pejabat;
+            $imgTte = $role === 5
+                ? $this->generateTte($signer, true, $this->getNoSrt($suratPengajuan))
+                : $this->generateTte($signer);
 
             $res = $this->TTE_sign([
                 'path'       => $pdfPath,
@@ -968,6 +1002,15 @@ class EsignController extends Controller
             ], 422);
         }
 
+        if (!$pejabat->jabatan) {
+            return response()->json([
+                'message' => 'Jabatan pejabat penandatangan untuk surat ini belum disetting.',
+                'status' => 'error'
+            ], 422);
+        }
+
+        $camat = $this->resolveCamatByDistrictName(optional($skpd->kecamatan)->nama);
+
         $tahun   = Carbon::parse($surat->tgl_surat)->format('Y');
         $nomorSurat = "{$surat->kd_jenis_surat}/{$surat->no_urut_surat}/{$skpd->instansi_kode}/{$tahun}";
         $verifyUrl  = config('app.url') . "/verify/{$jenisSurat}/{$id}";
@@ -982,10 +1025,13 @@ class EsignController extends Controller
             'skpd_alamat'     => $skpd->instansi_alamat ?? '',
             'skpd_telp'       => $skpd->instansi_telp ?? '',
             'skpd_pos'        => $skpd->instansi_kode_pos ?? '',
-            'skpd_kepala'     => $pejabat->nama ?? '',
-            'skpd_nip_kepala' => $pejabat->nip ?? '',
-            'skpd_jabatan'    => ucfirst(optional($pejabat->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower($skpd->nama ?? '')),
-            'surat_no'        => $nomorSurat,
+            'skpd_kepala'        => $pejabat->nama ?? '',
+            'skpd_nip_kepala'    => $pejabat->nip ?? '',
+            'skpd_jabatan'       => ucfirst(optional(optional($pejabat)->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower($skpd->nama ?? '')),
+            'skpd_camat'         => $camat->nama ?? '',
+            'skpd_nip_camat'     => $camat->nip ?? '',
+            'skpd_jabatan_camat' => strtoupper(optional(optional($camat)->jabatan)->nama ?? 'CAMAT'),
+            'surat_no'           => $nomorSurat,
             'surat_nama'      => $penduduk['name'] ?? '',
             'surat_nik'       => $nik,
             'surat_tmpl'      => $penduduk['tempat_lhr'] ?? '',
@@ -1028,7 +1074,8 @@ class EsignController extends Controller
         }
 
         $isCamat = (($output['role'] ?? 0) == 5);
-        $imgTte = $isCamat ? $this->generateTte($this->getCamat($pejabat), true, $surat->no_register) : $this->generateTte($pejabat);
+        $signer = ($isCamat && $camat) ? $camat : $pejabat;
+        $imgTte = $isCamat ? $this->generateTte($signer, true, $surat->no_register) : $this->generateTte($signer);
         $res = $this->TTE_sign([
             'path'       => $pdfPath,
             'file_name'  => $outputPdfName . '.pdf',

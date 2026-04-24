@@ -91,33 +91,93 @@
                                                 @endforeach
                                             </div>
                                         @else
-                                            @isset($var)
-                                                @foreach ($var as $item)
-                                                    <div class="row mb-3">
-                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">
-                                                            {{ ucwords(str_replace('_', ' ', $item)) }}
-                                                        </label>
-
-                                                        <div class="col-md-8">
-                                                            <input type="text"
-                                                                class="form-control @error($item) is-invalid @enderror"
-                                                                name="{{ $item }}"
-                                                                id="{{ $item }}"
-                                                                value="{{ old($item) }}"
-                                                                @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
-
-                                                            @error($item)
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
+                                            @if ($jenis === 'sktm')
+                                                <div class="row mb-3">
+                                                    <label class="col-md-3 col-form-label text-md-start ms-2">Jenis SKTM</label>
+                                                    <div class="col-md-8 d-flex align-items-center gap-3 pt-2">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="register_as" id="radioPeroranganAdmin" value="perorangan" {{ old('register_as', 'perorangan') === 'perorangan' ? 'checked' : '' }}>
+                                                            <label class="form-check-label" for="radioPeroranganAdmin">Perorangan</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="register_as" id="radioSekolahAdmin" value="sekolah" {{ old('register_as') === 'sekolah' ? 'checked' : '' }}>
+                                                            <label class="form-check-label" for="radioSekolahAdmin">Sekolah</label>
                                                         </div>
                                                     </div>
-                                                @endforeach
-                                            @endisset
+                                                </div>
+
+                                                <div id="field-sktm-perorangan">
+                                                    @foreach ([
+                                                        'nama_orang_tua' => 'Nama Orang Tua',
+                                                        'pekerjaan_orang_tua' => 'Pekerjaan Orang Tua',
+                                                        'alamat_orang_tua' => 'Alamat Orang Tua',
+                                                        'keperluan_bantuan' => 'Keperluan Bantuan',
+                                                        'kategori' => 'Kategori',
+                                                        'keterangan' => 'Keterangan'
+                                                    ] as $item => $label)
+                                                        <div class="row mb-3">
+                                                            <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ $label }}</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control @error($item) is-invalid @enderror" name="{{ $item }}" id="{{ $item }}" value="{{ old($item) }}">
+                                                                @error($item)
+                                                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+
+                                                <div id="field-sktm-sekolah" style="display:none;">
+                                                    @foreach ([
+                                                        'kepada' => 'Nama Siswa',
+                                                        'kepada_tempat_lhr' => 'Tempat Lahir',
+                                                        'kepada_tgl_lhr' => 'Tanggal Lahir',
+                                                        'kepada_gender' => 'Jenis Kelamin',
+                                                        'kepada_hubungan' => 'Hubungan Keluarga',
+                                                        'kepada_sekolah' => 'Sekolah',
+                                                        'kepada_kelas' => 'Kelas / Semester',
+                                                        'kepada_alamat_sekolah' => 'Alamat Sekolah',
+                                                        'kategori' => 'Kategori',
+                                                        'keterangan' => 'Keterangan'
+                                                    ] as $item => $label)
+                                                        <div class="row mb-3">
+                                                            <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ $label }}</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control @error($item) is-invalid @enderror" name="{{ $item }}" id="{{ $item }}" value="{{ old($item) }}">
+                                                                @error($item)
+                                                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                @isset($var)
+                                                    @foreach ($var as $item)
+                                                        <div class="row mb-3">
+                                                            <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">
+                                                                {{ ucwords(str_replace('_', ' ', $item)) }}
+                                                            </label>
+                                                            <div class="col-md-8">
+                                                                <input type="text"
+                                                                    class="form-control @error($item) is-invalid @enderror"
+                                                                    name="{{ $item }}"
+                                                                    id="{{ $item }}"
+                                                                    value="{{ old($item) }}"
+                                                                    @if($item === 'nik_pasangan') maxlength="16" inputmode="numeric" pattern="[0-9]{16}" @endif>
+                                                                @error($item)
+                                                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                @endisset
+                                            @endif
                                         @endif
 
-                                        <x-kepada><x-slot:kepada></x-slot:kepada></x-kepada>
+                                        @if ($jenis !== 'sktm')
+                                            <x-kepada><x-slot:kepada></x-slot:kepada></x-kepada>
+                                        @endif
                                         <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
 
                                         <div id="field-keperluan-lainnya" style="display:none;">
@@ -177,6 +237,28 @@ document.addEventListener('DOMContentLoaded', function () {
     const keperluanLainnya = document.getElementById('keperluan_lainnya');
     const binBinti = document.getElementById('bin_binti');
     const nikPasangan = document.getElementById('nik_pasangan');
+    const sktmRadios = document.querySelectorAll('input[name="register_as"]');
+    const fieldSktmPerorangan = document.getElementById('field-sktm-perorangan');
+    const fieldSktmSekolah = document.getElementById('field-sktm-sekolah');
+
+    function toggleSktmAdminFields() {
+        const selected = document.querySelector('input[name="register_as"]:checked')?.value || 'perorangan';
+        const isSekolah = selected === 'sekolah';
+
+        if (fieldSktmPerorangan) {
+            fieldSktmPerorangan.style.display = isSekolah ? 'none' : 'block';
+            fieldSktmPerorangan.querySelectorAll('input, select, textarea').forEach(function (el) {
+                el.disabled = isSekolah;
+            });
+        }
+
+        if (fieldSktmSekolah) {
+            fieldSktmSekolah.style.display = isSekolah ? 'block' : 'none';
+            fieldSktmSekolah.querySelectorAll('input, select, textarea').forEach(function (el) {
+                el.disabled = !isSekolah;
+            });
+        }
+    }
 
     function toggleFieldPasangan() {
         if (!peruntukan) return;
@@ -230,6 +312,13 @@ document.addEventListener('DOMContentLoaded', function () {
         nikPasangan.addEventListener('input', function () {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 16);
         });
+    }
+
+    if (sktmRadios.length) {
+        sktmRadios.forEach(function (el) {
+            el.addEventListener('change', toggleSktmAdminFields);
+        });
+        toggleSktmAdminFields();
     }
 
     if (peruntukan) {

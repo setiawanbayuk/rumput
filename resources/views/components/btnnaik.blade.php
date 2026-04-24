@@ -12,7 +12,7 @@
     $titleText = 'Ajukan ke Atasan';
 
     // Admin / RT / Super admin -> ajukan ke Sekkel
-    if (in_array($role, [1, 8, 9]) && (int) $status === 1) {
+    if (in_array($role, [1, 8, 9]) && in_array((int) $status, [0, 1], true)) {
         $routeNaik = Str::replaceLast('.edit', '.naik', $route);
         $confirmText = 'Apakah Anda yakin ingin mengajukan pengajuan ini ke atasan yang lebih tinggi?';
         $successText = 'Pengajuan berhasil diajukan ke atasan.';

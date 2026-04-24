@@ -25,7 +25,14 @@
 
             /* Warna Status Berdasarkan Slug */
             .status-pengajuan { background: #e0e0e0; color: #6C757D }
-            .status-draft, .status-proses { background: #e8f2ff; color: #1e63ff }
+            .status-draft-admin, .status-proses, .status-warga---admin { background: #e8f2ff; color: #1e63ff }
+            .status-warga { background: #eef2f7; color: #556070 }
+            .status-warga---sekkel, .status-admin---sekkel, .status-warga---lurah, .status-admin---lurah { background: #ffe9d7; color: #F4A261 }
+            .status-warga---camat, .status-admin---camat { background: #b4b1af; color: #B2784A }
+            .status-disetujui-warga, .status-disetujui-admin, .status-ttd-basah---bukti-uploaded { background: #e6f6ee; color: #0e8a5f }
+            .status-disetujui-camat-warga, .status-disetujui-camat-admin { background: #ebe7f5; color: #A78BFA }
+            .status-ditolak-warga, .status-ditolak-admin, .status-dihapus { background: #fde4e6; color: #d2353c }
+            .status-ttd-basah---belum-upload-bukti { background: #fff4e5; color: #b45309 }
             .status-dinaikkan-ke-sekkel, .status-dinaikkan-ke-lurah { background: #ffe9d7; color: #F4A261 }
             .status-dinaikkan-ke-camat { background: #b4b1af; color: #B2784A }
             .status-disetujui, .status-disetujui-lurah { background: #e6f6ee; color: #0e8a5f }
@@ -67,6 +74,17 @@
                 </div>
             </div>
         </div>
+
+        @if(isset($pendingManual) && count($pendingManual) > 0)
+        <div class="alert alert-warning shadow-sm border-0 mb-3">
+            <div class="fw-bold mb-1">Perhatian: Ada surat TTD Basah yang belum upload bukti</div>
+            <ul class="mb-0 ps-3">
+                @foreach($pendingManual as $item)
+                    <li>{{ strtoupper($item->jenis_surat) }} - NIK {{ $item->nik }} - {{ $item->peruntukan }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
         <div class="row">
             <div class="col-md-12">
@@ -139,18 +157,35 @@
                         { data: 'tgl_surat', name: 'tgl_surat', width: '12%' },
                         { data: 'peruntukan', name: 'peruntukan' },
                         {
-                            data: 'st',
-                            name: 'status',
-                            render: function(data) {
-                                if (!data) return '-';
-                                let slug = data.name.toLowerCase().replace(/\s+/g, '-');
-                                return `<span class="status-badge status-${slug}">${data.name}</span>`;
-                            },
-                            className: 'text-center'
+							data: 'st',
+							name: 'status',
+							render: function(data) {
+								if (!data) return '-';
+						
+								let colorMap = {
+									blue:   { bg: '#DBEAFE', text: '#1D4ED8' },
+									orange: { bg: '#FFEDD5', text: '#C2410C' },
+									green:  { bg: '#DCFCE7', text: '#15803D' },
+									red:    { bg: '#FEE2E2', text: '#DC2626' },
+									black:  { bg: '#F3F4F6', text: '#111827' },
+									purple: { bg: '#EDE9FE', text: '#7C3AED' },
+								
+									'#6B7280': { bg: '#F3F4F6', text: '#6B7280' },
+									'#EFBF04': { bg: '#FEF3C7', text: '#B45309' },
+									'#B2784A': { bg: '#F3E8DB', text: '#B2784A' },
+									'#A78BFA': { bg: '#EDE9FE', text: '#7C3AED' }
+								};
+								
+						
+								let c = colorMap[data.color] || colorMap.black;
+						
+								return `<span class="status-badge" style="background:${c.bg};color:${c.text};">${data.name}</span>`;
+							},
+							className: 'text-center'
                         },
                         { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' },
                     ],
-                    order: [[4, "desc"]], // Default urutkan berdasarkan Tanggal
+                    order: [], // Default urutkan berdasarkan Tanggal
                     language: {
                         searchPlaceholder: "Cari NIK atau Peruntukan...",
                         processing: '<div class="spinner-border text-primary" role="status"></div>'

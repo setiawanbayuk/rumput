@@ -26,7 +26,7 @@ class SuratAdminController extends Controller
 
         if (request()->ajax()) {
             // Query ke tabel tunggal
-            $query = SuratPengajuan::with('penduduk');
+			$query = SuratPengajuan::with('penduduk')->orderByDesc('id');
 
             // Filter berdasarkan Role (RT/RW hanya lihat wilayahnya)
             if ($user->role_id == 8) {
@@ -61,12 +61,17 @@ class SuratAdminController extends Controller
                     $jenis      = $row->jenis_surat; // Dinamis dari kolom database
                     $route      = 'admin.surat.edit'; // Route universal
 
+                    $variableRow = $this->decodeFlexibleValue($row->variable ?? []);
+                    $submitter_type = $this->resolveSubmitterType($row);
+                    $manual_signature = !empty($variableRow['manual_signature']) || (($variableRow['signature_mode'] ?? null) === 'manual');
+                    $bukti_ttd_basah = $variableRow['bukti_ttd_basah'] ?? null;
+
                     if ($role == 1) {
-                        return view('includes.button-admin', compact('id', 'route', 'status'));
+                        return view('includes.button-admin', compact('id', 'route', 'status', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     } elseif (in_array($role, [3, 5])) {
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route'));
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status', 'role', 'route'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     }
                 })
                 ->rawColumns(['action', 'tipe'])
@@ -234,7 +239,7 @@ class SuratAdminController extends Controller
                     'kk'             => ['nullable', 'regex:/^[0-9]{16}$/'],
                     'peruntukan'     => 'required|string',
                     'keperluan_lainnya' => 'nullable|string|max:255|required_if:peruntukan,lainnya',
-                    'kepada'         => 'required|string',
+                    'kepada'         => 'nullable|string',
                     'tgl_surat'      => 'nullable|date',
                 ];
 
@@ -261,11 +266,20 @@ class SuratAdminController extends Controller
                 }
 
                 if ($request->jenis_surat === 'sktm') {
-                    $rules['nama_orang_tua'] = 'required|string|max:255';
-                    $rules['pekerjaan_orang_tua'] = 'required|string|max:255';
-                    $rules['alamat_orang_tua'] = 'required|string';
-                    $rules['keperluan_bantuan'] = 'required|string';
-                }
+                        $rules['register_as'] = 'required|in:perorangan,sekolah';
+                        $rules['kategori'] = 'required|string|max:255';
+                        $rules['keterangan'] = 'required|string';
+                        $rules['kepada'] = 'nullable|string|max:255';
+                        $rules['kepada_tempat_lhr'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+                        $rules['kepada_tgl_lhr'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+                        $rules['kepada_gender'] = 'required_if:register_as,sekolah|nullable|string|max:50';
+                        $rules['kepada_hubungan'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+                        $rules['kepada_sekolah'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+                        $rules['kepada_kelas'] = 'required_if:register_as,sekolah|nullable|string|max:50';
+                        $rules['kepada_alamat_sekolah'] = 'required_if:register_as,sekolah|nullable|string';
+                    } else {
+                        $rules['kepada'] = 'required|string|max:255';
+                    }
 
                 if ($request->jenis_surat === 'skdom') {
                     $rules['alamat_domisili'] = 'required|string';
@@ -385,6 +399,23 @@ class SuratAdminController extends Controller
                         }
 
                         $allInput = $request->except(['_token']);
+						
+						if ($request->jenis_surat === 'sktm') {
+						$registerAs = strtolower(trim((string) $request->register_as));
+						$allInput['register_as'] = $registerAs;
+					
+						if ($registerAs !== 'sekolah') {
+							$allInput['kepada'] = strtoupper($request->name ?? '');
+							$allInput['kepada_tempat_lhr'] = null;
+							$allInput['kepada_tgl_lhr'] = null;
+							$allInput['kepada_gender'] = null;
+							$allInput['kepada_gender_nm'] = null;
+							$allInput['kepada_hubungan'] = null;
+							$allInput['kepada_sekolah'] = null;
+							$allInput['kepada_kelas'] = null;
+							$allInput['kepada_alamat_sekolah'] = null;
+						}
+					}
 
                         $allInput['name'] = strtoupper($request->name ?? '');
                         $allInput['tempat_lhr'] = strtoupper($request->tempat_lhr ?? '');
@@ -445,6 +476,26 @@ class SuratAdminController extends Controller
                         ];
 
                         $variableData = array_diff_key($allInput, array_flip($mainColumns));
+                        $variableData['submitter_type'] = 'admin';
+						
+						if ($request->jenis_surat === 'sktm') {
+						$registerAs = strtolower(trim((string) $request->register_as));
+						$variableData['register_as'] = $registerAs;
+					
+						if ($registerAs !== 'sekolah') {
+							unset(
+								$variableData['kepada'],
+								$variableData['kepada_tempat_lhr'],
+								$variableData['kepada_tgl_lhr'],
+								$variableData['kepada_gender'],
+								$variableData['kepada_gender_nm'],
+								$variableData['kepada_hubungan'],
+								$variableData['kepada_sekolah'],
+								$variableData['kepada_kelas'],
+								$variableData['kepada_alamat_sekolah']
+							);
+						}
+					}
 
                         if ($request->jenis_surat === 'skbn' && $request->peruntukan !== 'menikah') {
                             unset(
@@ -467,6 +518,11 @@ class SuratAdminController extends Controller
                         }
 
                         $surat = SuratPengajuan::create([
+							'kepada' => $request->jenis_surat === 'sktm'
+							? (strtolower((string) $request->register_as) === 'sekolah'
+								? $request->kepada
+								: strtoupper($request->name ?? ''))
+							: $request->kepada,
                             'jenis_surat'    => $request->jenis_surat,
                             'kd_jenis_surat' => $request->kd_jenis_surat,
                             'no_urut_surat'  => $request->no_urut_surat,
@@ -622,7 +678,9 @@ class SuratAdminController extends Controller
                 'kk'             => ['nullable', 'regex:/^[0-9]{16}$/'],
                 'peruntukan'     => 'required|string',
                 'keperluan_lainnya' => 'nullable|string|max:255|required_if:peruntukan,lainnya',
-                'kepada'         => 'required|string',
+                'kepada'         => 'nullable|string',
+                'pengantar'      => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
+                'bukti_ttd_basah' => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
                 'tgl_surat'      => 'nullable|date',
             ];
 
@@ -649,11 +707,19 @@ class SuratAdminController extends Controller
             }
 
             if ($request->jenis_surat === 'sktm') {
-                $rules['nama_orang_tua'] = 'required|string|max:255';
-                $rules['pekerjaan_orang_tua'] = 'required|string|max:255';
-                $rules['alamat_orang_tua'] = 'required|string';
-                $rules['keperluan_bantuan'] = 'required|string';
-            }
+					$rules['register_as'] = 'required|in:perorangan,sekolah';
+					$rules['kategori'] = 'required|string|max:255';
+					$rules['keterangan'] = 'required|string';
+				
+					$rules['kepada'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+					$rules['kepada_tempat_lhr'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+					$rules['kepada_tgl_lhr'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+					$rules['kepada_gender'] = 'required_if:register_as,sekolah|nullable|string|max:20';
+					$rules['kepada_hubungan'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+					$rules['kepada_sekolah'] = 'required_if:register_as,sekolah|nullable|string|max:255';
+					$rules['kepada_kelas'] = 'required_if:register_as,sekolah|nullable|string|max:50';
+					$rules['kepada_alamat_sekolah'] = 'required_if:register_as,sekolah|nullable|string';
+				}
 
             if ($request->jenis_surat === 'skdom') {
                 $rules['alamat_domisili'] = 'required|string';
@@ -766,6 +832,8 @@ class SuratAdminController extends Controller
                         ]);
                     }
 
+                    $existingVariable = $this->decodeFlexibleValue($surat->variable);
+
                     $allInput = $request->except(['_token', '_method']);
                     $allInput['name'] = strtoupper($request->name ?? '');
                     $allInput['tempat_lhr'] = strtoupper($request->tempat_lhr ?? '');
@@ -780,6 +848,23 @@ class SuratAdminController extends Controller
                         $allInput['agama_pasangan'] = null;
                         $allInput['pekerjaan_pasangan'] = null;
                         $allInput['alamat_pasangan'] = null;
+                    }
+
+                    if ($request->jenis_surat === 'sktm') {
+                        $registerAs = strtolower(trim((string) $request->register_as));
+                        $allInput['register_as'] = $registerAs;
+
+                        if ($registerAs !== 'sekolah') {
+                            $allInput['kepada'] = null;
+                            $allInput['kepada_tempat_lhr'] = null;
+                            $allInput['kepada_tgl_lhr'] = null;
+                            $allInput['kepada_gender'] = null;
+                            $allInput['kepada_gender_nm'] = null;
+                            $allInput['kepada_hubungan'] = null;
+                            $allInput['kepada_sekolah'] = null;
+                            $allInput['kepada_kelas'] = null;
+                            $allInput['kepada_alamat_sekolah'] = null;
+                        }
                     }
 
                     $mainColumns = [
@@ -826,6 +911,8 @@ class SuratAdminController extends Controller
                     ];
 
                     $variableData = array_diff_key($allInput, array_flip($mainColumns));
+                    $variableData = array_merge($existingVariable, $variableData);
+                    $variableData['submitter_type'] = $existingVariable['submitter_type'] ?? $this->resolveSubmitterType($surat);
 
                     $autoMeta = $this->buildAutoSuratMeta($request->peruntukan, $request->keperluan_lainnya);
                     $variableData['surat_kategori'] = $autoMeta['kategori'];
@@ -848,12 +935,39 @@ class SuratAdminController extends Controller
                         );
                     }
 
+                    if ($request->jenis_surat === 'sktm') {
+                        $registerAs = strtolower(trim((string) $request->register_as));
+                        $variableData['register_as'] = $registerAs;
+
+                        if ($registerAs !== 'sekolah') {
+                            unset(
+                                $variableData['kepada_tempat_lhr'],
+                                $variableData['kepada_tgl_lhr'],
+                                $variableData['kepada_gender'],
+                                $variableData['kepada_gender_nm'],
+                                $variableData['kepada_hubungan'],
+                                $variableData['kepada_sekolah'],
+                                $variableData['kepada_kelas'],
+                                $variableData['kepada_alamat_sekolah']
+                            );
+                        }
+                    }
+
                     $fileUrl = $surat->pengantar;
                     if ($request->hasFile('pengantar')) {
                         $path = $request->file('pengantar')->store(
                             'public/pengantar/' . date('Y') . '/' . $request->jenis_surat
                         );
                         $fileUrl = str_replace('public/', '/storage/', $path);
+                    }
+
+                    if ($request->hasFile('bukti_ttd_basah')) {
+                        $proofPath = $request->file('bukti_ttd_basah')->store(
+                            'public/bukti_ttd_basah/' . date('Y') . '/' . $request->jenis_surat
+                        );
+                        $variableData['bukti_ttd_basah'] = str_replace('public/', '/storage/', $proofPath);
+                        $variableData['manual_signature'] = true;
+                        $variableData['signature_mode'] = 'manual';
                     }
 
                     $surat->update([
@@ -867,7 +981,7 @@ class SuratAdminController extends Controller
                         'tahun'          => date('Y'),
                         'tgl_surat'      => $request->tgl_surat ?: now(),
                         'peruntukan'     => $request->peruntukan,
-                        'kepada'         => $request->kepada,
+                        'kepada'         => $request->jenis_surat === 'sktm' && strtolower((string) $request->register_as) !== 'sekolah' ? null : $request->kepada,
                         'pengantar'      => $fileUrl,
                         'variable'       => $variableData,
                     ]);
@@ -895,6 +1009,41 @@ class SuratAdminController extends Controller
 
 
 
+
+            protected function resolveSubmitterType(?SuratPengajuan $surat): string
+            {
+                if (!$surat) {
+                    return 'admin';
+                }
+
+                $variable = $this->decodeFlexibleValue($surat->variable ?? []);
+                $submitterType = strtolower(trim((string) ($variable['submitter_type'] ?? '')));
+
+                if (in_array($submitterType, ['warga', 'admin'], true)) {
+                    return $submitterType;
+                }
+
+                $firstLog = Log_surat::query()
+                    ->where('tabel_surat', 'surat_pengajuans')
+                    ->where('id_surat', $surat->id)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if ($firstLog) {
+                    $firstStatus = (int) $firstLog->status_surat;
+
+                    if ($firstStatus === 0) {
+                        return 'warga';
+                    }
+
+                    if ($firstStatus === 1) {
+                        return 'admin';
+                    }
+                }
+
+                return ((int) $surat->status === 0) ? 'warga' : 'admin';
+            }
+
             protected function decodeFlexibleValue($value): array
             {
                 if (is_array($value)) {
@@ -916,41 +1065,54 @@ class SuratAdminController extends Controller
                 return [];
             }
 
-            protected function resolveTemplateFileAdmin(string $jenis, int $idKel): string
-            {
-                $custom = \App\Models\SuratTemplate::where('id_kel', $idKel)
-                    ->where('jenis', $jenis)
-                    ->first();
-
-                if ($custom && !empty($custom->path_docs)) {
-                    $customPath = public_path($custom->path_docs);
-                    if (file_exists($customPath)) {
-                        return $customPath;
-                    }
-                }
-
-                $fallbackMap = [
-                    'skbn'        => 'templates/SKBN.docx',
-                    'sktm'        => 'templates/SKTM_PERORANGAN.docx',
-                    'skdom'       => 'templates/SKDOM.docx',
-                    'skusaha'     => 'templates/SKUSAHA.docx',
-                    'skhsl'       => 'templates/SKHSL.docx',
-                    'skboro'      => 'templates/SKBORO.docx',
-                    'skkelahiran' => 'templates/SKKELAHIRAN.docx',
-                    'skkematian'  => 'templates/SKKEMATIAN.docx',
-                    'suket'       => 'templates/SUKET.docx',
-                ];
-
-                $relative = $fallbackMap[$jenis] ?? null;
-                if ($relative) {
-                    $full = public_path($relative);
-                    if (file_exists($full)) {
-                        return $full;
-                    }
-                }
-
-                abort(404, "Template preview untuk jenis surat {$jenis} tidak ditemukan.");
-            }
+				protected function resolveTemplateFileAdmin(string $jenis, int $idKel, ?\App\Models\SuratPengajuan $surat = null): string
+			{
+				if ($jenis === 'sktm') {
+					$registerAs = strtolower((string) data_get($surat?->variable, 'register_as', 'perorangan'));
+			
+					$path = $registerAs === 'sekolah'
+						? public_path('templates/SKTM_SEKOLAH.docx')
+						: public_path('templates/SKTM_PERORANGAN.docx');
+			
+					if (!file_exists($path)) {
+						abort(404, 'Template SKTM tidak ditemukan.');
+					}
+			
+					return $path;
+				}
+			
+				$custom = \App\Models\SuratTemplate::where('id_kel', $idKel)
+					->where('jenis', $jenis)
+					->first();
+			
+				if ($custom && !empty($custom->path_docs)) {
+					$customPath = public_path($custom->path_docs);
+					if (file_exists($customPath)) {
+						return $customPath;
+					}
+				}
+			
+				$fallbackMap = [
+					'skbn'        => 'templates/SKBN.docx',
+					'skdom'       => 'templates/SKDOM.docx',
+					'skusaha'     => 'templates/SKUSAHA.docx',
+					'skhsl'       => 'templates/SKHSL.docx',
+					'skboro'      => 'templates/SKBORO.docx',
+					'skkelahiran' => 'templates/SKKELAHIRAN.docx',
+					'skkematian'  => 'templates/SKKEMATIAN.docx',
+					'suket'       => 'templates/SUKET.docx',
+				];
+			
+				$relative = $fallbackMap[$jenis] ?? null;
+				if ($relative) {
+					$full = public_path($relative);
+					if (file_exists($full)) {
+						return $full;
+					}
+				}
+			
+				abort(404, "Template preview untuk jenis surat {$jenis} tidak ditemukan.");
+			}
 
             protected function buildPdfDataAdmin(\App\Models\SuratPengajuan $surat): array
             {
@@ -969,6 +1131,7 @@ class SuratAdminController extends Controller
                 $pejabat = \App\Models\Pejabat::with(['skpd.kecamatan', 'jabatan'])
                     ->where('id_skpd', $user->id_instansi)
                     ->first();
+                $camat = $this->resolveCamatByDistrictName(optional(optional($pejabat)->skpd)->kecamatan->nama ?? null);
 
                 if (!$pejabat) {
                     abort(404, 'Data pejabat penandatangan tidak ditemukan.');
@@ -993,7 +1156,10 @@ class SuratAdminController extends Controller
                     'skpd_pos'            => optional($pejabat->skpd)->instansi_kode_pos ?? '',
                     'skpd_kepala'         => $pejabat->nama ?? '',
                     'skpd_nip_kepala'     => $pejabat->nip ?? '',
-                    'skpd_jabatan'        => trim(ucfirst(optional($pejabat->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower(optional($pejabat->skpd)->nama ?? ''))),
+                    'skpd_jabatan'        => trim(ucfirst(optional(optional($pejabat)->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower(optional(optional($pejabat)->skpd)->nama ?? ''))),
+                    'skpd_camat'          => optional($camat)->nama ?? '',
+                    'skpd_nip_camat'      => optional($camat)->nip ?? '',
+                    'skpd_jabatan_camat'  => strtoupper(optional(optional($camat)->jabatan)->nama ?? 'CAMAT'),
 
                     'surat_no'            => $nomorSurat,
                     'surat_tgl'           => $tglSurat,
@@ -1036,6 +1202,17 @@ class SuratAdminController extends Controller
                     }
                 }
 
+                if ($surat->jenis_surat === 'sktm') {
+                    $data['surat_kepada'] = $surat->kepada ?? ($variableData['kepada'] ?? '');
+                    $data['surat_kepada_tempat_lhr'] = $variableData['kepada_tempat_lhr'] ?? '';
+                    $data['surat_kepada_tgl_lhr'] = $variableData['kepada_tgl_lhr'] ?? '';
+                    $data['surat_kepada_sekolah'] = $variableData['kepada_sekolah'] ?? '';
+                    $data['surat_kepada_kelas'] = $variableData['kepada_kelas'] ?? '';
+                    $data['surat_kepada_gender'] = $variableData['kepada_gender'] ?? '';
+                    $data['surat_kepada_gender_nm'] = $variableData['kepada_gender_nm'] ?? ($variableData['kepada_gender'] ?? '');
+                    $data['surat_kepada_hubungan'] = $variableData['kepada_hubungan'] ?? '';
+                }
+
                 switch ($surat->jenis_surat) {
                     case 'skbn':
                         $data['surat_keterangan'] = $data['surat_keterangan'] ?: 'BENAR BAHWA YANG BERSANGKUTAN BELUM MENIKAH.';
@@ -1063,15 +1240,28 @@ class SuratAdminController extends Controller
                 return $data;
             }
 
-            protected function generateAdminPdfFile(\App\Models\SuratPengajuan $surat): array
-            {
-                $data = $this->buildPdfDataAdmin($surat);
-                $templateFile = $this->resolveTemplateFileAdmin($surat->jenis_surat, (int) $surat->id_kel);
-                $outputPdf = hash('sha256', strtoupper($surat->jenis_surat) . '_' . $surat->id);
-                $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+           	protected function generateAdminPdfFile(\App\Models\SuratPengajuan $surat, bool $manualSignature = false): array
+    {
+        $data = $this->buildPdfDataAdmin($surat);
+        $templateFile = $this->resolveTemplateFileAdmin($surat->jenis_surat, (int) $surat->id_kel, $surat);
 
-                return [$pdfPath, $data];
-            }
+        if ($manualSignature) {
+            $data = $this->applyManualSignatureData($data);
+            $templateFile = $this->buildManualSignatureTemplate($templateFile);
+
+            $variable = $this->decodeFlexibleValue($surat->variable);
+            $variable['manual_signature'] = true;
+            $variable['signature_mode'] = 'manual';
+            $variable['manual_signature_previewed_at'] = now()->toDateTimeString();
+            $surat->update(['variable' => $variable]);
+        }
+
+        $suffix = $manualSignature ? '_BASAH' : '';
+        $outputPdf = hash('sha256', strtoupper($surat->jenis_surat) . '_' . $surat->id . $suffix);
+        $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+
+        return [$pdfPath, $data];
+    }
 
             public function preview($id)
             {
@@ -1090,6 +1280,27 @@ class SuratAdminController extends Controller
 
                 return response()->download($pdfPath, $namaFile);
             }
+			
+			public function previewBasah($id)
+			{
+				$surat = \App\Models\SuratPengajuan::findOrFail($id);
+				[$pdfPath, $data] = $this->generateAdminPdfFile($surat, true);
+			
+				return response()->file($pdfPath);
+			}
+			
+			public function cetakBasah($id)
+			{
+				$surat = \App\Models\SuratPengajuan::findOrFail($id);
+				[$pdfPath, $data] = $this->generateAdminPdfFile($surat, true);
+			
+				$namaFile = strtoupper($surat->jenis_surat)
+					. '_TTD_BASAH_'
+					. preg_replace('/[^A-Za-z0-9\-]+/', '_', $this->getNoSrt($surat))
+					. '.pdf';
+			
+				return response()->download($pdfPath, $namaFile);
+			}
 
 
             // Naikan Ke Atasan Yang Lebih tinggi Web Admin
@@ -1110,11 +1321,12 @@ class SuratAdminController extends Controller
                     $message = 'Pengajuan berhasil diajukan ke atasan yang lebih tinggi.';
 
                     // Alur universal admin surat
-                    // 1 = Proses -> 2 = Dinaikkan ke Sekkel
+                    // 0 = Warga -> 2 = Dinaikkan ke Sekkel
+                    // 1 = Draft -> 2 = Dinaikkan ke Sekkel
                     // 2 = Dinaikkan ke Sekkel -> 3 = Dinaikkan ke Lurah
                     // 3 = Dinaikkan ke Lurah -> 8 = Dinaikkan ke Camat
                     // 8 = Dinaikkan ke Camat -> 9 = Disetujui Camat
-                    if ($currentStatus === 1) {
+                    if (in_array($currentStatus, [0, 1], true)) {
                         $nextStatus = 2;
                         $message = 'Pengajuan berhasil diajukan ke Sekkel.';
                     } elseif ($currentStatus === 2) {
@@ -1135,7 +1347,13 @@ class SuratAdminController extends Controller
                         ], 422);
                     }
 
-                    $surat->update(['status' => $nextStatus]);
+                    $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
+            $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+
+                    $surat->update([
+                        'status' => $nextStatus,
+                        'variable' => $variable,
+                    ]);
 
                     Log_surat::create([
                         'nik'          => $surat->nik,
@@ -1179,7 +1397,14 @@ class SuratAdminController extends Controller
 
                     $nextStatus = 3;
 
-                    $surat->update(['status' => $nextStatus]);
+                    $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
+                    $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+
+
+                    $surat->update([
+                        'status' => $nextStatus,
+                        'variable' => $variable,
+                    ]);
 
                     Log_surat::create([
                         'nik'          => $surat->nik,
@@ -1199,39 +1424,154 @@ class SuratAdminController extends Controller
                     ]);
                 }
 
-    public function tolak($id)
+    			public function tolak(Request $request, $id)
     {
-        // 1. Cari data di tabel tunggal
+        $request->validate([
+            'komentar' => 'required|string|max:1000',
+        ], [
+            'komentar.required' => 'Alasan penolakan wajib diisi.',
+        ]);
+
         $surat = SuratPengajuan::find($id);
 
-        if ($surat) {
-            // 2. Update status ke 6 (Tolak) sesuai StatusSuratTrait
-            $surat->update(['status' => 6]);
-
-            // 3. Catat ke Log secara dinamis
-            Log_surat::create([
-                'nik'          => $surat->nik,
-                'tabel_surat'  => 'surat_pengajuans', // Sekarang semua tabelnya sama
-                'nama_surat'   => strtoupper($surat->jenis_surat), // Mengambil jenis surat (skbn/sktm/dll)
-                'id_surat'     => $surat->id,
-                'status_surat' => 6,
-            ]);
-
+        if (!$surat) {
             return response()->json([
-                'status'  => 'success',
-                'message' => 'Pengajuan berhasil ditolak.',
-                'data'    => [
-                    'id'    => $id,
-                    'jenis' => $surat->jenis_surat
-                ]
-            ]);
+                'status'  => 'error',
+                'message' => 'Data tidak ditemukan atau gagal diperbarui.'
+            ], 404);
         }
 
+        $variable = $this->decodeFlexibleValue($surat->variable);
+        $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+        $variable['alasan_penolakan'] = trim((string) $request->komentar);
+        $variable['ditolak_pada'] = now()->toDateTimeString();
+
+        $surat->update([
+            'status'   => 6,
+            'variable' => $variable,
+        ]);
+
+        Log_surat::create([
+            'nik'          => $surat->nik,
+            'tabel_surat'  => 'surat_pengajuans',
+            'nama_surat'   => strtoupper($surat->jenis_surat),
+            'id_surat'     => $surat->id,
+            'status_surat' => 6,
+        ]);
+
         return response()->json([
-            'status'  => 'error',
-            'message' => 'Data tidak ditemukan atau gagal diperbarui.'
-        ], 404);
+            'status'  => 'success',
+            'message' => 'Pengajuan berhasil ditolak dan alasan penolakan sudah tersimpan.',
+            'data'    => [
+                'id'       => $id,
+                'jenis'    => $surat->jenis_surat,
+                'komentar' => $variable['alasan_penolakan'] ?? null,
+            ]
+        ]);
     }
+
+
+    protected function resolveCamatByDistrictName(?string $districtName): ?\App\Models\Pejabat
+    {
+        $districtName = strtoupper(trim((string) $districtName));
+        if ($districtName === '') {
+            return null;
+        }
+
+        $map = [
+            'MOJOROTO' => 64,
+            'KOTA' => 65,
+            'PESANTREN' => 66,
+        ];
+
+        $idSkpd = $map[$districtName] ?? null;
+        if (!$idSkpd) {
+            return null;
+        }
+
+        return \App\Models\Pejabat::with(['jabatan', 'skpd.kecamatan'])
+            ->where('id_skpd', $idSkpd)
+            ->where('id_jabatan', 2)
+            ->first();
+    }
+
+    protected function applyManualSignatureData(array $data): array
+    {
+        $data['qr'] = '';
+        $data['qr_camat'] = '';
+        $data['show_qr'] = false;
+
+        $data['skpd_kepala'] = '';
+        $data['skpd_jabatan'] = '';
+        $data['skpd_nip_kepala'] = '';
+
+        $data['skpd_camat'] = '';
+        $data['skpd_jabatan_camat'] = '';
+        $data['skpd_nip_camat'] = '';
+
+        return $data;
+    }
+
+    protected function buildManualSignatureTemplate(string $templateFile): string
+    {
+        if (!file_exists($templateFile)) {
+            throw new \RuntimeException("Template tidak ditemukan: {$templateFile}");
+        }
+
+        if (strtolower(pathinfo($templateFile, PATHINFO_EXTENSION)) !== 'docx') {
+            return $templateFile;
+        }
+
+        $tempDir = storage_path('app/manual_signature_templates');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0777, true);
+        }
+
+        $newFile = $tempDir . DIRECTORY_SEPARATOR . uniqid('manual_', true) . '.docx';
+        copy($templateFile, $newFile);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($newFile) === true) {
+            $documentXml = $zip->getFromName('word/document.xml');
+            if ($documentXml !== false) {
+                $search = [
+                    '${qr}~',
+                    '[[qr_camat]]',
+                    '${skpd_kepala}',
+                    '${skpd_jabatan}',
+                    '${skpd_nip_kepala}',
+                    '${skpd_camat}',
+                    '${skpd_jabatan_camat}',
+                    '${skpd_nip_camat}',
+                    'NIP. ${skpd_nip_kepala}',
+                    'NIP. ${skpd_nip_camat}',
+                    'NIP.${skpd_nip_kepala}',
+                    'NIP.${skpd_nip_camat}',
+                    'NIP. ',
+                    'NIP.',
+                ];
+                $replace = array_fill(0, count($search), '');
+                $documentXml = str_replace($search, $replace, $documentXml);
+
+                $zip->addFromString('word/document.xml', $documentXml);
+            }
+            $zip->close();
+        }
+
+        return $newFile;
+    }
+
+    protected function clearManualSignatureFlags(array $variable): array
+    {
+        unset(
+            $variable['manual_signature'],
+            $variable['manual_signature_previewed_at'],
+            $variable['signature_mode']
+        );
+
+        return $variable;
+    }
+
 
     public function proses($id)
     {
@@ -1240,7 +1580,14 @@ class SuratAdminController extends Controller
 
         if ($surat) {
             // 2. Update status ke 1 (Proses)
-            $surat->update(['status' => 1]);
+            $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
+            $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+
+
+            $surat->update([
+                'status' => 1,
+                'variable' => $variable,
+            ]);
 
             // 3. Catat Log secara dinamis menggunakan jenis_surat dari database
             Log_surat::create([
@@ -1276,8 +1623,11 @@ class SuratAdminController extends Controller
         }
 
         $currentStatus = (int) $surat->status;
+        $variableNow = $this->decodeFlexibleValue($surat->variable);
+        $isFromWarga = $this->resolveSubmitterType($surat) === 'warga';
+
         $nextStatus = match ($currentStatus) {
-            2 => 1,
+            2 => ($isFromWarga ? 0 : 1),
             3 => 2,
             8 => 3,
             default => null,
@@ -1290,7 +1640,14 @@ class SuratAdminController extends Controller
             ], 422);
         }
 
-        $surat->update(['status' => $nextStatus]);
+        $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
+                    $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+
+
+        $surat->update([
+            'status' => $nextStatus,
+            'variable' => $variable,
+        ]);
 
         Log_surat::create([
             'nik'          => $surat->nik,
@@ -1321,10 +1678,10 @@ class SuratAdminController extends Controller
             ], 404);
         }
 
-        if ((int) $surat->status !== 1) {
+        if (!in_array((int) $surat->status, [0, 1], true)) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Hanya draft yang belum diajukan yang bisa dihapus.'
+                'message' => 'Hanya surat warga atau draft yang belum diajukan yang bisa dihapus.'
             ], 422);
         }
 
@@ -1340,7 +1697,7 @@ class SuratAdminController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Draft surat berhasil dihapus.'
+            'message' => 'Surat berhasil dihapus.'
         ]);
     }
 }

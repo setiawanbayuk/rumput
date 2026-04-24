@@ -38,13 +38,58 @@ class SkusahaController extends Controller
 {
     use GetNoSurat, GeneratePDF;
 
+    protected function residentData($resident): array
+    {
+        $data = $resident->data ?? [];
+
+        if (is_array($data)) {
+            return $data;
+        }
+
+        if (is_string($data)) {
+            $decoded = json_decode($data, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+
+            $unserialized = @unserialize($data);
+            if (is_array($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return [];
+    }
+
+    protected function suratVariable($value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+
+            $unserialized = @unserialize($value);
+            if (is_array($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return [];
+    }
+
+
     public function index()
     {
         $user = auth()->user();
         $rt = $user->id_rt;
         $rw = $user->id_rw;
         $resident = Resident::where('nik', $user->nik)->first();
-        $penduduk = unserialize($resident->data);
+        $penduduk = $this->residentData($resident);
         $kelurahan = $penduduk['kelurahan_nm'];
         if (request()->ajax()) {
             $query = SuratUsaha::query();
@@ -643,7 +688,7 @@ class SkusahaController extends Controller
         $surat = SuratUsaha::find($id);
         $surat['kepada_tgl_lhr'] = Carbon::parse($surat['kepada_tgl_lhr'])->isoFormat('D MMMM Y');
         $resident = Resident::where('nik', $surat->nik)->first();
-        $penduduk = unserialize($resident->data);
+        $penduduk = $this->residentData($resident);
         $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
         $user = new User_resource(User::with('skpd')->find(Auth::id()));
         $pejabat = new Pejabat_resource(Pejabat::where('id_skpd', $user->id_instansi)->first());
@@ -685,7 +730,7 @@ class SkusahaController extends Controller
         // Path template .docx
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skusaha'])->first();
         if (isset($template) && ($surat->variable != "")) {
-            $var = unserialize($surat->variable);
+            $var = $this->suratVariable($surat->variable);
             $templateFile = public_path($template->path_docs);
             $data = array_merge($data, $var);
         } else {
@@ -723,7 +768,7 @@ class SkusahaController extends Controller
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skusaha/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
             $resident = Resident::where('nik', $request->nik)->first();
-            $penduduk = unserialize($resident->data);
+            $penduduk = $this->residentData($resident);
             $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
             $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
 

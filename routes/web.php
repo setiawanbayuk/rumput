@@ -318,4 +318,6 @@ Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' =>
     // Preview & Dokumen Akhir (TTE)
     Route::get('/preview/{id}', [SuratAdminController::class, 'preview'])->name('preview');
     Route::get('/cetak/{id}', [SuratAdminController::class, 'cetak'])->name('cetak');
+	Route::get('/preview-basah/{id}', [SuratAdminController::class, 'previewBasah'])->name('previewBasah');
+	Route::get('/cetak-basah/{id}', [SuratAdminController::class, 'cetakBasah'])->name('cetakBasah');
 });

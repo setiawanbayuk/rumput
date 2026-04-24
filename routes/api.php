@@ -16,18 +16,18 @@ use App\Http\Controllers\Requests\PersonalController;
 use App\Http\Controllers\Requests\ProvinsiController;
 use App\Http\Controllers\Requests\RegionalController;
 use App\Http\Controllers\Requests\ResidentController;
-use App\Http\Controllers\Requests\SkpdController;
-use App\Http\Controllers\Requests\StatusPerkawinanController;
 use App\Http\Controllers\Requests\RwController;
 use App\Http\Controllers\Requests\RtController;
+use App\Http\Controllers\Requests\SkpdController;
+use App\Http\Controllers\Requests\StatusPerkawinanController;
 use App\Http\Controllers\SkbnController;
 use App\Http\Controllers\SkboroController;
 use App\Http\Controllers\SkdomController;
 use App\Http\Controllers\SkhslController;
-use App\Http\Controllers\SktmController;
-use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SkkelahiranController;
 use App\Http\Controllers\SkkematianController;
+use App\Http\Controllers\SktmController;
+use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SuketController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -35,7 +35,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
-
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -76,32 +75,26 @@ Route::middleware('auth:sanctum')->prefix('skdom')->group(function () {
     Route::get('/', [SkdomController::class, 'get']);
     Route::post('/', [SkdomController::class, 'save']);
 });
-
 Route::middleware('auth:sanctum')->prefix('skhsl')->group(function () {
     Route::get('/', [SkhslController::class, 'get']);
     Route::post('/', [SkhslController::class, 'save']);
 });
-
 Route::middleware('auth:sanctum')->prefix('skusaha')->group(function () {
     Route::get('/', [SkusahaController::class, 'get']);
     Route::post('/', [SkusahaController::class, 'save']);
 });
-
 Route::middleware('auth:sanctum')->prefix('skboro')->group(function () {
     Route::get('/', [SkboroController::class, 'get']);
     Route::post('/', [SkboroController::class, 'save']);
 });
-
 Route::middleware('auth:sanctum')->prefix('skelahiran')->group(function () {
     Route::get('/', [SkkelahiranController::class, 'get']);
     Route::post('/', [SkkelahiranController::class, 'save']);
 });
-
 Route::middleware('auth:sanctum')->prefix('skkematian')->group(function () {
     Route::get('/', [SkkematianController::class, 'get']);
     Route::post('/', [SkkematianController::class, 'save']);
 });
-
 Route::middleware('auth:sanctum')->prefix('resident')->group(function () {
     Route::post('/simpan', [ResidentController::class, 'simpan']);
 });
@@ -125,5 +118,8 @@ Route::resource('rw', RwController::class);
 Route::resource('rt', RtController::class);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/jenis-surat', [SuratApiController::class, 'jenisSurat']);
+    Route::get('/surat/form-config', [SuratApiController::class, 'formConfig']);
+    Route::get('/surat/history', [SuratApiController::class, 'history']);
     Route::post('/surat/store', [SuratApiController::class, 'store']);
 });
