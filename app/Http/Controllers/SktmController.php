@@ -54,7 +54,7 @@ class SktmController extends Controller
                 return $decoded;
             }
 
-            $unserialized = @unserialize($data);
+            $unserialized = decode_json_data($data);
             if (is_array($unserialized)) {
                 return $unserialized;
             }
@@ -75,7 +75,7 @@ class SktmController extends Controller
                 return $decoded;
             }
 
-            $unserialized = @unserialize($value);
+            $unserialized = decode_json_data($value);
             if (is_array($unserialized)) {
                 return $unserialized;
             }
@@ -335,7 +335,7 @@ class SktmController extends Controller
             $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'sktm_perorangan'])->first();
         }
         if (isset($template)) {
-            $var = unserialize($template->variable);
+            $var = decode_json_data($template->variable);
             // dd($var);
             return view('sktm.add', compact('title', 'currentUser', 'no_urut_surat', 'var'));
         } else {
@@ -403,7 +403,7 @@ class SktmController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $datapemohon = serialize([
+        $datapemohon = encode_json_data([
             'kk' => $request->kk,
             'name' => $request->name,
             'gender' => $request->gender,
@@ -473,7 +473,7 @@ class SktmController extends Controller
             foreach ($arr_intersect as $key => $value) {
                 $var[$value] = $request[$value];
             }
-            $datavar = serialize($var);
+            $datavar = encode_json_data($var);
         }
         $suket = SuratSktm::create([
             'id_kel' => auth()->user()->id_instansi,
@@ -588,7 +588,7 @@ class SktmController extends Controller
 
         if ($suratKeterangan) {
 
-            $datapemohon = serialize([
+            $datapemohon = encode_json_data([
                 'kk' => $request->kk,
                 'name' => $request->name,
                 'gender' => $request->gender,
@@ -657,7 +657,7 @@ class SktmController extends Controller
                 foreach ($arr_intersect as $key => $value) {
                     $var[$value] = $request[$value];
                 }
-                $datavar = serialize($var);
+                $datavar = encode_json_data($var);
             }
 
             if ($request->register_as == 'sekolah') {

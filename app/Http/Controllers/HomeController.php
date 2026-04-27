@@ -68,7 +68,12 @@ class HomeController extends Controller
         }
 
         if (request()->ajax()) {
-            $data = $service->getAllForUser($user);
+            // TABEL BERANDA:
+            // Hanya tampilkan surat yang sudah final/disetujui saja.
+            // Grafik tetap ALL status; filter ini hanya untuk tabel di bawah grafik.
+            $data = $service->getAllForUser($user)
+                ->filter(fn($row) => $this->isFinalForHomeTable($row))
+                ->values();
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -104,13 +109,34 @@ class HomeController extends Controller
                     $jenis  = $row->jenis;
                     $route  = $row->route_edit;
 
+                    /**
+                     * Aksi tabel Beranda harus khusus final saja.
+                     * Untuk TTD Basah yang sudah upload bukti, aksi wajib hanya:
+                     * - Preview TTD Basah
+                     * - Preview Bukti Upload
+                     *
+                     * Karena tabel Beranda memang sudah difilter oleh isFinalForHomeTable(),
+                     * maka jangan munculkan tombol proses seperti naikkan/edit/delete/tolak.
+                     */
+                    $variable = $this->rowVariableArray($row);
+                    $statusName = strtolower(trim((string) data_get($row, 'raw.st.name', data_get($row, 'st.name', ''))));
+                    $submitter_type = $variable['submitter_type'] ?? data_get($row, 'raw.submitter_type', (((int) $status === 0) ? 'warga' : 'admin'));
+                    $manual_signature = !empty($variable['manual_signature'])
+                        || (($variable['signature_mode'] ?? null) === 'manual')
+                        || $statusName === 'sudah upload bukti'
+                        || $statusName === 'ttd basah - bukti uploaded';
+                    $bukti_ttd_basah = $variable['bukti_ttd_basah']
+                        ?? data_get($row, 'raw.bukti_ttd_basah')
+                        ?? data_get($row, 'raw.bukti_upload')
+                        ?? data_get($row, 'raw.bukti');
+
                     if (in_array($role, [1, 8, 9])) {
-                        return view('includes.button-admin', compact('id', 'route', 'status'));
+                        return view('includes.button-admin', compact('id', 'route', 'status', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     } elseif (in_array($role, [3, 5])) {
                         $nomorSurat = $this->getNoSrt($row->raw);
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route'));
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status', 'role', 'route'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     }
                 })
                 ->rawColumns(['action', 'no_surat'])
@@ -334,6 +360,97 @@ class HomeController extends Controller
         ));
     }
 
+
+
+    /**
+     * Ambil variable surat sebagai array, aman untuk JSON baru, array cast Laravel,
+     * JSON double-encoded lama, dan serialize lama.
+     */
+    private function rowVariableArray(object $row): array
+    {
+        $value = data_get($row, 'raw.variable', data_get($row, 'variable'));
+
+        if (empty($value)) {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_object($value)) {
+            return json_decode(json_encode($value), true) ?: [];
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                if (is_string($decoded)) {
+                    $decodedAgain = json_decode($decoded, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedAgain)) {
+                        return $decodedAgain;
+                    }
+                }
+
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+
+            $unserialized = @unserialize($value);
+            if ($unserialized !== false && is_array($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Filter khusus tabel Beranda.
+     * Tabel di bawah grafik hanya menampilkan data final/disetujui.
+     *
+     * Status final TTE:
+     * - 4 = selesai/disetujui lurah
+     * - 9 = selesai/disetujui camat/SKTM
+     *
+     * Status final TTD Basah / Cetak Mandiri:
+     * - label accessor st = "Sudah Upload Bukti"
+     *   karena alur TTD Basah tidak melewati TTE sekkel/lurah, tetapi selesai setelah bukti diupload.
+     */
+    private function isFinalForHomeTable(object $row): bool
+    {
+        $status = (int) ($row->status ?? data_get($row, 'raw.status', -999));
+        $statusName = strtolower(trim((string) data_get($row, 'raw.st.name', data_get($row, 'st.name', ''))));
+
+        return in_array($status, [4, 9], true)
+            || $statusName === 'sudah upload bukti';
+    }
+
+    /**
+     * Bucket status khusus grafik Beranda.
+     * Grafik harus menghitung ALL data, tetapi label manual TTD Basah perlu dirapikan:
+     * - "TTD Basah - Belum Upload Bukti" => Diproses
+     * - "Sudah Upload Bukti"             => Selesai
+     *
+     * Fungsi ini hanya untuk tampilan grafik dan tidak mengubah database.
+     */
+    private function chartStatusBucket(object $row): int
+    {
+        $statusName = strtolower(trim((string) data_get($row, 'raw.st.name', data_get($row, 'st.name', ''))));
+
+        if ($statusName === 'ttd basah - belum upload bukti') {
+            return 1; // Diproses
+        }
+
+        if ($statusName === 'sudah upload bukti') {
+            return 4; // Selesai
+        }
+
+        return (int) ($row->status ?? data_get($row, 'raw.status', 0));
+    }
+
     public function chartDrilldown(SuratCollection $service)
     {
         $user = auth()->user();
@@ -344,7 +461,11 @@ class HomeController extends Controller
         // Ambil daftar semua jenis dari SuratCollection
         $allJenis = array_keys($service->getConfig());
 
-        // Ambil daftar semua status
+        // Ambil daftar semua status untuk grafik.
+        // Catatan khusus TTD Basah / Cetak Mandiri:
+        // - Belum memilih TTE/TTD Basah mengikuti status asli, biasanya Diajukan.
+        // - TTD Basah - Belum Upload Bukti dihitung sebagai Diproses.
+        // - Sudah Upload Bukti dihitung sebagai Selesai.
         $statusLabel = [
             0 => 'Diajukan',
             1 => 'Diproses',
@@ -377,8 +498,9 @@ class HomeController extends Controller
             // Ambil data hanya untuk jenis ini
             $items = $surat->where('jenis', $jenis);
 
-            // Hitung status yang ada
-            $statusCounts = $items->groupBy('status')
+            // Hitung status untuk grafik memakai bucket khusus.
+            // Ini tidak mengubah status database; hanya cara pengelompokan di grafik.
+            $statusCounts = $items->groupBy(fn($row) => $this->chartStatusBucket($row))
                 ->map(fn($r) => $r->count())
                 ->toArray();
 

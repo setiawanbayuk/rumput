@@ -34,7 +34,6 @@ class ProfileController extends Controller
         $this->middleware('auth');
     }
 
-
     /**
      * Show the application dashboard.
      *
@@ -47,9 +46,11 @@ class ProfileController extends Controller
         $resident = Resident::where('nik', Auth::user()->nik)->first();
         $surat = JenisSurat::where(['is_active' => true])->get();
         $penduduk = [];
-        if (isset($resident)) {
-            $penduduk = unserialize($resident->data);
+
+        if ($resident) {
+            $penduduk = decode_json_data($resident->data);
         }
+
         return view('profile.index', compact('title', 'resident', 'penduduk', 'surat'));
     }
 
@@ -74,18 +75,17 @@ class ProfileController extends Controller
             'rw' => ['required', 'string'],
             'rt' => ['required', 'string'],
             'alamat' => ['required', 'max:100'],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // avatar optional: image max 2MB
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        // ====== 1) Simpan avatar ke storage (public/avatars) & update users.avatar ======
-        $user = $request->user(); // sama dengan Auth::user()
+        $user = $request->user();
+
         if ($request->hasFile('avatar')) {
-            // hapus file lama kalau ada
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
-            // simpan baru
-            $path = $request->file('avatar')->store('avatars', 'public'); // ex: avatars/abc.jpg
+
+            $path = $request->file('avatar')->store('avatars', 'public');
             $user->forceFill(['avatar' => $path])->save();
         }
 
@@ -100,54 +100,58 @@ class ProfileController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $datapemohon = serialize([
+        $datapemohon = resident_data_order([
             'kk' => $request->kk,
             'name' => $request->name,
             'gender' => $request->gender,
-            'gender_nm' => $gender->nama,
+            'gender_nm' => $gender->nama ?? null,
             'status_kwn' => $request->status_kwn,
-            'status_kwn_nm' => $status_kwn->nama,
+            'status_kwn_nm' => $status_kwn->nama ?? null,
             'kewarganegaraan' => $request->kewarganegaraan,
-            'kewarganegaraan_nm' => $kewarganegaraan->nama,
+            'kewarganegaraan_nm' => $kewarganegaraan->nama ?? null,
             'tempat_lhr' => $request->tempat_lhr,
-            'tgl_lhr' =>  $request->tgl_lhr,
+            'tgl_lhr' => $request->tgl_lhr,
             'agama' => $request->agama,
-            'agama_nm' => $agama->nama,
+            'agama_nm' => $agama->nama ?? null,
             'pendidikan' => $request->pendidikan,
-            'pendidikan_nm' => $pendidikan->nama,
+            'pendidikan_nm' => $pendidikan->nama ?? null,
             'pekerjaan' => $request->pekerjaan,
-            'pekerjaan_nm' => $pekerjaan->nama,
+            'pekerjaan_nm' => $pekerjaan->nama ?? null,
             'provinsi' => $request->provinsi,
-            'provinsi_nm' => $provinsi->nama,
+            'provinsi_nm' => $provinsi->nama ?? null,
             'kabko' => $request->kabko,
-            'kabko_nm' => $kabko->nama,
+            'kabko_nm' => $kabko->nama ?? null,
             'kecamatan' => $request->kecamatan,
-            'kecamatan_nm' => $kecamatan->nama,
+            'kecamatan_nm' => $kecamatan->nama ?? null,
             'kelurahan' => $request->kelurahan,
-            'kelurahan_nm' => $kelurahan->nama,
+            'kelurahan_nm' => $kelurahan->nama ?? null,
             'rw' => $request->rw,
             'rw_nm' => 'RW ' . $request->rw,
             'rt' => $request->rt,
             'rt_nm' => 'RT ' . $request->rt,
-            'alamat' => $request->alamat
+            'alamat' => $request->alamat,
         ]);
+
         $resident = Resident::where('nik', $request->nik)->first();
 
-        if (!$resident) {
+        if (! $resident) {
             Resident::create([
                 'nik' => $request->nik,
                 'kk' => $request->kk,
-                'data' => $datapemohon
+                'data' => $datapemohon,
             ]);
         } else {
-            if ($datapemohon != $resident->data) {
+            $oldData = decode_json_data($resident->data);
+
+            if ($datapemohon != $oldData || $request->kk != $resident->kk || $request->nik != $resident->nik) {
                 $resident->update([
                     'nik' => $request->nik,
                     'kk' => $request->kk,
-                    'data' => $datapemohon
+                    'data' => $datapemohon,
                 ]);
             }
         }
+
         return redirect()->route('profile')->with('status', 'Data pribadi berhasil di update!');
     }
 
@@ -163,7 +167,6 @@ class ProfileController extends Controller
 
         $user = User::findOrFail($id);
 
-        // Password harus di-hash sebelum disimpan
         $user->update([
             'password' => Hash::make($request->password),
         ]);

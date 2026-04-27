@@ -42,7 +42,7 @@ class SkkematianController extends Controller
                 return $decoded;
             }
 
-            $unserialized = @unserialize($data);
+            $unserialized = decode_json_data($data);
             if (is_array($unserialized)) {
                 return $unserialized;
             }
@@ -63,7 +63,7 @@ class SkkematianController extends Controller
                 return $decoded;
             }
 
-            $unserialized = @unserialize($value);
+            $unserialized = decode_json_data($value);
             if (is_array($unserialized)) {
                 return $unserialized;
             }

@@ -45,7 +45,10 @@
             .status-dinaikkan-ke-camat  { background: #b4b1af; color:  #B2784A }
             .status-disetujui   { background: #e6f6ee;color: #0e8a5f }
             .status-disetujui-lurah   { background: #e6f6ee;color: #0e8a5f }
-            .status-disetujui-camat   { background: #ebe7f5;color: #A78BFA }
+            .status-disetujui-warga   { background: #e0f7f4;color: #07847b }
+            .status-disetujui-camat   { background: #ebe7f5;color: #7c5cc4 }
+            .status-sudah-upload-bukti { background: #eef4ff;color: #2f5fb3 }
+            .status-ttd-basah---bukti-uploaded { background: #eef4ff;color: #2f5fb3 }
             .status-ditolak   { background: #fde4e6; color: #d2353c }
             .status-dihapus   { background: #fde4e6; color: #d2353c }
             .status-dinilai   { background: #f6f1dd;color: #8b6f1d }

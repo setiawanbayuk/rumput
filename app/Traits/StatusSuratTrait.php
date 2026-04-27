@@ -15,7 +15,7 @@ trait StatusSuratTrait
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 return $decoded;
             }
-            $unserialized = @unserialize($value);
+            $unserialized = decode_json_data($value);
             if ($unserialized !== false && is_array($unserialized)) {
                 return $unserialized;
             }

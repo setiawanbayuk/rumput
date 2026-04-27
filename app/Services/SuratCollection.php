@@ -14,6 +14,7 @@ use App\Models\SuratKematian;
 use App\Models\SuratPengajuan;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class SuratCollection
 {
@@ -29,7 +30,7 @@ class SuratCollection
         'skkematian'  => ['model' => SuratKematian::class,    'route' => 'skkematian.edit',  'title' => 'Surat Keterangan Kematian'],
     ];
 
-    public function getAllForUser(User $user): Collection
+    public function getAllForUser(User $user, ?array $universalStatusFilter = null): Collection
     {
         $items = collect();
 
@@ -76,7 +77,14 @@ class SuratCollection
         }
 
         if ($user->role_id != 2) {
-            $universal = SuratPengajuan::query()->whereIn('status', [4, 9]);
+            // Data universal dari tabel surat_pengajuans harus ikut dihitung SEMUA statusnya.
+            // Jangan default-filter status [4, 9], karena grafik Beranda harus menampilkan
+            // surat yang masih Diajukan, Diproses, Dinaikkan ke Sekkel/Lurah/Camat, Ditolak, dll.
+            $universal = SuratPengajuan::query();
+
+            if (is_array($universalStatusFilter)) {
+                $universal->whereIn('status', $universalStatusFilter);
+            }
 
             if ($user->role_id == 8) {
                 $universal->where('id_kel', $user->id_instansi)
@@ -91,8 +99,8 @@ class SuratCollection
             $universalRows = $universal->get()->map(function ($row) {
                 return (object) [
                     'id'          => $row->id,
-                    'jenis'       => $row->jenis_surat,
-                    'jenis_label' => 'Surat ' . strtoupper($row->jenis_surat),
+                    'jenis'       => Str::lower((string) $row->jenis_surat),
+                    'jenis_label' => 'Surat ' . strtoupper((string) $row->jenis_surat),
                     'route_edit'  => 'admin.surat.edit',
                     'nik'         => $row->nik,
                     'peruntukan'  => $row->peruntukan,

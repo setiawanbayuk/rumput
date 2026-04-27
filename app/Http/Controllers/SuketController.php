@@ -59,7 +59,7 @@ class SuketController extends Controller
                 return $decoded;
             }
 
-            $unserialized = @unserialize($data);
+            $unserialized = decode_json_data($data);
             if (is_array($unserialized)) {
                 return $unserialized;
             }
@@ -80,7 +80,7 @@ class SuketController extends Controller
                 return $decoded;
             }
 
-            $unserialized = @unserialize($value);
+            $unserialized = decode_json_data($value);
             if (is_array($unserialized)) {
                 return $unserialized;
             }
@@ -305,7 +305,7 @@ class SuketController extends Controller
         $no_urut_surat = intval($no_urut_surat) + 1;
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'suket'])->first();
         if (isset($template)) {
-            $var = unserialize($template->variable);
+            $var = decode_json_data($template->variable);
             // dd($var);
             return view('suket.add', compact('title', 'currentUser', 'no_urut_surat', 'var'));
         } else {
@@ -365,7 +365,7 @@ class SuketController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-        $datapemohon = serialize([
+        $datapemohon = encode_json_data([
             'kk' => $request->kk,
             'name' => $request->name,
             'gender' => $request->gender,
@@ -428,7 +428,7 @@ class SuketController extends Controller
             foreach ($arr_intersect as $key => $value) {
                 $var[$value] = $request[$value];
             }
-            $datavar = serialize($var);
+            $datavar = encode_json_data($var);
         }
 
         $suket = SuratKeterangan::create([
@@ -471,15 +471,15 @@ class SuketController extends Controller
         }
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'suket'])->first();
         if (isset($template)) {
-            $var = unserialize($template->variable);
-            $var_value = unserialize($suratKeterangan->variable);
+            $var = decode_json_data($template->variable);
+            $var_value = decode_json_data($suratKeterangan->variable);
             return view('suket.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
         } else {
             return view('suket.edit', compact('title', 'currentUser', 'suratKeterangan'));
-            // $var = @unserialize($template->variable);
+            // $var = decode_json_data($template->variable);
             // $var = is_array($var) ? $var : [];
 
-            // $var_value = @unserialize($suratKeterangan->variable);
+            // $var_value = decode_json_data($suratKeterangan->variable);
             // $var_value = is_array($var_value) ? $var_value : [];
 
             // return view('skbn.edit', compact('title', 'currentUser', 'suratKeterangan', 'var', 'var_value'));
@@ -542,7 +542,7 @@ class SuketController extends Controller
 
         if ($suratKeterangan) {
 
-            $datapemohon = serialize([
+            $datapemohon = encode_json_data([
                 'kk' => $request->kk,
                 'name' => $request->name,
                 'gender' => $request->gender,
@@ -604,7 +604,7 @@ class SuketController extends Controller
                 foreach ($arr_intersect as $key => $value) {
                     $var[$value] = $request[$value];
                 }
-                $datavar = serialize($var);
+                $datavar = encode_json_data($var);
             }
 
             $suratKeterangan->update([

@@ -16,9 +16,11 @@ class Resident extends Model
         'kk',
         'data',
     ];
+
     protected $casts = [
         'data' => 'array',
     ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

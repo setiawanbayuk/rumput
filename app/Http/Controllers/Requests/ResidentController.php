@@ -13,10 +13,7 @@ use App\Models\Kewarganegaraan;
 use App\Models\Pekerjaan;
 use App\Models\Pendidikan;
 use App\Models\Provinsi;
-use App\Models\Regional;
 use App\Models\Resident;
-use App\Models\RtRw;
-use App\Models\Status_kwn;
 use App\Models\StatusKwn;
 use Illuminate\Http\Request;
 
@@ -28,10 +25,12 @@ class ResidentController extends Controller
     public function index(Request $request)
     {
         $req = Resident::where('nik', $request->nik)->first();
+
         if ($req) {
             $data = new Resident_resource($req);
             return response()->json($data, 200);
         }
+
         return response()->json(['message' => 'Data Not Found!'], 404);
     }
 
@@ -96,66 +95,70 @@ class ResidentController extends Controller
         $kecamatan = Kecamatan::find($request->kecamatan);
         $kelurahan = Kelurahan::find($request->kelurahan);
 
-
-        $datapemohon = serialize([
+        /**
+         * PENTING:
+         * Karena App\Models\Resident sudah memakai cast:
+         * protected $casts = ['data' => 'array'];
+         * maka data harus disimpan sebagai ARRAY, bukan json_encode string.
+         *
+         * resident_data_order() menjaga agar urutan JSON dari mobile sama seperti input website.
+         */
+        $datapemohon = resident_data_order([
             'kk' => $request->kk,
             'name' => $request->name,
             'gender' => $request->gender,
-            'gender_nm' => $gender->nama,
+            'gender_nm' => $gender->nama ?? null,
             'status_kwn' => $request->status_kwn,
-            'status_kwn_nm' => $status_kwn->nama,
+            'status_kwn_nm' => $status_kwn->nama ?? null,
             'kewarganegaraan' => $request->kewarganegaraan,
-            'kewarganegaraan_nm' => $kewarganegaraan->nama,
+            'kewarganegaraan_nm' => $kewarganegaraan->nama ?? null,
             'tempat_lhr' => $request->tempat_lhr,
-            'tgl_lhr' =>  $request->tgl_lhr,
+            'tgl_lhr' => $request->tgl_lhr,
             'agama' => $request->agama,
-            'agama_nm' => $agama->nama,
+            'agama_nm' => $agama->nama ?? null,
             'pendidikan' => $request->pendidikan,
-            'pendidikan_nm' => $pendidikan->nama,
+            'pendidikan_nm' => $pendidikan->nama ?? null,
             'pekerjaan' => $request->pekerjaan,
-            'pekerjaan_nm' => $pekerjaan->nama,
+            'pekerjaan_nm' => $pekerjaan->nama ?? null,
             'provinsi' => $request->provinsi,
-            'provinsi_nm' => $provinsi->nama,
+            'provinsi_nm' => $provinsi->nama ?? null,
             'kabko' => $request->kabko,
-            'kabko_nm' => $kabko->nama,
+            'kabko_nm' => $kabko->nama ?? null,
             'kecamatan' => $request->kecamatan,
-            'kecamatan_nm' => $kecamatan->nama,
+            'kecamatan_nm' => $kecamatan->nama ?? null,
             'kelurahan' => $request->kelurahan,
-            'kelurahan_nm' => $kelurahan->nama,
+            'kelurahan_nm' => $kelurahan->nama ?? null,
             'rw' => $request->rw,
             'rw_nm' => 'RW ' . $request->rw,
             'rt' => $request->rt,
             'rt_nm' => 'RT ' . $request->rt,
-            'alamat' => $request->alamat
+            'alamat' => $request->alamat,
         ]);
-
 
         $resident = Resident::where('nik', $request->nik)->first();
 
-        if (!$resident) {
+        if (! $resident) {
             Resident::create([
                 'nik' => $request->nik,
                 'kk' => $request->kk,
-                'data' => $datapemohon
+                'data' => $datapemohon,
             ]);
 
             return response()->json(['message' => 'Data updated successfully.'], 200);
-        } else {
-            if ($datapemohon != $resident->data) {
-                $resident->update([
-                    'nik' => $request->nik,
-                    'kk' => $request->kk,
-                    'data' => $datapemohon
-                ]);
-
-                return response()->json(['message' => 'Data updated successfully.'], 200);
-            } else {
-
-                return response()->json(['message' => 'Nothing changed.'], 200);
-            }
         }
 
+        $oldData = resident_data_order($resident->data);
 
-        return response()->json(['message' => 'Data updated failed.'], 400);
+        if ($datapemohon != $oldData || $request->kk != $resident->kk || $request->nik != $resident->nik) {
+            $resident->update([
+                'nik' => $request->nik,
+                'kk' => $request->kk,
+                'data' => $datapemohon,
+            ]);
+
+            return response()->json(['message' => 'Data updated successfully.'], 200);
+        }
+
+        return response()->json(['message' => 'Nothing changed.'], 200);
     }
 }
