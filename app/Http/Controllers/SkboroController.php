@@ -33,6 +33,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpWord\TemplateProcessor;
 use Yajra\DataTables\DataTables;
 
@@ -82,6 +83,93 @@ class SkboroController extends Controller
         }
 
         return [];
+    }
+
+
+    /**
+     * Ambil master data berdasarkan ID atau kode wilayah.
+     * Fix khusus BORO: input dari Postman/form kadang berisi kode wilayah,
+     * bukan primary key tabel. Jadi tidak boleh hanya Model::find().
+     */
+    protected function findMasterData(string $modelClass, $value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $model = new $modelClass;
+        $table = $model->getTable();
+        $query = $modelClass::query();
+
+        $columns = [
+            $model->getKeyName(),
+            'id',
+            'kode',
+            'kode_wilayah',
+            'kode_kemendagri',
+            'kd_provinsi',
+            'kd_kabko',
+            'kd_kecamatan',
+            'kd_kelurahan',
+            'kode_provinsi',
+            'kode_kabko',
+            'kode_kecamatan',
+            'kode_kelurahan',
+            'provinsi',
+            'kabko',
+            'kecamatan',
+            'kelurahan',
+        ];
+
+        $used = false;
+        foreach (array_values(array_unique($columns)) as $column) {
+            if (Schema::hasColumn($table, $column)) {
+                $used = true;
+                $query->orWhere($column, $value);
+            }
+        }
+
+        if (!$used) {
+            return $modelClass::find($value);
+        }
+
+        return $query->first();
+    }
+
+    protected function masterNama($model, $fallback = ''): string
+    {
+        if (!$model) {
+            return (string) $fallback;
+        }
+
+        foreach (['nama', 'name', 'nama_wilayah', 'nama_provinsi', 'nama_kabko', 'nama_kecamatan', 'nama_kelurahan'] as $field) {
+            if (isset($model->{$field}) && $model->{$field} !== '') {
+                return (string) $model->{$field};
+            }
+        }
+
+        return (string) $fallback;
+    }
+
+    protected function cleanTemplateVariables(array $var): array
+    {
+        // Placeholder yang dihitung otomatis saat preview tidak boleh disimpan dari input form,
+        // karena bisa menimpa data final dan menyebabkan ${surat_tujuan}, ${surat_keperluan}, dll tampil mentah di PDF.
+        $reserved = [
+            'header', 'block', 'detail_pengikut',
+            'skpd_kec', 'skpd_kel', 'skpd_alamat', 'skpd_telp', 'skpd_pos',
+            'skpd_kepala', 'skpd_nip_kepala', 'skpd_jabatan',
+            'surat_no', 'surat_nama', 'surat_nik', 'surat_tmpl', 'surat_tgll',
+            'surat_gender', 'surat_perkawinan', 'surat_agama', 'surat_pekerjaan', 'surat_pendidikan',
+            'surat_alamat', 'surat_tgl', 'surat_tgl_berlaku', 'surat_tujuan',
+            'surat_keperluan', 'surat_jml_pengikut', 'link', 'qr'
+        ];
+
+        foreach ($reserved as $key) {
+            unset($var[$key]);
+        }
+
+        return $var;
     }
 
     public function index()
@@ -268,22 +356,22 @@ class SkboroController extends Controller
             $request->file('pengantar')->storeAs($path, $fileName);
         }
 
-        $provinsi_boro = Provinsi::find($request->provinsi_boro);
-        $kabko_boro = Kabko::find($request->kabko_boro);
-        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
-        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
+        $provinsi_boro = $this->findMasterData(Provinsi::class, $request->provinsi_boro);
+        $kabko_boro = $this->findMasterData(Kabko::class, $request->kabko_boro);
+        $kecamatan_boro = $this->findMasterData(Kecamatan::class, $request->kecamatan_boro);
+        $kelurahan_boro = $this->findMasterData(Kelurahan::class, $request->kelurahan_boro);
 
         // === UPDATE DATA ===
         $suratKeterangan->update([
             'nik' => $request->nik,
             'prov_boro' => $request->provinsi_boro,
-            'prov_boro_nm' => $provinsi_boro->nama,
+            'prov_boro_nm' => $this->masterNama($provinsi_boro, $request->provinsi_boro),
             'kabko_boro' => $request->kabko_boro,
-            'kabko_boro_nm' => $kabko_boro->nama,
+            'kabko_boro_nm' => $this->masterNama($kabko_boro, $request->kabko_boro),
             'kec_boro' => $request->kecamatan_boro,
-            'kec_boro_nm' => $kecamatan_boro->nama,
+            'kec_boro_nm' => $this->masterNama($kecamatan_boro, $request->kecamatan_boro),
             'kel_boro' => $request->kelurahan_boro,
-            'kel_boro_nm' => $kelurahan_boro->nama,
+            'kel_boro_nm' => $this->masterNama($kelurahan_boro, $request->kelurahan_boro),
             'alamat_boro' => $request->alamat_boro,
             'tgl_awal' => $request->tgl_awal,
             'tgl_akhir' => $request->tgl_akhir,
@@ -293,7 +381,7 @@ class SkboroController extends Controller
 
         SuratBoroPengikut::where('boro_id', $id)->delete();
         if ($request->add_nik) {
-            foreach ($request->add_nik as $key => $value) {
+            foreach (($request->add_nik ?? []) as $key => $value) {
                 if (!$value) continue; // skip data kosong
 
                 $gender_pengikut = Gender::find($request->add_jk[$key]);
@@ -303,9 +391,9 @@ class SkboroController extends Controller
                     'nik' => $request->add_nik[$key],
                     'nama' => $request->add_nama[$key],
                     'gender' => $request->add_jk[$key],
-                    'gender_nm' => $gender_pengikut->nama,
+                    'gender_nm' => $this->masterNama($gender_pengikut, $request->add_jk[$key]),
                     'status_kwn' => $request->add_stat[$key],
-                    'status_kwn_nm' => $status_kwn_pengikut->nama,
+                    'status_kwn_nm' => $this->masterNama($status_kwn_pengikut, $request->add_stat[$key]),
                     'umur' => $request->add_umr[$key],
                     'hubungan' => $request->add_hub[$key],
                 ]);
@@ -352,6 +440,7 @@ class SkboroController extends Controller
             'no_urut_surat' => ['required', 'string'],
             'id_instansi' => ['required', 'string'],
             'tahun' => ['required', 'string'],
+
             'tgl_surat' => ['required', 'date'],
             'nik' => ['required', 'min:16'],
             'kk' => ['required', 'min:16'],
@@ -396,36 +485,36 @@ class SkboroController extends Controller
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
-        $provinsi = Provinsi::find($request->provinsi);
-        $kabko = Kabko::find($request->kabko);
-        $kecamatan = Kecamatan::find($request->kecamatan);
-        $kelurahan = Kelurahan::find($request->kelurahan);
+        $provinsi = $this->findMasterData(Provinsi::class, $request->provinsi);
+        $kabko = $this->findMasterData(Kabko::class, $request->kabko);
+        $kecamatan = $this->findMasterData(Kecamatan::class, $request->kecamatan);
+        $kelurahan = $this->findMasterData(Kelurahan::class, $request->kelurahan);
 
         $datapemohon = encode_json_data([
             'kk' => $request->kk,
             'name' => $request->name,
             'gender' => $request->gender,
-            'gender_nm' => $gender->nama,
+            'gender_nm' => $this->masterNama($gender, $request->gender),
             'status_kwn' => $request->status_kwn,
-            'status_kwn_nm' => $status_kwn->nama,
+            'status_kwn_nm' => $this->masterNama($status_kwn, $request->status_kwn),
             'kewarganegaraan' => $request->kewarganegaraan,
-            'kewarganegaraan_nm' => $kewarganegaraan->nama,
+            'kewarganegaraan_nm' => $this->masterNama($kewarganegaraan, $request->kewarganegaraan),
             'tempat_lhr' => $request->tempat_lhr,
             'tgl_lhr' =>  $request->tgl_lhr,
             'agama' => $request->agama,
-            'agama_nm' => $agama->nama,
+            'agama_nm' => $this->masterNama($agama, $request->agama),
             'pendidikan' => $request->pendidikan,
-            'pendidikan_nm' => $pendidikan->nama,
+            'pendidikan_nm' => $this->masterNama($pendidikan, $request->pendidikan),
             'pekerjaan' => $request->pekerjaan,
-            'pekerjaan_nm' => $pekerjaan->nama,
+            'pekerjaan_nm' => $this->masterNama($pekerjaan, $request->pekerjaan),
             'provinsi' => $request->provinsi,
-            'provinsi_nm' => $provinsi->nama,
+            'provinsi_nm' => $this->masterNama($provinsi, $request->provinsi),
             'kabko' => $request->kabko,
-            'kabko_nm' => $kabko->nama,
+            'kabko_nm' => $this->masterNama($kabko, $request->kabko),
             'kecamatan' => $request->kecamatan,
-            'kecamatan_nm' => $kecamatan->nama,
+            'kecamatan_nm' => $this->masterNama($kecamatan, $request->kecamatan),
             'kelurahan' => $request->kelurahan,
-            'kelurahan_nm' => $kelurahan->nama,
+            'kelurahan_nm' => $this->masterNama($kelurahan, $request->kelurahan),
             'rw' => $request->rw,
             'rw_nm' => 'RW ' . $request->rw,
             'rt' => $request->rt,
@@ -451,10 +540,10 @@ class SkboroController extends Controller
             }
         }
 
-        $provinsi_boro = Provinsi::find($request->provinsi_boro);
-        $kabko_boro = Kabko::find($request->kabko_boro);
-        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
-        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
+        $provinsi_boro = $this->findMasterData(Provinsi::class, $request->provinsi_boro);
+        $kabko_boro = $this->findMasterData(Kabko::class, $request->kabko_boro);
+        $kecamatan_boro = $this->findMasterData(Kecamatan::class, $request->kecamatan_boro);
+        $kelurahan_boro = $this->findMasterData(Kelurahan::class, $request->kelurahan_boro);
 
         $template = SuratTemplate::where(['id_kel' => auth()->user()->id_instansi, 'jenis' => 'skboro'])->first();
         if (isset($template)) {
@@ -480,13 +569,13 @@ class SkboroController extends Controller
             'tgl_surat' => $request->tgl_surat,
             'nik' => $request->nik,
             'prov_boro' => $request->provinsi_boro,
-            'prov_boro_nm' => $provinsi_boro->nama,
+            'prov_boro_nm' => $this->masterNama($provinsi_boro, $request->provinsi_boro),
             'kabko_boro' => $request->kabko_boro,
-            'kabko_boro_nm' => $kabko_boro->nama,
+            'kabko_boro_nm' => $this->masterNama($kabko_boro, $request->kabko_boro),
             'kec_boro' => $request->kecamatan_boro,
-            'kec_boro_nm' => $kecamatan_boro->nama,
+            'kec_boro_nm' => $this->masterNama($kecamatan_boro, $request->kecamatan_boro),
             'kel_boro' => $request->kelurahan_boro,
-            'kel_boro_nm' => $kelurahan_boro->nama,
+            'kel_boro_nm' => $this->masterNama($kelurahan_boro, $request->kelurahan_boro),
             'alamat_boro' => $request->alamat_boro,
             'tgl_awal' => $request->tgl_awal,
             'tgl_akhir' => $request->tgl_akhir,
@@ -497,7 +586,7 @@ class SkboroController extends Controller
             'pengantar' => $request->file('pengantar') ? $fileLocation : ''
         ]);
 
-        foreach ($request->add_nik as $key => $value) {
+        foreach (($request->add_nik ?? []) as $key => $value) {
 
             $gender_pengikut = Gender::find($request->add_jk[$key]);
             $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
@@ -507,9 +596,9 @@ class SkboroController extends Controller
                 'nik' => $request->add_nik[$key],
                 'nama' => $request->add_nama[$key],
                 'gender' => $request->add_jk[$key],
-                'gender_nm' => $gender_pengikut->nama,
+                'gender_nm' => $this->masterNama($gender_pengikut, $request->add_jk[$key]),
                 'status_kwn' => $request->add_stat[$key],
-                'status_kwn_nm' => $status_kwn_pengikut->nama,
+                'status_kwn_nm' => $this->masterNama($status_kwn_pengikut, $request->add_stat[$key]),
                 'umur' => $request->add_umr[$key],
                 'hubungan' => $request->add_hub[$key],
             ]);
@@ -593,14 +682,14 @@ class SkboroController extends Controller
         $agama = Agama::find($request->agama);
         $pendidikan = Pendidikan::find($request->pendidikan);
         $pekerjaan = Pekerjaan::find($request->pekerjaan);
-        $provinsi = Provinsi::find($request->provinsi);
-        $kabko = Kabko::find($request->kabko);
-        $kecamatan = Kecamatan::find($request->kecamatan);
-        $kelurahan = Kelurahan::find($request->kelurahan);
-        $provinsi_boro = Provinsi::find($request->provinsi_boro);
-        $kabko_boro = Kabko::find($request->kabko_boro);
-        $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
-        $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
+        $provinsi = $this->findMasterData(Provinsi::class, $request->provinsi);
+        $kabko = $this->findMasterData(Kabko::class, $request->kabko);
+        $kecamatan = $this->findMasterData(Kecamatan::class, $request->kecamatan);
+        $kelurahan = $this->findMasterData(Kelurahan::class, $request->kelurahan);
+        $provinsi_boro = $this->findMasterData(Provinsi::class, $request->provinsi_boro);
+        $kabko_boro = $this->findMasterData(Kabko::class, $request->kabko_boro);
+        $kecamatan_boro = $this->findMasterData(Kecamatan::class, $request->kecamatan_boro);
+        $kelurahan_boro = $this->findMasterData(Kelurahan::class, $request->kelurahan_boro);
 
         $suratKeterangan = SuratBoro::find($id);
 
@@ -610,27 +699,27 @@ class SkboroController extends Controller
                 'kk' => $request->kk,
                 'name' => $request->name,
                 'gender' => $request->gender,
-                'gender_nm' => $gender->nama,
+                'gender_nm' => $this->masterNama($gender, $request->gender),
                 'status_kwn' => $request->status_kwn,
-                'status_kwn_nm' => $status_kwn->nama,
+                'status_kwn_nm' => $this->masterNama($status_kwn, $request->status_kwn),
                 'kewarganegaraan' => $request->kewarganegaraan,
-                'kewarganegaraan_nm' => $kewarganegaraan->nama,
+                'kewarganegaraan_nm' => $this->masterNama($kewarganegaraan, $request->kewarganegaraan),
                 'tempat_lhr' => $request->tempat_lhr,
                 'tgl_lhr' =>  $request->tgl_lhr,
                 'agama' => $request->agama,
-                'agama_nm' => $agama->nama,
+                'agama_nm' => $this->masterNama($agama, $request->agama),
                 'pendidikan' => $request->pendidikan,
-                'pendidikan_nm' => $pendidikan->nama,
+                'pendidikan_nm' => $this->masterNama($pendidikan, $request->pendidikan),
                 'pekerjaan' => $request->pekerjaan,
-                'pekerjaan_nm' => $pekerjaan->nama,
+                'pekerjaan_nm' => $this->masterNama($pekerjaan, $request->pekerjaan),
                 'provinsi' => $request->provinsi,
-                'provinsi_nm' => $provinsi->nama,
+                'provinsi_nm' => $this->masterNama($provinsi, $request->provinsi),
                 'kabko' => $request->kabko,
-                'kabko_nm' => $kabko->nama,
+                'kabko_nm' => $this->masterNama($kabko, $request->kabko),
                 'kecamatan' => $request->kecamatan,
-                'kecamatan_nm' => $kecamatan->nama,
+                'kecamatan_nm' => $this->masterNama($kecamatan, $request->kecamatan),
                 'kelurahan' => $request->kelurahan,
-                'kelurahan_nm' => $kelurahan->nama,
+                'kelurahan_nm' => $this->masterNama($kelurahan, $request->kelurahan),
                 'rw' => $request->rw,
                 'rw_nm' => 'RW ' . $request->rw,
                 'rt' => $request->rt,
@@ -670,6 +759,7 @@ class SkboroController extends Controller
                 foreach ($arr_intersect as $key => $value) {
                     $var[$value] = $request[$value];
                 }
+                $var = $this->cleanTemplateVariables($var);
                 $datavar = encode_json_data($var);
             }
 
@@ -679,13 +769,13 @@ class SkboroController extends Controller
                 'tgl_surat' => $request->tgl_surat,
                 'nik' => $request->nik,
                 'prov_boro' => $request->provinsi_boro,
-                'prov_boro_nm' => $provinsi_boro->nama,
+                'prov_boro_nm' => $this->masterNama($provinsi_boro, $request->provinsi_boro),
                 'kabko_boro' => $request->kabko_boro,
-                'kabko_boro_nm' => $kabko_boro->nama,
+                'kabko_boro_nm' => $this->masterNama($kabko_boro, $request->kabko_boro),
                 'kec_boro' => $request->kecamatan_boro,
-                'kec_boro_nm' => $kecamatan_boro->nama,
+                'kec_boro_nm' => $this->masterNama($kecamatan_boro, $request->kecamatan_boro),
                 'kel_boro' => $request->kelurahan_boro,
-                'kel_boro_nm' => $kelurahan_boro->nama,
+                'kel_boro_nm' => $this->masterNama($kelurahan_boro, $request->kelurahan_boro),
                 'alamat_boro' => $request->alamat_boro,
                 'tgl_awal' => $request->tgl_awal,
                 'tgl_akhir' => $request->tgl_akhir,
@@ -697,7 +787,7 @@ class SkboroController extends Controller
             ]);
 
             SuratBoroPengikut::where('boro_id', $id)->delete();
-            foreach ($request->add_nik as $key => $value) {
+            foreach (($request->add_nik ?? []) as $key => $value) {
                 $gender_pengikut = Gender::find($request->add_jk[$key]);
                 $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
                 SuratBoroPengikut::create([
@@ -705,9 +795,9 @@ class SkboroController extends Controller
                     'nik' => $request->add_nik[$key],
                     'nama' => $request->add_nama[$key],
                     'gender' => $request->add_jk[$key],
-                    'gender_nm' => $gender_pengikut->nama,
+                    'gender_nm' => $this->masterNama($gender_pengikut, $request->add_jk[$key]),
                     'status_kwn' => $request->add_stat[$key],
-                    'status_kwn_nm' => $status_kwn_pengikut->nama,
+                    'status_kwn_nm' => $this->masterNama($status_kwn_pengikut, $request->add_stat[$key]),
                     'umur' => $request->add_umr[$key],
                     'hubungan' => $request->add_hub[$key],
                 ]);
@@ -823,7 +913,7 @@ class SkboroController extends Controller
         if (isset($template) && ($surat->variable != "")) {
             $var = $this->suratVariable($surat->variable);
             $templateFile = public_path($template->path_docs);
-            $data = array_merge($data, $var);
+            $data = array_merge($var, $data);
         } else {
             $templateFile = public_path('templates/SKBORO.docx');
         }
@@ -851,18 +941,19 @@ class SkboroController extends Controller
         try {
             //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skboro', 0755);
             $path = '/public/pengantar/' . date('Y') . '/skboro';
+
             $fileName = $request->file('pengantar')->hashName();
             $fileLocation = '/storage/pengantar/' . date('Y') . '/skboro/' . $fileName;
             $request->file('pengantar')->storeAs($path, $fileName);
             $resident = Resident::where('nik', $request->nik)->first();
             $penduduk = $this->residentData($resident);
             $penduduk['tgl_lhr'] = Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y');
-            $regional = new Kelurahan_resource(Kelurahan::find($penduduk['kelurahan']));
+            $regional = new Kelurahan_resource($this->findMasterData(Kelurahan::class, $penduduk['kelurahan'] ?? null));
 
-            $provinsi_boro = Provinsi::find($request->provinsi_boro);
-            $kabko_boro = Kabko::find($request->kabko_boro);
-            $kecamatan_boro = Kecamatan::find($request->kecamatan_boro);
-            $kelurahan_boro = Kelurahan::find($request->kelurahan_boro);
+            $provinsi_boro = $this->findMasterData(Provinsi::class, $request->provinsi_boro);
+            $kabko_boro = $this->findMasterData(Kabko::class, $request->kabko_boro);
+            $kecamatan_boro = $this->findMasterData(Kecamatan::class, $request->kecamatan_boro);
+            $kelurahan_boro = $this->findMasterData(Kelurahan::class, $request->kelurahan_boro);
 
             $suket = SuratBoro::create([
                 'id_kel'    => auth()->user()->id_instansi,
@@ -875,13 +966,13 @@ class SkboroController extends Controller
                 'tgl_surat' => date('Y-m-d'),
                 'nik' => $request->nik,
                 'prov_boro' => $request->provinsi_boro,
-                'prov_boro_nm' => $provinsi_boro->nama,
+                'prov_boro_nm' => $this->masterNama($provinsi_boro, $request->provinsi_boro),
                 'kabko_boro' => $request->kabko_boro,
-                'kabko_boro_nm' => $kabko_boro->nama,
+                'kabko_boro_nm' => $this->masterNama($kabko_boro, $request->kabko_boro),
                 'kec_boro' => $request->kecamatan_boro,
-                'kec_boro_nm' => $kecamatan_boro->nama,
+                'kec_boro_nm' => $this->masterNama($kecamatan_boro, $request->kecamatan_boro),
                 'kel_boro' => $request->kelurahan_boro,
-                'kel_boro_nm' => $kelurahan_boro->nama,
+                'kel_boro_nm' => $this->masterNama($kelurahan_boro, $request->kelurahan_boro),
                 'alamat_boro' => $request->alamat_boro,
                 'tgl_awal' => $request->tgl_awal,
                 'tgl_akhir' => $request->tgl_akhir,
@@ -890,7 +981,7 @@ class SkboroController extends Controller
                 'pengantar' => $fileLocation
             ]);
 
-            foreach ($request->add_nik as $key => $value) {
+            foreach (($request->add_nik ?? []) as $key => $value) {
 
                 $gender_pengikut = Gender::find($request->add_jk[$key]);
                 $status_kwn_pengikut = StatusKwn::find($request->add_stat[$key]);
@@ -900,9 +991,9 @@ class SkboroController extends Controller
                     'nik' => $request->add_nik[$key],
                     'nama' => $request->add_nama[$key],
                     'gender' => $request->add_jk[$key],
-                    'gender_nm' => $gender_pengikut->nama,
+                    'gender_nm' => $this->masterNama($gender_pengikut, $request->add_jk[$key]),
                     'status_kwn' => $request->add_stat[$key],
-                    'status_kwn_nm' => $status_kwn_pengikut->nama,
+                    'status_kwn_nm' => $this->masterNama($status_kwn_pengikut, $request->add_stat[$key]),
                     'umur' => $request->add_umr[$key],
                     'hubungan' => $request->add_hub[$key],
                 ]);

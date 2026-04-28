@@ -139,8 +139,18 @@ class SuratAdminController extends Controller
                         'lama_usaha',
                     ],
                     'skhsl' => [
+                        'kepada_tempat_lhr',
+                        'kepada_tgl_lhr',
+                        'kepada_gender',
+                        'kepada_gender_nm',
+                        'kepada_hubungan',
+                        'kepada_sekolah',
+                        'kepada_kelas',
+                        'kepada_alamat_sekolah',
+                        'penghasilan',
+                        'terbilang',
                         'keperluan',
-                        'keterangan_tambahan',
+                        'surat_keperluan',
                     ],
                     'skboro' => [
                         'nama_ayah',
@@ -277,7 +287,7 @@ class SuratAdminController extends Controller
                         $rules['kepada_sekolah'] = 'required_if:register_as,sekolah|nullable|string|max:255';
                         $rules['kepada_kelas'] = 'required_if:register_as,sekolah|nullable|string|max:50';
                         $rules['kepada_alamat_sekolah'] = 'required_if:register_as,sekolah|nullable|string';
-                    } else {
+                    } elseif ($request->jenis_surat !== 'skboro') {
                         $rules['kepada'] = 'required|string|max:255';
                     }
 
@@ -295,14 +305,31 @@ class SuratAdminController extends Controller
                 }
 
                 if ($request->jenis_surat === 'skhsl') {
-                    $rules['keperluan'] = 'required|string';
+                    $rules['kepada'] = 'required|string|max:255';
+                    $rules['kepada_tempat_lhr'] = 'required|string|max:255';
+                    $rules['kepada_tgl_lhr'] = 'required|date';
+                    $rules['kepada_gender'] = 'required|string|max:50';
+                    $rules['kepada_hubungan'] = 'required|string|max:255';
+                    $rules['kepada_sekolah'] = 'required|string|max:255';
+                    $rules['kepada_kelas'] = 'required|string|max:100';
+                    $rules['kepada_alamat_sekolah'] = 'required|string';
+                    $rules['penghasilan'] = 'required|string|max:255';
+                    $rules['terbilang'] = 'required|string|max:255';
+                    $rules['keperluan'] = 'nullable|string|max:255';
+                    $rules['surat_keperluan'] = 'nullable|string|max:255';
                     $rules['keterangan_tambahan'] = 'nullable|string';
                 }
 
                 if ($request->jenis_surat === 'skboro') {
-                    $rules['nama_ayah'] = 'required|string|max:255';
-                    $rules['nama_ibu'] = 'required|string|max:255';
-                    $rules['alamat_asal'] = 'required|string';
+                    $rules['tgl_awal'] = 'required|date';
+                    $rules['tgl_akhir'] = 'required|date|after_or_equal:tgl_awal';
+                    $rules['provinsi_boro'] = 'required|string|max:255';
+                    $rules['kabko_boro'] = 'required|string|max:255';
+                    $rules['kecamatan_boro'] = 'required|string|max:255';
+                    $rules['kelurahan_boro'] = 'required|string|max:255';
+                    $rules['alamat_boro'] = 'required|string';
+                    $rules['jumlah_pengikut'] = 'nullable|integer|min:0';
+                    $rules['kepada'] = 'nullable|string|max:255';
                 }
 
                 if ($request->jenis_surat === 'skkelahiran') {
@@ -421,6 +448,14 @@ class SuratAdminController extends Controller
                         $allInput['tempat_lhr'] = strtoupper($request->tempat_lhr ?? '');
                         $allInput['alamat'] = strtoupper($request->alamat ?? '');
 
+                        if ($request->jenis_surat === 'skhsl') {
+                            $allInput['kepada'] = strtoupper($request->kepada ?? '');
+                            $allInput['kepada_tempat_lhr'] = strtoupper($request->kepada_tempat_lhr ?? '');
+                            $allInput['kepada_gender_nm'] = $request->kepada_gender;
+                            $allInput['keperluan'] = $request->peruntukan;
+                            $allInput['surat_keperluan'] = $request->peruntukan;
+                        }
+
                     if ($request->jenis_surat === 'skbn' && $request->peruntukan !== 'menikah') {
                         $allInput['bin_binti'] = null;
                         $allInput['nama_pasangan'] = null;
@@ -477,6 +512,44 @@ class SuratAdminController extends Controller
 
                         $variableData = array_diff_key($allInput, array_flip($mainColumns));
                         $variableData['submitter_type'] = 'admin';
+
+                        if ($request->jenis_surat === 'skhsl') {
+                            $penghasilanAngka = preg_replace('/[^0-9]/', '', (string) $request->penghasilan);
+                            $penghasilanDisplay = $penghasilanAngka !== ''
+                                ? 'Rp. ' . number_format((int) $penghasilanAngka, 2, ',', '.')
+                                : (string) $request->penghasilan;
+
+                            $variableData['kepada'] = strtoupper($request->kepada ?? '');
+                            $variableData['kepada_tempat_lhr'] = strtoupper($request->kepada_tempat_lhr ?? '');
+                            $variableData['kepada_tgl_lhr'] = $request->kepada_tgl_lhr;
+                            $variableData['kepada_gender'] = $request->kepada_gender;
+                            $variableData['kepada_gender_nm'] = $request->kepada_gender;
+                            $variableData['kepada_hubungan'] = $request->kepada_hubungan;
+                            $variableData['kepada_sekolah'] = $request->kepada_sekolah;
+                            $variableData['kepada_kelas'] = $request->kepada_kelas;
+                            $variableData['kepada_alamat_sekolah'] = $request->kepada_alamat_sekolah;
+                            $variableData['penghasilan'] = $request->penghasilan;
+                            $variableData['penghasilan_display'] = $penghasilanDisplay;
+                            $variableData['terbilang'] = $request->terbilang;
+                            $variableData['keperluan'] = $request->peruntukan;
+                            $variableData['surat_keperluan'] = $request->peruntukan;
+                            $variableData['surat_keterangan'] = 'Adalah benar-benar dengan penghasilan perbulan sebesar ' . $penghasilanDisplay . ' (' . $request->terbilang . ').';
+                        }
+
+                        if ($request->jenis_surat === 'skboro') {
+                            $tujuanBoro = collect([
+                                $request->kelurahan_boro ? 'Desa / Kelurahan : ' . $request->kelurahan_boro : null,
+                                $request->kecamatan_boro ? 'Kecamatan : ' . $request->kecamatan_boro : null,
+                                $request->kabko_boro ? 'Kabupaten/Kota : ' . $request->kabko_boro : null,
+                                $request->provinsi_boro ? 'Provinsi : ' . $request->provinsi_boro : null,
+                                $request->alamat_boro ? 'Alamat : ' . $request->alamat_boro : null,
+                            ])->filter()->implode(' ');
+
+                            $variableData['surat_tgl_berlaku'] = trim(($request->tgl_awal ?? '') . ' s/d ' . ($request->tgl_akhir ?? ''));
+                            $variableData['surat_tujuan'] = $tujuanBoro;
+                            $variableData['surat_keperluan'] = $request->peruntukan;
+                            $variableData['surat_jml_pengikut'] = (string) ($request->jumlah_pengikut ?? '0');
+                        }
 						
 						if ($request->jenis_surat === 'sktm') {
 						$registerAs = strtolower(trim((string) $request->register_as));
@@ -533,7 +606,7 @@ class SuratAdminController extends Controller
                             'tahun'          => date('Y'),
                             'tgl_surat'      => $request->tgl_surat ?: now(),
                             'peruntukan'     => $request->peruntukan,
-                            'kepada'         => $request->kepada,
+                            'kepada'         => $request->jenis_surat === 'skboro' ? null : $request->kepada,
                             'status'         => 1,
                             'pengantar'      => $fileUrl,
                             'variable'       => $variableData,
@@ -735,14 +808,32 @@ class SuratAdminController extends Controller
             }
 
             if ($request->jenis_surat === 'skhsl') {
-                $rules['keperluan'] = 'required|string';
+                $rules['kepada'] = 'required|string|max:255';
+                $rules['kepada_tempat_lhr'] = 'required|string|max:255';
+                $rules['kepada_tgl_lhr'] = 'required|date';
+                $rules['kepada_gender'] = 'required|string|max:50';
+                $rules['kepada_hubungan'] = 'required|string|max:255';
+                $rules['kepada_sekolah'] = 'required|string|max:255';
+                $rules['kepada_kelas'] = 'required|string|max:100';
+                $rules['kepada_alamat_sekolah'] = 'required|string';
+                $rules['penghasilan'] = 'required|string|max:255';
+                $rules['terbilang'] = 'required|string|max:255';
+                $rules['keperluan'] = 'nullable|string|max:255';
+                $rules['surat_keperluan'] = 'nullable|string|max:255';
                 $rules['keterangan_tambahan'] = 'nullable|string';
             }
 
             if ($request->jenis_surat === 'skboro') {
-                $rules['nama_ayah'] = 'required|string|max:255';
-                $rules['nama_ibu'] = 'required|string|max:255';
-                $rules['alamat_asal'] = 'required|string';
+                // BORO memakai field tujuan dan masa berlaku, bukan nama_ayah/nama_ibu/alamat_asal.
+                $rules['tgl_awal'] = 'required|date';
+                $rules['tgl_akhir'] = 'required|date|after_or_equal:tgl_awal';
+                $rules['provinsi_boro'] = 'required|string|max:255';
+                $rules['kabko_boro'] = 'required|string|max:255';
+                $rules['kecamatan_boro'] = 'required|string|max:255';
+                $rules['kelurahan_boro'] = 'required|string|max:255';
+                $rules['alamat_boro'] = 'required|string';
+                $rules['jumlah_pengikut'] = 'nullable|integer|min:0';
+                $rules['kepada'] = 'nullable|string|max:255';
             }
 
             if ($request->jenis_surat === 'skkelahiran') {
@@ -839,6 +930,14 @@ class SuratAdminController extends Controller
                     $allInput['tempat_lhr'] = strtoupper($request->tempat_lhr ?? '');
                     $allInput['alamat'] = strtoupper($request->alamat ?? '');
 
+                    if ($request->jenis_surat === 'skhsl') {
+                        $allInput['kepada'] = strtoupper($request->kepada ?? '');
+                        $allInput['kepada_tempat_lhr'] = strtoupper($request->kepada_tempat_lhr ?? '');
+                        $allInput['kepada_gender_nm'] = $request->kepada_gender;
+                        $allInput['keperluan'] = $request->peruntukan;
+                        $allInput['surat_keperluan'] = $request->peruntukan;
+                    }
+
                     if ($request->jenis_surat === 'skbn' && $request->peruntukan !== 'menikah') {
                         $allInput['bin_binti'] = null;
                         $allInput['nama_pasangan'] = null;
@@ -914,6 +1013,44 @@ class SuratAdminController extends Controller
                     $variableData = array_merge($existingVariable, $variableData);
                     $variableData['submitter_type'] = $existingVariable['submitter_type'] ?? $this->resolveSubmitterType($surat);
 
+                    if ($request->jenis_surat === 'skhsl') {
+                        $penghasilanAngka = preg_replace('/[^0-9]/', '', (string) $request->penghasilan);
+                        $penghasilanDisplay = $penghasilanAngka !== ''
+                            ? 'Rp. ' . number_format((int) $penghasilanAngka, 2, ',', '.')
+                            : (string) $request->penghasilan;
+
+                        $variableData['kepada'] = strtoupper($request->kepada ?? '');
+                        $variableData['kepada_tempat_lhr'] = strtoupper($request->kepada_tempat_lhr ?? '');
+                        $variableData['kepada_tgl_lhr'] = $request->kepada_tgl_lhr;
+                        $variableData['kepada_gender'] = $request->kepada_gender;
+                        $variableData['kepada_gender_nm'] = $request->kepada_gender;
+                        $variableData['kepada_hubungan'] = $request->kepada_hubungan;
+                        $variableData['kepada_sekolah'] = $request->kepada_sekolah;
+                        $variableData['kepada_kelas'] = $request->kepada_kelas;
+                        $variableData['kepada_alamat_sekolah'] = $request->kepada_alamat_sekolah;
+                        $variableData['penghasilan'] = $request->penghasilan;
+                        $variableData['penghasilan_display'] = $penghasilanDisplay;
+                        $variableData['terbilang'] = $request->terbilang;
+                        $variableData['keperluan'] = $request->peruntukan;
+                        $variableData['surat_keperluan'] = $request->peruntukan;
+                        $variableData['surat_keterangan'] = 'Adalah benar-benar dengan penghasilan perbulan sebesar ' . $penghasilanDisplay . ' (' . $request->terbilang . ').';
+                    }
+
+                    if ($request->jenis_surat === 'skboro') {
+                        $tujuanBoro = collect([
+                            $request->kelurahan_boro ? 'Desa / Kelurahan : ' . $request->kelurahan_boro : null,
+                            $request->kecamatan_boro ? 'Kecamatan : ' . $request->kecamatan_boro : null,
+                            $request->kabko_boro ? 'Kabupaten/Kota : ' . $request->kabko_boro : null,
+                            $request->provinsi_boro ? 'Provinsi : ' . $request->provinsi_boro : null,
+                            $request->alamat_boro ? 'Alamat : ' . $request->alamat_boro : null,
+                        ])->filter()->implode(' ');
+
+                        $variableData['surat_tgl_berlaku'] = trim(($request->tgl_awal ?? '') . ' s/d ' . ($request->tgl_akhir ?? ''));
+                        $variableData['surat_tujuan'] = $tujuanBoro;
+                        $variableData['surat_keperluan'] = $request->peruntukan;
+                        $variableData['surat_jml_pengikut'] = (string) ($request->jumlah_pengikut ?? '0');
+                    }
+
                     $autoMeta = $this->buildAutoSuratMeta($request->peruntukan, $request->keperluan_lainnya);
                     $variableData['surat_kategori'] = $autoMeta['kategori'];
                     $variableData['surat_catatan'] = $autoMeta['catatan'];
@@ -981,7 +1118,7 @@ class SuratAdminController extends Controller
                         'tahun'          => date('Y'),
                         'tgl_surat'      => $request->tgl_surat ?: now(),
                         'peruntukan'     => $request->peruntukan,
-                        'kepada'         => $request->jenis_surat === 'sktm' && strtolower((string) $request->register_as) !== 'sekolah' ? null : $request->kepada,
+                        'kepada'         => $request->jenis_surat === 'skboro' ? null : ($request->jenis_surat === 'sktm' && strtolower((string) $request->register_as) !== 'sekolah' ? null : $request->kepada),
                         'pengantar'      => $fileUrl,
                         'variable'       => $variableData,
                     ]);
@@ -1227,10 +1364,42 @@ class SuratAdminController extends Controller
                         $data['surat_keterangan'] = $data['surat_keterangan'] ?: ('MEMILIKI USAHA ' . ($variableData['nama_usaha'] ?? ''));
                         break;
                     case 'skhsl':
-                        $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['keperluan'] ?? '');
+                        $penghasilanRaw = $variableData['penghasilan'] ?? '';
+                        $penghasilanAngka = preg_replace('/[^0-9]/', '', (string) $penghasilanRaw);
+                        $penghasilanDisplay = $variableData['penghasilan_display'] ?? (
+                            $penghasilanAngka !== ''
+                                ? 'Rp. ' . number_format((int) $penghasilanAngka, 2, ',', '.')
+                                : (string) $penghasilanRaw
+                        );
+
+                        $data['surat_kepada'] = $surat->kepada ?? ($variableData['kepada'] ?? '');
+                        $data['surat_kepada_tempat_lhr'] = $variableData['kepada_tempat_lhr'] ?? '';
+                        $data['surat_kepada_tgl_lhr'] = $variableData['kepada_tgl_lhr'] ?? '';
+                        $data['surat_kepada_sekolah'] = $variableData['kepada_sekolah'] ?? '';
+                        $data['surat_kepada_kelas'] = $variableData['kepada_kelas'] ?? '';
+                        $data['surat_kepada_alamat_sekolah'] = $variableData['kepada_alamat_sekolah'] ?? '';
+                        $data['surat_kepada_gender_nm'] = $variableData['kepada_gender_nm'] ?? ($variableData['kepada_gender'] ?? '');
+                        $data['surat_kepada_hubungan'] = $variableData['kepada_hubungan'] ?? '';
+                        $data['surat_keperluan'] = $variableData['surat_keperluan'] ?? ($variableData['keperluan'] ?? $surat->peruntukan ?? '');
+                        $data['surat_keterangan'] = $variableData['surat_keterangan']
+                            ?? ('Adalah benar-benar dengan penghasilan perbulan sebesar ' . $penghasilanDisplay . ' (' . ($variableData['terbilang'] ?? '') . ').');
                         break;
                     case 'skboro':
-                        $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['alamat_asal'] ?? '');
+                        $data['header'] = $variableData['header'] ?? '';
+                        $data['block'] = $variableData['block'] ?? '';
+                        $data['detail_pengikut'] = $variableData['detail_pengikut'] ?? '';
+                        $data['qr'] = $data['show_qr'] ? ($data['qr'] ?? '') : '';
+                        $data['surat_tgl_berlaku'] = $variableData['surat_tgl_berlaku'] ?? trim(($variableData['tgl_awal'] ?? '') . ' s/d ' . ($variableData['tgl_akhir'] ?? ''));
+                        $data['surat_tujuan'] = $variableData['surat_tujuan'] ?? collect([
+                            !empty($variableData['kelurahan_boro']) ? 'Desa / Kelurahan : ' . $variableData['kelurahan_boro'] : null,
+                            !empty($variableData['kecamatan_boro']) ? 'Kecamatan : ' . $variableData['kecamatan_boro'] : null,
+                            !empty($variableData['kabko_boro']) ? 'Kabupaten/Kota : ' . $variableData['kabko_boro'] : null,
+                            !empty($variableData['provinsi_boro']) ? 'Provinsi : ' . $variableData['provinsi_boro'] : null,
+                            !empty($variableData['alamat_boro']) ? 'Alamat : ' . $variableData['alamat_boro'] : null,
+                        ])->filter()->implode(' ');
+                        $data['surat_keperluan'] = $variableData['surat_keperluan'] ?? ($surat->peruntukan ?? '');
+                        $data['surat_jml_pengikut'] = $variableData['surat_jml_pengikut'] ?? (string) ($variableData['jumlah_pengikut'] ?? '0');
+                        $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['alamat_boro'] ?? '');
                         break;
                     case 'suket':
                         $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['keterangan_tambahan'] ?? '');

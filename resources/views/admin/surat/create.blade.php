@@ -151,6 +151,92 @@
                                                         </div>
                                                     @endforeach
                                                 </div>
+                                            @elseif ($jenis === 'skhsl')
+                                                
+                                                @foreach ([
+                                                    'kepada' => 'Nama Anak / Siswa',
+                                                    'kepada_tempat_lhr' => 'Tempat Lahir Anak',
+                                                    'kepada_tgl_lhr' => 'Tanggal Lahir Anak',
+                                                    'kepada_gender' => 'Jenis Kelamin Anak',
+                                                    'kepada_hubungan' => 'Status Keluarga / Hubungan',
+                                                    'kepada_sekolah' => 'Nama Sekolah',
+                                                    'kepada_kelas' => 'Kelas / Semester',
+                                                    'kepada_alamat_sekolah' => 'Alamat Sekolah',
+                                                    'penghasilan' => 'Penghasilan Per Bulan',
+                                                    'terbilang' => 'Terbilang Penghasilan',
+                                                    'peruntukan' => 'Untuk Keperluan'
+                                                ] as $item => $label)
+                                                    <div class="row mb-3">
+                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ $label }}</label>
+                                                        <div class="col-md-8">
+                                                            <input type="{{ $item === 'kepada_tgl_lhr' ? 'date' : 'text' }}"
+                                                                class="form-control @error($item) is-invalid @enderror"
+                                                                name="{{ $item }}"
+                                                                id="{{ $item }}"
+                                                                value="{{ old($item) }}"
+                                                                @if($item === 'penghasilan') inputmode="numeric" placeholder="Contoh: 3000000" @endif
+                                                                @if($item === 'terbilang') placeholder="Contoh: Tiga Juta Rupiah" @endif
+                                                                required>
+                                                            @error($item)<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+
+                                                <input type="hidden" name="surat_keperluan" id="surat_keperluan" value="{{ old('surat_keperluan') }}">
+                                            @elseif (in_array($jenis, ['skboro', 'boro']))
+                                               
+
+                                                <div class="row mb-3">
+                                                    <label for="tgl_awal" class="col-md-3 col-form-label text-md-start ms-2">Mulai Berlaku</label>
+                                                    <div class="col-md-8">
+                                                        <input type="date" class="form-control @error('tgl_awal') is-invalid @enderror" name="tgl_awal" id="tgl_awal" value="{{ old('tgl_awal') }}" required>
+                                                        @error('tgl_awal')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <label for="tgl_akhir" class="col-md-3 col-form-label text-md-start ms-2">Sampai Tanggal</label>
+                                                    <div class="col-md-8">
+                                                        <input type="date" class="form-control @error('tgl_akhir') is-invalid @enderror" name="tgl_akhir" id="tgl_akhir" value="{{ old('tgl_akhir') }}" required>
+                                                        @error('tgl_akhir')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                    </div>
+                                                </div>
+
+                                                @foreach ([
+                                                    'provinsi_boro' => 'Provinsi Tujuan',
+                                                    'kabko_boro' => 'Kabupaten/Kota Tujuan',
+                                                    'kecamatan_boro' => 'Kecamatan Tujuan',
+                                                    'kelurahan_boro' => 'Desa/Kelurahan Tujuan',
+                                                    'alamat_boro' => 'Alamat Tujuan'
+                                                ] as $item => $label)
+                                                    <div class="row mb-3">
+                                                        <label for="{{ $item }}" class="col-md-3 col-form-label text-md-start ms-2">{{ $label }}</label>
+                                                        <div class="col-md-8">
+                                                            <input type="text" class="form-control @error($item) is-invalid @enderror" name="{{ $item }}" id="{{ $item }}" value="{{ old($item) }}" required>
+                                                            @error($item)<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+
+                                                <div class="row mb-3">
+                                                    <label for="peruntukan" class="col-md-3 col-form-label text-md-start ms-2">Keperluan</label>
+                                                    <div class="col-md-8">
+                                                        <input type="text" class="form-control @error('peruntukan') is-invalid @enderror" name="peruntukan" id="peruntukan" value="{{ old('peruntukan') }}" placeholder="Contoh: bekerja / mencari pekerjaan / pindah sementara" required>
+                                                        @error('peruntukan')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                                                    </div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <label for="jumlah_pengikut" class="col-md-3 col-form-label text-md-start ms-2">Jumlah Pengikut</label>
+                                                    <div class="col-md-8">
+                                                        <input type="number" min="0" class="form-control" name="jumlah_pengikut" id="jumlah_pengikut" value="{{ old('jumlah_pengikut', 0) }}">
+                                                    </div>
+                                                </div>
+
+                                                <input type="hidden" name="surat_tgl_berlaku" id="surat_tgl_berlaku" value="{{ old('surat_tgl_berlaku') }}">
+                                                <input type="hidden" name="surat_tujuan" id="surat_tujuan" value="{{ old('surat_tujuan') }}">
+                                                <input type="hidden" name="surat_keperluan" id="surat_keperluan" value="{{ old('surat_keperluan') }}">
+                                                <input type="hidden" name="surat_jml_pengikut" id="surat_jml_pengikut" value="{{ old('surat_jml_pengikut', 0) }}">
                                             @else
                                                 @isset($var)
                                                     @foreach ($var as $item)
@@ -175,10 +261,12 @@
                                             @endif
                                         @endif
 
-                                        @if ($jenis !== 'sktm')
+                                        @if (!in_array($jenis, ['sktm', 'skhsl', 'skboro', 'boro']))
                                             <x-kepada><x-slot:kepada></x-slot:kepada></x-kepada>
                                         @endif
-                                        <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
+                                        @if (!in_array($jenis, ['skhsl', 'skboro', 'boro']))
+                                            <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
+                                        @endif
 
                                         <div id="field-keperluan-lainnya" style="display:none;">
                                             <div class="row mb-3">
@@ -327,5 +415,44 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
+<script>
+(function () {
+    function byId(id) { return document.getElementById(id); }
+    function val(id) { return (byId(id)?.value || '').trim(); }
+    function updateBoroHiddenFields() {
+        if (!byId('surat_tujuan')) return;
+        const tglAwal = val('tgl_awal');
+        const tglAkhir = val('tgl_akhir');
+        const prov = val('provinsi_boro');
+        const kabko = val('kabko_boro');
+        const kec = val('kecamatan_boro');
+        const kel = val('kelurahan_boro');
+        const alamat = val('alamat_boro');
+        const peruntukan = val('peruntukan');
+        const jumlah = val('jumlah_pengikut') || '0';
+
+        if (byId('surat_tgl_berlaku')) byId('surat_tgl_berlaku').value = [tglAwal, tglAkhir].filter(Boolean).join(' s/d ');
+        byId('surat_tujuan').value = [
+            kel ? 'Desa / Kelurahan : ' + kel : '',
+            kec ? 'Kecamatan : ' + kec : '',
+            kabko ? 'Kabupaten/Kota : ' + kabko : '',
+            prov ? 'Provinsi : ' + prov : '',
+            alamat ? 'Alamat : ' + alamat : ''
+        ].filter(Boolean).join(' ');
+        if (byId('surat_keperluan')) byId('surat_keperluan').value = peruntukan;
+        if (byId('surat_jml_pengikut')) byId('surat_jml_pengikut').value = jumlah;
+    }
+
+    document.addEventListener('input', function (e) {
+        if (['tgl_awal','tgl_akhir','provinsi_boro','kabko_boro','kecamatan_boro','kelurahan_boro','alamat_boro','peruntukan','jumlah_pengikut'].includes(e.target.id)) {
+            updateBoroHiddenFields();
+        }
+    });
+    document.addEventListener('change', updateBoroHiddenFields);
+    document.addEventListener('DOMContentLoaded', updateBoroHiddenFields);
+})();
+</script>
+
 @endpush
 @endsection
