@@ -271,8 +271,296 @@ class SuratApiController extends Controller
         ]);
     }
 
+    protected function mapKodeJenisSurat(string $jenis): string
+    {
+        $mapKodeJenis = [
+            'skbn' => 'SKBN',
+            'sktm' => 'SKTM',
+            'skdom' => 'SKDOM',
+            'skusaha' => 'SKUSAHA',
+            'skhsl' => 'SKHSL',
+            'skboro' => 'SKBORO',
+            'skkelahiran' => 'SKKELAHIRAN',
+            'skkematian' => 'SKKEMATIAN',
+            'suket' => 'SUKET',
+        ];
+
+        return $mapKodeJenis[$jenis] ?? strtoupper($jenis);
+    }
+
+    protected function getPengajuanIdFromRequest(Request $request, ?int $routeId = null): ?int
+    {
+        if ($routeId) {
+            return (int) $routeId;
+        }
+
+        foreach (['pengajuan_id', 'id_pengajuan', 'surat_pengajuan_id', 'id_surat', 'surat_id'] as $key) {
+            if ($request->filled($key)) {
+                return (int) $request->input($key);
+            }
+        }
+
+        return null;
+    }
+
+    protected function getExistingVariableData(?SuratPengajuan $surat): array
+    {
+        if (!$surat) {
+            return [];
+        }
+
+        $variable = $surat->variable ?? [];
+
+        if (is_array($variable)) {
+            return $variable;
+        }
+
+        if (is_string($variable) && trim($variable) !== '') {
+            $decoded = json_decode($variable, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    protected function rejectedColumnNames(): array
+    {
+        return [
+            'alasan_penolakan',
+            'alasan_tolak',
+            'alasan',
+            'keterangan_penolakan',
+            'catatan_penolakan',
+            'ditolak_oleh',
+            'ditolak_by',
+            'rejected_by',
+            'tanggal_ditolak',
+            'tgl_ditolak',
+            'rejected_at',
+            'status_tolak',
+        ];
+    }
+
+    protected function hasRejectionMarker(SuratPengajuan $surat): bool
+			{
+				// 1. Cek kolom-kolom penolakan jika memang ada di surat_pengajuans
+				foreach ($this->rejectedColumnNames() as $column) {
+					if (Schema::hasColumn('surat_pengajuans', $column)) {
+						$value = $surat->{$column} ?? null;
+			
+						if ($value !== null && trim((string) $value) !== '') {
+							return true;
+						}
+					}
+				}
+			
+				// 2. Cek status langsung dari kolom status
+				$status = strtolower(trim((string) ($surat->status ?? '')));
+			
+				$rejectedStatusValues = [
+					'ditolak',
+					'tolak',
+					'rejected',
+					'reject',
+					'pengajuan ditolak',
+					'ditolak admin',
+					'dikembalikan',
+					'revisi',
+					'perbaikan',
+					'99',
+					'-1',
+					'98',
+					'97',
+				];
+			
+				if (in_array($status, $rejectedStatusValues, true)) {
+					return true;
+				}
+			
+				// 3. Cek nama status dari relasi status, jika model punya relasi st
+				try {
+					$statusName = '';
+			
+					if (isset($surat->st)) {
+						if (is_array($surat->st)) {
+							$statusName = strtolower(trim((string) ($surat->st['name'] ?? $surat->st['nama'] ?? '')));
+						} else {
+							$statusName = strtolower(trim((string) ($surat->st->name ?? $surat->st->nama ?? '')));
+						}
+					}
+			
+					if (
+						$statusName !== '' &&
+						(
+							str_contains($statusName, 'tolak') ||
+							str_contains($statusName, 'reject') ||
+							str_contains($statusName, 'dikembalikan') ||
+							str_contains($statusName, 'revisi') ||
+							str_contains($statusName, 'perbaikan')
+						)
+					) {
+						return true;
+					}
+				} catch (\Throwable $e) {
+					// Relasi status tidak wajib ada.
+				}
+			
+				// 4. Cek variable JSON, karena beberapa sistem menyimpan alasan/status penolakan di variable
+				$variable = $this->getExistingVariableData($surat);
+			
+				foreach ([
+					'alasan',
+					'alasan_penolakan',
+					'alasan_tolak',
+					'keterangan_penolakan',
+					'catatan_penolakan',
+					'status_penolakan',
+					'status_tolak',
+				] as $key) {
+					if (isset($variable[$key]) && trim((string) $variable[$key]) !== '') {
+						return true;
+					}
+				}
+			
+				if (isset($variable['status'])) {
+					$variableStatus = strtolower(trim((string) $variable['status']));
+			
+					if (
+						str_contains($variableStatus, 'tolak') ||
+						str_contains($variableStatus, 'reject') ||
+						str_contains($variableStatus, 'dikembalikan') ||
+						str_contains($variableStatus, 'revisi')
+					) {
+						return true;
+					}
+				}
+			
+				return false;
+			}
+
+    protected function cleanInternalPayload(array $input): array
+    {
+        $mainColumns = [
+            'id',
+            'pengajuan_id',
+            'id_pengajuan',
+            'surat_pengajuan_id',
+            'id_surat',
+            'surat_id',
+            'jenis_surat',
+            'jenis_surat_id',
+            'nik',
+            'peruntukan',
+            'kepada',
+            'id_kel',
+            'id_rw',
+            'id_rt',
+            'tahun',
+            'tgl_surat',
+            'pengantar',
+            'token',
+            '_method',
+            'status',
+            'status_label',
+            'alasan',
+            'alasan_penolakan',
+            'alasan_tolak',
+            'keterangan_penolakan',
+            'catatan_penolakan',
+            'ditolak_oleh',
+            'ditolak_by',
+            'rejected_by',
+            'tanggal_ditolak',
+            'tgl_ditolak',
+            'rejected_at',
+            'status_tolak',
+        ];
+
+        return array_diff_key($input, array_flip($mainColumns));
+    }
+
+    protected function buildAllInput(Request $request, Resident $resident, string $resolvedJenis): array
+    {
+        $allInput = $request->all();
+        $allInput['submitter_type'] = 'warga';
+
+        if ($resolvedJenis === 'sktm') {
+            $registerAs = strtolower(trim((string) $request->register_as));
+            $allInput['register_as'] = $registerAs;
+
+            if ($registerAs !== 'sekolah') {
+                $allInput['kepada'] = strtoupper($resident->name ?? $request->name ?? '');
+                $allInput['kepada_tempat_lhr'] = null;
+                $allInput['kepada_tgl_lhr'] = null;
+                $allInput['kepada_gender'] = null;
+                $allInput['kepada_gender_nm'] = null;
+                $allInput['kepada_hubungan'] = null;
+                $allInput['kepada_sekolah'] = null;
+                $allInput['kepada_kelas'] = null;
+                $allInput['kepada_alamat_sekolah'] = null;
+            }
+        }
+
+        return $allInput;
+    }
+
+    protected function storePengantarFile(Request $request, string $resolvedJenis): ?string
+    {
+        if (!$request->hasFile('pengantar')) {
+            return null;
+        }
+
+        $file = $request->file('pengantar');
+        $year = date('Y');
+        $savePath = "public/pengantar/{$year}/{$resolvedJenis}";
+        $fileName = $file->hashName();
+
+        $file->storeAs($savePath, $fileName);
+
+        return "/storage/pengantar/{$year}/{$resolvedJenis}/{$fileName}";
+    }
+
+    protected function responseData(SuratPengajuan $surat, string $resolvedJenis, ?array $master = null): array
+    {
+        $master = $master ?: $this->masterJenisCollection()->firstWhere('jenis', $resolvedJenis);
+
+        $data = [
+            'id' => $surat->id,
+            'pengajuan_id' => $surat->id,
+            'jenis_surat' => $surat->jenis_surat,
+            'jenis_surat_id' => $master['id'] ?? null,
+            'jenis_surat_label' => $master['nama'] ?? strtoupper((string) $surat->jenis_surat),
+            'jenis_surat_kode' => $master['kode'] ?? strtoupper((string) $surat->jenis_surat),
+            'no_urut_surat' => $surat->no_urut_surat,
+            'nik' => $surat->nik,
+            'peruntukan' => $surat->peruntukan,
+            'kepada' => $surat->kepada,
+            'status' => $surat->status,
+            'status_label' => $surat->status == 0 ? 'Warga' : ($surat->st['name'] ?? null),
+            'pengantar' => $surat->pengantar,
+            'variable' => $this->getExistingVariableData($surat),
+            'tgl_surat' => $surat->tgl_surat,
+            'created_at' => $surat->created_at,
+            'updated_at' => $surat->updated_at,
+        ];
+
+        foreach (['alasan_penolakan', 'alasan_tolak', 'alasan', 'keterangan_penolakan', 'catatan_penolakan', 'tanggal_ditolak', 'tgl_ditolak', 'rejected_at'] as $column) {
+            if (Schema::hasColumn('surat_pengajuans', $column)) {
+                $data[$column] = $surat->{$column};
+            }
+        }
+
+        return $data;
+    }
+
     public function store(Request $request)
     {
+        $pengajuanId = $this->getPengajuanIdFromRequest($request);
+
+        if ($pengajuanId) {
+            return $this->revisiDitolak($request, $pengajuanId);
+        }
+
         $allowedJenis = $this->masterJenisCollection()->pluck('jenis')->filter()->values()->all();
         $resolvedJenis = $this->resolveJenisInput($request);
 
@@ -287,8 +575,10 @@ class SuratApiController extends Controller
             'pengantar' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
         ]);
 
+        $fileUrl = null;
+
         try {
-            return DB::transaction(function () use ($request, $resolvedJenis) {
+            return DB::transaction(function () use ($request, $resolvedJenis, &$fileUrl) {
                 $user = auth()->user();
                 $resident = Resident::where('nik', $request->nik)->first();
 
@@ -296,56 +586,11 @@ class SuratApiController extends Controller
                     throw new \Exception('NIK tidak terdaftar dalam pangkalan data penduduk.');
                 }
 
-                $file = $request->file('pengantar');
-                $year = date('Y');
-                $savePath = "public/pengantar/{$year}/{$resolvedJenis}";
-                $fileName = $file->hashName();
-                $file->storeAs($savePath, $fileName);
-                $fileUrl = "/storage/pengantar/{$year}/{$resolvedJenis}/{$fileName}";
+                $fileUrl = $this->storePengantarFile($request, $resolvedJenis);
 
-                $allInput = $request->all();
-                $allInput['submitter_type'] = 'warga';
+                $allInput = $this->buildAllInput($request, $resident, $resolvedJenis);
+                $variableData = $this->cleanInternalPayload($allInput);
 
-                if ($resolvedJenis === 'sktm') {
-                    $registerAs = strtolower(trim((string) $request->register_as));
-                    $allInput['register_as'] = $registerAs;
-
-                    if ($registerAs !== 'sekolah') {
-                        $allInput['kepada'] = strtoupper($resident->name ?? $request->name ?? '');
-                        $allInput['kepada_tempat_lhr'] = null;
-                        $allInput['kepada_tgl_lhr'] = null;
-                        $allInput['kepada_gender'] = null;
-                        $allInput['kepada_gender_nm'] = null;
-                        $allInput['kepada_hubungan'] = null;
-                        $allInput['kepada_sekolah'] = null;
-                        $allInput['kepada_kelas'] = null;
-                        $allInput['kepada_alamat_sekolah'] = null;
-                    }
-                }
-
-                $mainColumns = [
-                    'jenis_surat', 'nik', 'peruntukan', 'kepada',
-                    'id_kel', 'id_rw', 'id_rt', 'tahun', 'tgl_surat', 'jenis_surat_id'
-                ];
-
-                $variableData = array_diff_key(
-                    $allInput,
-                    array_flip(array_merge($mainColumns, ['pengantar', 'token', '_method']))
-                );
-
-                $mapKodeJenis = [
-                    'skbn' => 'SKBN',
-                    'sktm' => 'SKTM',
-                    'skdom' => 'SKDOM',
-                    'skusaha' => 'SKUSAHA',
-                    'skhsl' => 'SKHSL',
-                    'skboro' => 'SKBORO',
-                    'skkelahiran' => 'SKKELAHIRAN',
-                    'skkematian' => 'SKKEMATIAN',
-                    'suket' => 'SUKET',
-                ];
-
-                $kdJenisSurat = $mapKodeJenis[$resolvedJenis] ?? strtoupper($resolvedJenis);
                 $tglSurat = $request->filled('tgl_surat') ? Carbon::parse($request->tgl_surat) : now();
 
                 $noUrutSurat = ((int) SuratPengajuan::where('jenis_surat', $resolvedJenis)
@@ -360,7 +605,7 @@ class SuratApiController extends Controller
 
                 $surat = SuratPengajuan::create([
                     'jenis_surat' => $resolvedJenis,
-                    'kd_jenis_surat' => $kdJenisSurat,
+                    'kd_jenis_surat' => $this->mapKodeJenisSurat($resolvedJenis),
                     'no_urut_surat' => $noUrutSurat,
                     'nik' => $request->nik,
                     'id_kel' => $user->id_instansi,
@@ -383,31 +628,14 @@ class SuratApiController extends Controller
                     'status_surat' => 0,
                 ]);
 
-                $master = $this->masterJenisCollection()->firstWhere('jenis', $resolvedJenis);
-
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Pengajuan surat berhasil dikirim!',
-                    'data' => [
-                        'id' => $surat->id,
-                        'jenis_surat' => $surat->jenis_surat,
-                        'jenis_surat_id' => $master['id'] ?? null,
-                        'jenis_surat_label' => $master['nama'] ?? strtoupper($surat->jenis_surat),
-                        'jenis_surat_kode' => $master['kode'] ?? strtoupper($surat->jenis_surat),
-                        'no_urut_surat' => $surat->no_urut_surat,
-                        'nik' => $surat->nik,
-                        'peruntukan' => $surat->peruntukan,
-                        'kepada' => $surat->kepada,
-                        'status' => 0,
-                        'status_label' => 'Warga',
-                        'pengantar' => $surat->pengantar,
-                        'variable' => $surat->variable,
-                        'created_at' => $surat->created_at,
-                    ],
+                    'data' => $this->responseData($surat->fresh(), $resolvedJenis),
                 ], 201);
             });
         } catch (\Exception $e) {
-            if (isset($fileUrl)) {
+            if ($fileUrl) {
                 Storage::delete(str_replace('/storage/', 'public/', $fileUrl));
             }
 
@@ -416,6 +644,160 @@ class SuratApiController extends Controller
                 'message' => 'Gagal menyimpan: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function revisiDitolak(Request $request, int $id)
+    {
+        $allowedJenis = $this->masterJenisCollection()->pluck('jenis')->filter()->values()->all();
+        $resolvedJenis = $this->resolveJenisInput($request);
+
+        $surat = SuratPengajuan::find($id);
+
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengajuan surat tidak ditemukan.',
+            ], 404);
+        }
+
+        $resolvedJenis = $resolvedJenis ?: strtolower((string) $surat->jenis_surat);
+
+        $request->merge([
+            'jenis_surat' => $resolvedJenis,
+            'nik' => $request->input('nik', $surat->nik),
+        ]);
+
+        $request->validate([
+            'jenis_surat' => ['required', 'string', Rule::in($allowedJenis)],
+            'nik' => ['required', 'digits:16'],
+            'peruntukan' => ['required', 'string', 'max:255'],
+            'pengantar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        if ((string) $surat->nik !== (string) $request->nik) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'NIK revisi tidak sesuai dengan NIK pengajuan yang ditolak.',
+            ], 422);
+        }
+
+        if (strtolower((string) $surat->jenis_surat) !== strtolower((string) $resolvedJenis)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Jenis surat revisi tidak sesuai dengan pengajuan yang ditolak.',
+            ], 422);
+        }
+
+        if (!$this->hasRejectionMarker($surat)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengajuan ini tidak sedang dalam status ditolak, sehingga tidak dapat direvisi dari mobile.',
+            ], 422);
+        }
+
+        $fileUrl = null;
+
+        try {
+            return DB::transaction(function () use ($request, $surat, $resolvedJenis, &$fileUrl) {
+                $user = auth()->user();
+                $resident = Resident::where('nik', $request->nik)->first();
+
+                if (!$resident) {
+                    throw new \Exception('NIK tidak terdaftar dalam pangkalan data penduduk.');
+                }
+
+                $fileUrl = $this->storePengantarFile($request, $resolvedJenis);
+
+                $allInput = $this->buildAllInput($request, $resident, $resolvedJenis);
+                $newVariableData = $this->cleanInternalPayload($allInput);
+                $oldVariableData = $this->getExistingVariableData($surat);
+                $variableData = array_merge($oldVariableData, $newVariableData);
+
+                $kepadaValue = $request->input('kepada', $surat->kepada);
+                if ($resolvedJenis === 'sktm' && strtolower((string) $request->register_as) !== 'sekolah') {
+                    $kepadaValue = strtoupper($resident->name ?? $request->name ?? '');
+                }
+
+                $updateData = [
+                    'peruntukan' => $request->peruntukan,
+                    'kepada' => $kepadaValue,
+                    'status' => 0,
+                    'variable' => $variableData,
+                ];
+
+                if ($fileUrl) {
+                    $updateData['pengantar'] = $fileUrl;
+                }
+
+                if (Schema::hasColumn('surat_pengajuans', 'kd_jenis_surat') && empty($surat->kd_jenis_surat)) {
+                    $updateData['kd_jenis_surat'] = $this->mapKodeJenisSurat($resolvedJenis);
+                }
+
+                foreach (['alasan_penolakan', 'alasan_tolak', 'alasan', 'keterangan_penolakan', 'catatan_penolakan', 'ditolak_oleh', 'ditolak_by', 'rejected_by', 'tanggal_ditolak', 'tgl_ditolak', 'rejected_at', 'status_tolak'] as $column) {
+                    if (Schema::hasColumn('surat_pengajuans', $column)) {
+                        $updateData[$column] = null;
+                    }
+                }
+
+                if (Schema::hasColumn('surat_pengajuans', 'is_revisi')) {
+                    $updateData['is_revisi'] = 1;
+                }
+
+                if (Schema::hasColumn('surat_pengajuans', 'revisi_ke')) {
+                    $updateData['revisi_ke'] = ((int) ($surat->revisi_ke ?? 0)) + 1;
+                }
+
+                $surat->update($updateData);
+
+                Log_surat::create([
+                    'nik' => $request->nik,
+                    'tabel_surat' => 'surat_pengajuans',
+                    'nama_surat' => strtoupper($resolvedJenis),
+                    'id_surat' => $surat->id,
+                    'status_surat' => 0,
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Revisi pengajuan berhasil dikirim ulang. Status penolakan sudah dibersihkan dan pengajuan kembali masuk ke admin.',
+                    'data' => $this->responseData($surat->fresh(), $resolvedJenis),
+                ], 200);
+            });
+        } catch (\Exception $e) {
+            if ($fileUrl) {
+                Storage::delete(str_replace('/storage/', 'public/', $fileUrl));
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal memperbarui revisi: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function detail(Request $request, int $id)
+    {
+        $surat = SuratPengajuan::find($id);
+
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengajuan surat tidak ditemukan.',
+            ], 404);
+        }
+
+        $jenisMap = $this->masterJenisCollection()->keyBy(function ($item) {
+            return strtolower(trim((string) $item['jenis']));
+        });
+
+        $jenisKey = strtolower(trim((string) $surat->jenis_surat));
+        $jenisMaster = $jenisMap->get($jenisKey);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Detail surat berhasil diambil.',
+            'data' => $this->responseData($surat, $jenisKey, $jenisMaster),
+        ]);
     }
 
     public function history(Request $request)
@@ -441,21 +823,7 @@ class SuratApiController extends Controller
             $jenisKey = strtolower(trim((string) $item->jenis_surat));
             $jenisMaster = $jenisMap->get($jenisKey);
 
-            return [
-                'id' => $item->id,
-                'jenis_surat' => $item->jenis_surat,
-                'jenis_surat_id' => $jenisMaster['id'] ?? null,
-                'jenis_surat_label' => $jenisMaster['nama'] ?? strtoupper((string) $item->jenis_surat),
-                'jenis_surat_kode' => $jenisMaster['kode'] ?? strtoupper((string) $item->jenis_surat),
-                'nik' => $item->nik,
-                'peruntukan' => $item->peruntukan,
-                'kepada' => $item->kepada,
-                'status' => $item->status,
-                'status_label' => $item->st['name'] ?? null,
-                'pengantar' => $item->pengantar,
-                'tgl_surat' => $item->tgl_surat,
-                'created_at' => $item->created_at,
-            ];
+            return $this->responseData($item, $jenisKey, $jenisMaster);
         })->values();
 
         return response()->json([
@@ -464,4 +832,5 @@ class SuratApiController extends Controller
             'data' => $data,
         ]);
     }
+
 }

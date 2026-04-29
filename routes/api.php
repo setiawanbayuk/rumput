@@ -121,5 +121,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/jenis-surat', [SuratApiController::class, 'jenisSurat']);
     Route::get('/surat/form-config', [SuratApiController::class, 'formConfig']);
     Route::get('/surat/history', [SuratApiController::class, 'history']);
+    Route::get('/surat/detail/{id}', [SuratApiController::class, 'detail']);
+
+    // Submit baru dari Super App.
+    // Catatan: endpoint lama tetap aman dipakai.
+    // Kalau body berisi pengajuan_id/id_pengajuan/id_surat/surat_id, controller otomatis masuk mode revisi.
     Route::post('/surat/store', [SuratApiController::class, 'store']);
+
+    // Revisi surat warga yang ditolak admin.
+    // Mobile boleh pakai POST atau PUT, pilih yang paling mudah di Super App.
+    Route::match(['post', 'put'], '/surat/{id}/revisi', [SuratApiController::class, 'revisiDitolak']);
+    Route::match(['post', 'put'], '/surat/{id}/perbaiki', [SuratApiController::class, 'revisiDitolak']);
 });
