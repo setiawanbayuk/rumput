@@ -521,37 +521,62 @@ class SuratApiController extends Controller
     }
 
     protected function responseData(SuratPengajuan $surat, string $resolvedJenis, ?array $master = null): array
-    {
-        $master = $master ?: $this->masterJenisCollection()->firstWhere('jenis', $resolvedJenis);
-
-        $data = [
-            'id' => $surat->id,
-            'pengajuan_id' => $surat->id,
-            'jenis_surat' => $surat->jenis_surat,
-            'jenis_surat_id' => $master['id'] ?? null,
-            'jenis_surat_label' => $master['nama'] ?? strtoupper((string) $surat->jenis_surat),
-            'jenis_surat_kode' => $master['kode'] ?? strtoupper((string) $surat->jenis_surat),
-            'no_urut_surat' => $surat->no_urut_surat,
-            'nik' => $surat->nik,
-            'peruntukan' => $surat->peruntukan,
-            'kepada' => $surat->kepada,
-            'status' => $surat->status,
-            'status_label' => $surat->status == 0 ? 'Warga' : ($surat->st['name'] ?? null),
-            'pengantar' => $surat->pengantar,
-            'variable' => $this->getExistingVariableData($surat),
-            'tgl_surat' => $surat->tgl_surat,
-            'created_at' => $surat->created_at,
-            'updated_at' => $surat->updated_at,
-        ];
-
-        foreach (['alasan_penolakan', 'alasan_tolak', 'alasan', 'keterangan_penolakan', 'catatan_penolakan', 'tanggal_ditolak', 'tgl_ditolak', 'rejected_at'] as $column) {
-            if (Schema::hasColumn('surat_pengajuans', $column)) {
-                $data[$column] = $surat->{$column};
-            }
-        }
-
-        return $data;
-    }
+	{
+		$master = $master ?: $this->masterJenisCollection()->firstWhere('jenis', $resolvedJenis);
+	
+		$formatTanggal = function ($value) {
+			if (!$value) {
+				return null;
+			}
+	
+			return Carbon::parse($value)->timezone('Asia/Jakarta')->format('Y-m-d');
+		};
+	
+		$formatDateTime = function ($value) {
+			if (!$value) {
+				return null;
+			}
+	
+			return Carbon::parse($value)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s');
+		};
+	
+		$data = [
+			'id' => $surat->id,
+			'pengajuan_id' => $surat->id,
+			'jenis_surat' => $surat->jenis_surat,
+			'jenis_surat_id' => $master['id'] ?? null,
+			'jenis_surat_label' => $master['nama'] ?? strtoupper((string) $surat->jenis_surat),
+			'jenis_surat_kode' => $master['kode'] ?? strtoupper((string) $surat->jenis_surat),
+			'no_urut_surat' => $surat->no_urut_surat,
+			'nik' => $surat->nik,
+			'peruntukan' => $surat->peruntukan,
+			'kepada' => $surat->kepada,
+			'status' => $surat->status,
+			'status_label' => $surat->status == 0 ? 'Warga' : ($surat->st['name'] ?? null),
+			'pengantar' => $surat->pengantar,
+			'variable' => $this->getExistingVariableData($surat),
+	
+			// FIX UTAMA: jangan kirim Carbon mentah ke JSON
+			'tgl_surat' => $formatTanggal($surat->tgl_surat),
+			'created_at' => $formatDateTime($surat->created_at),
+			'updated_at' => $formatDateTime($surat->updated_at),
+		];
+	
+		foreach (['alasan_penolakan', 'alasan_tolak', 'alasan', 'keterangan_penolakan', 'catatan_penolakan', 'tanggal_ditolak', 'tgl_ditolak', 'rejected_at'] as $column) {
+			if (Schema::hasColumn('surat_pengajuans', $column)) {
+				if (in_array($column, ['tanggal_ditolak', 'tgl_ditolak'], true)) {
+					$data[$column] = $formatTanggal($surat->{$column});
+				} elseif ($column === 'rejected_at') {
+					$data[$column] = $formatDateTime($surat->{$column});
+				} else {
+					$data[$column] = $surat->{$column};
+				}
+			}
+		}
+	
+		return $data;
+	}
+	
 
     public function store(Request $request)
     {
