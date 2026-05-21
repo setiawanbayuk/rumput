@@ -540,6 +540,8 @@ class SuratApiController extends Controller
 			return Carbon::parse($value)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s');
 		};
 	
+		$pdfInfo = $this->resolvePdfInfo($surat);
+
 		$data = [
 			'id' => $surat->id,
 			'pengajuan_id' => $surat->id,
@@ -553,6 +555,8 @@ class SuratApiController extends Controller
 			'kepada' => $surat->kepada,
 			'status' => $surat->status,
 			'status_label' => $surat->status == 0 ? 'Warga' : ($surat->st['name'] ?? null),
+			'pdf_url' => $pdfInfo['url'] ?? null,
+			'download_pdf_url' => $pdfInfo ? url('/api/surat/' . $surat->id . '/download-pdf') : null,
 			'pengantar' => $surat->pengantar,
 			'variable' => $this->getExistingVariableData($surat),
 	
@@ -818,10 +822,13 @@ class SuratApiController extends Controller
         $jenisKey = strtolower(trim((string) $surat->jenis_surat));
         $jenisMaster = $jenisMap->get($jenisKey);
 
+        $data = $this->responseData($surat, $jenisKey, $jenisMaster);
+        $data['tracking'] = $this->buildTrackingPayload($surat);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Detail surat berhasil diambil.',
-            'data' => $this->responseData($surat, $jenisKey, $jenisMaster),
+            'data' => $data,
         ]);
     }
 
@@ -848,13 +855,787 @@ class SuratApiController extends Controller
             $jenisKey = strtolower(trim((string) $item->jenis_surat));
             $jenisMaster = $jenisMap->get($jenisKey);
 
-            return $this->responseData($item, $jenisKey, $jenisMaster);
+            $payload = $this->responseData($item, $jenisKey, $jenisMaster);
+            $payload['tracking'] = $this->buildTrackingPayload($item);
+
+            return $payload;
         })->values();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Riwayat surat berhasil diambil.',
             'data' => $data,
+        ]);
+    }
+
+
+
+    /**
+     * API realtime tracking surat untuk Super APP / Postman.
+     *
+     * Endpoint ini sengaja tidak mengubah alur lama. Timeline dibaca dari log_surats
+     * yang sudah dibuat setiap kali status surat berubah di backend ESUKET.
+     *
+     * Ringkasan alur:
+     * - Semua surat selain SKTM: Pengajuan -> Diproses -> Selesai
+     * - SKTM: Pengajuan -> Diproses -> Lurah -> Sekcam -> Selesai
+     */
+    public function tracking(Request $request, $id)
+    {
+        $identifier = trim((string) $id);
+
+        // Endpoint ini mendukung 2 cara panggil:
+        // 1. /api/surat/{pengajuan_id}/tracking  -> ambil tracking 1 surat berdasarkan ID pengajuan.
+        // 2. /api/surat/{nik}/tracking           -> ambil tracking surat terbaru milik NIK tersebut.
+        if (preg_match('/^\d{16}$/', $identifier)) {
+            $surat = SuratPengajuan::query()
+                ->where('nik', $identifier)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->first();
+        } else {
+            $surat = SuratPengajuan::find($identifier);
+        }
+
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengajuan surat tidak ditemukan untuk ID/NIK tersebut.',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Tracking realtime surat berhasil diambil.',
+            'data' => $this->buildTrackingPayload($surat),
+        ]);
+    }
+
+    protected function buildTrackingPayload(SuratPengajuan $surat): array
+    {
+        $isSktm = strtolower(trim((string) $surat->jenis_surat)) === 'sktm';
+        $logs = $this->trackingLogs($surat);
+        $currentStatus = (int) ($surat->status ?? 0);
+        $currentTracking = $this->resolveCurrentTrackingLabel($currentStatus, $isSktm);
+
+        $alur = $isSktm
+            ? ['Pengajuan', 'Diproses', 'Lurah', 'Sekcam', 'Selesai']
+            : ['Pengajuan', 'Diproses', 'Selesai'];
+
+        $timeline = $isSktm
+            ? $this->buildSktmTimeline($surat, $logs)
+            : $this->buildNonSktmTimeline($surat, $logs);
+
+        $currentIndex = array_search($currentTracking, $alur, true);
+        $progressPercent = $currentTracking === 'Ditolak'
+            ? 100
+            : ($currentIndex === false || count($alur) <= 1
+                ? 0
+                : (int) round(($currentIndex / (count($alur) - 1)) * 100));
+
+        // Response dibuat ringkas untuk Postman/Super APP.
+        // Detail teknis seperti raw_logs, transisi_waktu, keterangan, dan duplikasi timeline tidak dikirim.
+        return [
+            'pengajuan_id' => (int) $surat->id,
+            'nik' => (string) $surat->nik,
+            'jenis_surat' => strtolower((string) $surat->jenis_surat),
+            'is_sktm' => $isSktm,
+            'status_tracking' => $currentTracking,
+            'progress_percent' => $progressPercent,
+            'alur' => $timeline,
+        ];
+    }
+
+    protected function trackingLogs(SuratPengajuan $surat)
+    {
+        $createdAt = $this->toJakartaDateTime($surat->created_at);
+
+        $logs = Log_surat::query()
+            ->where('tabel_surat', 'surat_pengajuans')
+            ->where('id_surat', $surat->id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->filter(function ($log) use ($createdAt) {
+                if (!$createdAt || !$log->created_at) {
+                    return true;
+                }
+
+                // Pengaman agar log lama dari surat lain tidak ikut terbaca dan membuat durasi minus.
+                return $this->toJakartaDateTime($log->created_at)->greaterThanOrEqualTo($createdAt->copy()->subMinute());
+            })
+            ->values();
+
+        // Pengaman untuk data yang belum punya log awal.
+        if ($logs->isEmpty()) {
+            $fallback = new Log_surat([
+                'nik' => $surat->nik,
+                'tabel_surat' => 'surat_pengajuans',
+                'nama_surat' => strtoupper((string) $surat->jenis_surat),
+                'id_surat' => $surat->id,
+                'status_surat' => (int) ($surat->status ?? 0),
+            ]);
+            $fallback->id = 0;
+            $fallback->created_at = $surat->created_at ?: now();
+            $fallback->updated_at = $fallback->created_at;
+
+            return collect([$fallback]);
+        }
+
+        return $logs;
+    }
+
+    protected function buildNonSktmTimeline(SuratPengajuan $surat, $logs): array
+    {
+        $currentStatus = (int) ($surat->status ?? 0);
+        $cycleLogs = $this->currentTrackingCycleLogs($surat, $logs);
+        $isRejected = $currentStatus === 6;
+        $currentPhase = $this->trackingPhaseForStatus($currentStatus, false);
+        $activePhase = $isRejected ? $this->lastNonRejectedPhase($cycleLogs, false) : $currentPhase;
+
+        $startPengajuan = $this->cyclePengajuanStart($surat, $cycleLogs);
+        $startDitolak = $isRejected ? $this->timeFromLog($this->lastLogWithStatus($cycleLogs, [6])) : null;
+
+        // Non-SKTM diringkas untuk Super APP/Postman:
+        // Pengajuan/Admin -> Diproses/Sekkel -> Selesai/Ditolak.
+        // Kuncinya: log lama setelah surat direvisi atau diturunkan tidak boleh membuat "selesai" tetap terisi.
+        $startDiproses = $activePhase >= 1
+            ? $this->timeFromLog($this->firstLogAfterLastStatus($cycleLogs, [2], [0, 1]))
+            : null;
+
+        if (!$startDiproses && $activePhase >= 1) {
+            $startDiproses = $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [2]));
+        }
+
+        $startLurah = $activePhase >= 2
+            ? $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [3]))
+            : null;
+
+        // Jika pernah dinaikkan ke Lurah lalu diturunkan lagi ke Sekkel/Admin,
+        // status 3 lama tidak boleh lagi menjadi selesai tahap Diproses.
+        $endDiprosesByLurah = $activePhase >= 2
+            ? $this->timeFromLog($this->lastLogAfterLastStatus($cycleLogs, [3], [2]))
+            : null;
+
+        if (!$endDiprosesByLurah && $activePhase >= 2) {
+            $endDiprosesByLurah = $startLurah;
+        }
+
+        $startSelesai = $activePhase >= 3
+            ? $this->timeFromLog($this->firstLogAfterLastStatus($cycleLogs, [4, 9, 5], [3]))
+            : null;
+
+        if (!$startSelesai && $activePhase >= 3) {
+            $startSelesai = $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [4, 9, 5]));
+        }
+
+        $endPengajuan = null;
+        if ($isRejected) {
+            $endPengajuan = $startDiproses ?: $startDitolak;
+        } elseif ($currentPhase >= 1) {
+            $endPengajuan = $startDiproses;
+        }
+
+        $endDiproses = null;
+        if ($startDiproses) {
+            if ($isRejected) {
+                $endDiproses = $endDiprosesByLurah ?: $startSelesai ?: $startDitolak;
+            } elseif ($currentPhase > 1) {
+                $endDiproses = $endDiprosesByLurah ?: $startSelesai;
+            }
+            // currentPhase == 1 berarti surat sedang kembali/berada di Sekkel,
+            // jadi selesai Diproses wajib null walaupun pernah ada status 3 lama.
+        }
+
+        $timeline = [];
+        $timeline[] = $this->timelineRow('Pengajuan', $startPengajuan, $endPengajuan);
+
+        if ($startDiproses) {
+            $timeline[] = $this->timelineRow('Diproses', $startDiproses, $endDiproses);
+        }
+
+        if ($startSelesai && !$isRejected) {
+            $timeline[] = $this->timelineRow('Selesai', $startSelesai, null);
+        }
+
+        if ($startDitolak) {
+            $timeline[] = $this->timelineRow('Ditolak', $startDitolak, null);
+        }
+
+        return $timeline;
+    }
+
+    protected function buildSktmTimeline(SuratPengajuan $surat, $logs): array
+    {
+        $currentStatus = (int) ($surat->status ?? 0);
+        $cycleLogs = $this->currentTrackingCycleLogs($surat, $logs);
+        $isRejected = $currentStatus === 6;
+        $currentPhase = $this->trackingPhaseForStatus($currentStatus, true);
+        $activePhase = $isRejected ? $this->lastNonRejectedPhase($cycleLogs, true) : $currentPhase;
+
+        $startPengajuan = $this->cyclePengajuanStart($surat, $cycleLogs);
+        $startDitolak = $isRejected ? $this->timeFromLog($this->lastLogWithStatus($cycleLogs, [6])) : null;
+
+        $startDiproses = $activePhase >= 1
+            ? $this->timeFromLog($this->firstLogAfterLastStatus($cycleLogs, [2], [0, 1]))
+            : null;
+
+        if (!$startDiproses && $activePhase >= 1) {
+            $startDiproses = $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [2]));
+        }
+
+        $startLurah = $activePhase >= 2
+            ? $this->timeFromLog($this->firstLogAfterLastStatus($cycleLogs, [3, 4], [2]))
+            : null;
+
+        if (!$startLurah && $activePhase >= 2) {
+            $startLurah = $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [3, 4]));
+        }
+
+        $endDiprosesByLurah = $activePhase >= 2
+            ? $this->timeFromLog($this->lastLogAfterLastStatus($cycleLogs, [3], [2]))
+            : null;
+
+        if (!$endDiprosesByLurah && $activePhase >= 2) {
+            $endDiprosesByLurah = $startLurah;
+        }
+
+        // Status 11 = mulai meja Sekcam. Jika dari Sekcam/Camat diturunkan lagi,
+        // status 11/8 lama tidak boleh membuat tahap sebelumnya tetap selesai.
+        $startSekcam = $activePhase >= 3
+            ? $this->timeFromLog($this->firstLogAfterLastStatus($cycleLogs, [11], [3, 4]))
+            : null;
+
+        if (!$startSekcam && $activePhase >= 3) {
+            $startSekcam = $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [11]));
+        }
+
+        $endSekcam = $activePhase >= 4
+            ? $this->timeFromLog($this->lastLogAfterLastStatus($cycleLogs, [8], [11]))
+            : null;
+
+        // Status 9 = final Camat untuk SKTM. Status 5 tetap dianggap selesai jika ada data lama yang sudah dinilai.
+        $startSelesai = $activePhase >= 5
+            ? $this->timeFromLog($this->firstLogAfterLastStatus($cycleLogs, [9, 5], [8]))
+            : null;
+
+        if (!$startSelesai && $activePhase >= 5) {
+            $startSelesai = $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [9, 5]));
+        }
+
+        $endPengajuan = null;
+        if ($isRejected) {
+            $endPengajuan = $startDiproses ?: $startDitolak;
+        } elseif ($currentPhase >= 1) {
+            $endPengajuan = $startDiproses;
+        }
+
+        $endDiproses = null;
+        if ($startDiproses) {
+            if ($isRejected) {
+                $endDiproses = $endDiprosesByLurah ?: $startDitolak;
+            } elseif ($currentPhase > 1) {
+                $endDiproses = $endDiprosesByLurah;
+            }
+        }
+
+        $endLurah = null;
+        if ($startLurah) {
+            if ($isRejected) {
+                $endLurah = $startSekcam ?: $startDitolak;
+            } elseif ($currentPhase > 2) {
+                $endLurah = $startSekcam;
+            }
+            // currentPhase == 2 berarti surat sedang di Lurah / kembali dari Sekcam,
+            // jadi selesai Lurah wajib null.
+        }
+
+        $endSekcamRow = null;
+        if ($startSekcam) {
+            if ($isRejected) {
+                $endSekcamRow = $endSekcam ?: $startSelesai ?: $startDitolak;
+            } elseif ($currentPhase > 3) {
+                $endSekcamRow = $endSekcam ?: $startSelesai;
+            }
+            // currentPhase == 3 berarti surat sedang di Sekcam / kembali dari Camat,
+            // jadi selesai Sekcam wajib null walaupun pernah ada status 8 lama.
+        }
+
+        $timeline = [];
+        $timeline[] = $this->timelineRow('Pengajuan', $startPengajuan, $endPengajuan);
+
+        if ($startDiproses) {
+            $timeline[] = $this->timelineRow('Diproses', $startDiproses, $endDiproses);
+        }
+
+        if ($startLurah) {
+            $timeline[] = $this->timelineRow('Lurah', $startLurah, $endLurah);
+        }
+
+        if ($startSekcam) {
+            $timeline[] = $this->timelineRow('Sekcam', $startSekcam, $endSekcamRow);
+        }
+
+        if ($startSelesai && !$isRejected) {
+            $timeline[] = $this->timelineRow('Selesai', $startSelesai, null);
+        }
+
+        if ($startDitolak) {
+            $timeline[] = $this->timelineRow('Ditolak', $startDitolak, null);
+        }
+
+        return $timeline;
+    }
+
+    protected function currentTrackingCycleLogs(SuratPengajuan $surat, $logs)
+    {
+        $logs = $logs->values();
+        if ($logs->isEmpty()) {
+            return $logs;
+        }
+
+        $startIndex = 0;
+        $lastRejectedIndex = null;
+
+        foreach ($logs as $index => $log) {
+            $status = (int) ($log->status_surat ?? 0);
+
+            if ($status === 6) {
+                $lastRejectedIndex = $index;
+                continue;
+            }
+
+            // Revisi warga setelah ditolak selalu membuat log status 0 baru.
+            // Dari titik ini tracking harus restart, supaya Ditolak dan waktu selesai lama tidak ikut terbaca.
+            if ($status === 0 && $lastRejectedIndex !== null && $index > $lastRejectedIndex) {
+                $startIndex = $index;
+            }
+        }
+
+        return $logs->slice($startIndex)->values();
+    }
+
+    protected function cyclePengajuanStart(SuratPengajuan $surat, $logs): ?Carbon
+    {
+        return $this->timeFromLog($this->firstLogWithStatus($logs, [0]))
+            ?: $this->toJakartaDateTime($surat->created_at)
+            ?: $this->timeFromLog($logs->first());
+    }
+
+    protected function trackingPhaseForStatus(int $status, bool $isSktm): int
+    {
+        if ($status === 6) {
+            return -1;
+        }
+
+        if ($isSktm) {
+            return match (true) {
+                in_array($status, [0, 1], true) => 0,
+                $status === 2 => 1,
+                in_array($status, [3, 4], true) => 2,
+                $status === 11 => 3,
+                $status === 8 => 4,
+                in_array($status, [5, 9], true) => 5,
+                default => 0,
+            };
+        }
+
+        return match (true) {
+            in_array($status, [0, 1], true) => 0,
+            $status === 2 => 1,
+            in_array($status, [3, 8, 11], true) => 2,
+            in_array($status, [4, 5, 9], true) => 3,
+            default => 0,
+        };
+    }
+
+    protected function lastNonRejectedPhase($logs, bool $isSktm): int
+    {
+        for ($i = $logs->count() - 1; $i >= 0; $i--) {
+            $status = (int) ($logs[$i]->status_surat ?? 0);
+            if ($status !== 6) {
+                return max(0, $this->trackingPhaseForStatus($status, $isSktm));
+            }
+        }
+
+        return 0;
+    }
+
+    protected function firstLogWithStatus($logs, array $statuses)
+    {
+        return $logs->first(function ($item) use ($statuses) {
+            return in_array((int) ($item->status_surat ?? 0), $statuses, true);
+        });
+    }
+
+    protected function lastLogWithStatus($logs, array $statuses)
+    {
+        for ($i = $logs->count() - 1; $i >= 0; $i--) {
+            if (in_array((int) ($logs[$i]->status_surat ?? 0), $statuses, true)) {
+                return $logs[$i];
+            }
+        }
+
+        return null;
+    }
+
+    protected function firstLogAfterLastStatus($logs, array $targetStatuses, array $afterStatuses)
+    {
+        $afterIndex = $this->lastIndexOfStatus($logs, $afterStatuses);
+
+        foreach ($logs as $index => $log) {
+            if ($afterIndex !== null && $index <= $afterIndex) {
+                continue;
+            }
+
+            if (in_array((int) ($log->status_surat ?? 0), $targetStatuses, true)) {
+                return $log;
+            }
+        }
+
+        return null;
+    }
+
+    protected function lastLogAfterLastStatus($logs, array $targetStatuses, array $afterStatuses)
+    {
+        $afterIndex = $this->lastIndexOfStatus($logs, $afterStatuses);
+        $found = null;
+
+        foreach ($logs as $index => $log) {
+            if ($afterIndex !== null && $index <= $afterIndex) {
+                continue;
+            }
+
+            if (in_array((int) ($log->status_surat ?? 0), $targetStatuses, true)) {
+                $found = $log;
+            }
+        }
+
+        return $found;
+    }
+
+    protected function lastIndexOfStatus($logs, array $statuses): ?int
+    {
+        for ($i = $logs->count() - 1; $i >= 0; $i--) {
+            if (in_array((int) ($logs[$i]->status_surat ?? 0), $statuses, true)) {
+                return $i;
+            }
+        }
+
+        return null;
+    }
+
+    protected function timeFromLog($log): ?Carbon
+    {
+        return $log ? $this->toJakartaDateTime($log->created_at) : null;
+    }
+
+    protected function resolveCurrentTrackingLabel(int $status, bool $isSktm): string
+    {
+        if ($status === 6) {
+            return 'Ditolak';
+        }
+
+        if ($isSktm) {
+            if ($status === 9 || $status === 5) {
+                return 'Selesai';
+            }
+            if (in_array($status, [11, 8], true)) {
+                return 'Sekcam';
+            }
+            if (in_array($status, [3, 4], true)) {
+                return 'Lurah';
+            }
+            if ($status === 2) {
+                return 'Diproses';
+            }
+            return 'Pengajuan';
+        }
+
+        if (in_array($status, [4, 5, 9], true)) {
+            return 'Selesai';
+        }
+        if (in_array($status, [2, 3, 8, 11], true)) {
+            return 'Diproses';
+        }
+        return 'Pengajuan';
+    }
+
+    protected function firstTime($logs, array $statuses): ?Carbon
+    {
+        $log = $logs->first(function ($item) use ($statuses) {
+            return in_array((int) $item->status_surat, $statuses, true);
+        });
+
+        return $log ? $this->toJakartaDateTime($log->created_at) : null;
+    }
+
+    protected function timelineRow(string $status, ?Carbon $mulai, ?Carbon $selesai): array
+    {
+        return [
+            'status' => $status,
+            'mulai' => $this->formatTrackingTime($mulai),
+            'selesai' => $this->formatTrackingTime($selesai),
+            'durasi' => ($mulai && $selesai) ? $this->formatDurationText($mulai->diffInMinutes($selesai)) : null,
+        ];
+    }
+
+    protected function toJakartaDateTime($value): ?Carbon
+    {
+        if (!$value) {
+            return null;
+        }
+
+        return Carbon::parse($value)->timezone('Asia/Jakarta');
+    }
+
+    protected function formatTrackingTime($value): ?string
+    {
+        $date = $this->toJakartaDateTime($value);
+        return $date ? $date->format('d-m-Y H:i') : null;
+    }
+
+    protected function formatDurationText(?int $minutes): ?string
+    {
+        if ($minutes === null) {
+            return null;
+        }
+
+        $days = intdiv($minutes, 1440);
+        $hours = intdiv($minutes % 1440, 60);
+        $mins = $minutes % 60;
+        $parts = [];
+
+        if ($days > 0) {
+            $parts[] = $days . ' hari';
+        }
+        if ($hours > 0) {
+            $parts[] = $hours . ' jam';
+        }
+        if ($mins > 0 || empty($parts)) {
+            $parts[] = $mins . ' menit';
+        }
+
+        return implode(' ', $parts);
+    }
+
+
+    /**
+     * Normalisasi path PDF dari berbagai kemungkinan format:
+     * /storage/pdf/file.pdf, storage/pdf/file.pdf, public/pdf/file.pdf,
+     * pdf/file.pdf, atau hanya nama_file.pdf.
+     */
+    protected function normalizePdfRelativePath(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $value = str_replace('\\', '/', $value);
+        $value = preg_replace('#^https?://[^/]+/#i', '/', $value);
+        $value = preg_replace('#^/?storage/#i', '', $value);
+        $value = preg_replace('#^/?public/#i', '', $value);
+        $value = ltrim($value, '/');
+
+        if (!str_ends_with(strtolower($value), '.pdf')) {
+            return null;
+        }
+
+        if (!str_contains($value, '/')) {
+            $value = 'pdf/' . $value;
+        }
+
+        return $value;
+    }
+
+    protected function existingPdfFromRelativePath(?string $relativePath): ?array
+    {
+        $relativePath = $this->normalizePdfRelativePath($relativePath);
+
+        if (!$relativePath) {
+            return null;
+        }
+
+        $storagePath = storage_path('app/public/' . $relativePath);
+        if (is_file($storagePath)) {
+            return [
+                'relative_path' => $relativePath,
+                'absolute_path' => $storagePath,
+                'url' => asset('storage/' . $relativePath),
+                'filename' => basename($storagePath),
+            ];
+        }
+
+        $publicPath = public_path('storage/' . $relativePath);
+        if (is_file($publicPath)) {
+            return [
+                'relative_path' => $relativePath,
+                'absolute_path' => $publicPath,
+                'url' => asset('storage/' . $relativePath),
+                'filename' => basename($publicPath),
+            ];
+        }
+
+        return null;
+    }
+
+    protected function resolvePdfInfo(SuratPengajuan $surat): ?array
+    {
+        // Di database project ini nama kolom PDF adalah `file`.
+        // Contoh isi: storage/pdf/SUKET_58_signed.pdf
+        // Jadi `file` wajib dicek paling awal sebelum nama kolom alternatif lain.
+        $candidateColumns = [
+            'file',
+            'file_pdf',
+            'pdf_file',
+            'pdf_path',
+            'path_pdf',
+            'pdf',
+            'dokumen_pdf',
+            'surat_pdf',
+            'final_pdf',
+            'hasil_pdf',
+            'file_surat',
+            'ttd_file',
+            'tte_file',
+        ];
+
+        foreach ($candidateColumns as $column) {
+            if (Schema::hasColumn('surat_pengajuans', $column)) {
+                $info = $this->existingPdfFromRelativePath($surat->{$column} ?? null);
+                if ($info) {
+                    $info['source'] = 'column:' . $column;
+                    return $info;
+                }
+            }
+        }
+
+        $variable = $this->getExistingVariableData($surat);
+        foreach ($candidateColumns as $key) {
+            if (array_key_exists($key, $variable)) {
+                $info = $this->existingPdfFromRelativePath($variable[$key] ?? null);
+                if ($info) {
+                    $info['source'] = 'variable:' . $key;
+                    return $info;
+                }
+            }
+        }
+
+        $pdfDirs = [
+            storage_path('app/public/pdf'),
+            public_path('storage/pdf'),
+        ];
+
+        $patterns = array_values(array_filter(array_unique([
+            (string) $surat->id,
+            strtolower((string) $surat->jenis_surat) . '_' . $surat->id,
+            strtolower((string) $surat->jenis_surat) . '-' . $surat->id,
+            (string) ($surat->nik ?? ''),
+        ])));
+
+        foreach ($pdfDirs as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            $files = glob($dir . '/*.pdf') ?: [];
+            usort($files, function ($a, $b) {
+                return filemtime($b) <=> filemtime($a);
+            });
+
+            foreach ($files as $file) {
+                $base = strtolower(basename($file));
+                foreach ($patterns as $pattern) {
+                    if ($pattern !== '' && str_contains($base, strtolower($pattern))) {
+                        $relativePath = 'pdf/' . basename($file);
+
+                        return [
+                            'relative_path' => $relativePath,
+                            'absolute_path' => $file,
+                            'url' => asset('storage/' . $relativePath),
+                            'filename' => basename($file),
+                            'source' => 'fallback:pdf-folder',
+                        ];
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public function pdfUrl(Request $request, int $id)
+    {
+        $surat = SuratPengajuan::find($id);
+
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data surat tidak ditemukan.',
+            ], 404);
+        }
+
+        $pdf = $this->resolvePdfInfo($surat);
+
+        if (!$pdf) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'File PDF belum tersedia. Buka/generate preview PDF dari web admin terlebih dahulu, atau pastikan path PDF tersimpan di surat_pengajuans.',
+                'data' => [
+                    'id' => $surat->id,
+                    'jenis_surat' => $surat->jenis_surat,
+                    'status' => $surat->status,
+                ],
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'File PDF tersedia.',
+            'data' => [
+                'id' => $surat->id,
+                'jenis_surat' => $surat->jenis_surat,
+                'status' => $surat->status,
+                'pdf_url' => $pdf['url'],
+                'download_url' => url('/api/surat/' . $surat->id . '/download-pdf'),
+                'filename' => $pdf['filename'],
+                'source' => $pdf['source'] ?? null,
+            ],
+        ]);
+    }
+
+    public function downloadPdf(Request $request, int $id)
+    {
+        $surat = SuratPengajuan::find($id);
+
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data surat tidak ditemukan.',
+            ], 404);
+        }
+
+        $pdf = $this->resolvePdfInfo($surat);
+
+        if (!$pdf || empty($pdf['absolute_path']) || !is_file($pdf['absolute_path'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'File PDF belum tersedia atau tidak ditemukan di server.',
+                'data' => [
+                    'id' => $surat->id,
+                    'jenis_surat' => $surat->jenis_surat,
+                    'status' => $surat->status,
+                ],
+            ], 404);
+        }
+
+        return response()->file($pdf['absolute_path'], [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $pdf['filename'] . '"',
+            'Cache-Control' => 'private, max-age=0, must-revalidate',
+            'Pragma' => 'public',
         ]);
     }
 

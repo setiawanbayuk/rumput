@@ -662,6 +662,12 @@ class EsignController extends Controller
 
 
 
+
+
+
+
+
+
     //         'status_surat' => 3,
     //     ]);
 
@@ -704,7 +710,7 @@ class EsignController extends Controller
 
         $fallbackMap = [
             'skbn'    => 'templates/SKBN.docx',
-            'sktm'    => (($variableData['kategori'] ?? null) === 'sekolah' ? 'templates/SKTM_SEKOLAH.docx' : 'templates/SKTM_PERORANGAN.docx'),
+            'sktm'    => (strtolower((string) ($variableData['register_as'] ?? $variableData['kategori'] ?? 'perorangan')) === 'sekolah' ? 'templates/SKTM_SEKOLAH.docx' : 'templates/SKTM_PERORANGAN.docx'),
             'skdom'   => 'templates/SKDOM.docx',
             'skusaha' => 'templates/SKUSAHA.docx',
             'skhsl'   => 'templates/SKHSL.docx',
@@ -723,8 +729,8 @@ class EsignController extends Controller
         $name = strtoupper(trim((string) $districtName));
 
         $mapping = [
-            'MOJOROTO' => 64,
-            'KOTA' => 65,
+            'MOJOROTO'  => 64,
+            'KOTA'      => 65,
             'PESANTREN' => 66,
         ];
 
@@ -735,7 +741,124 @@ class EsignController extends Controller
 
         return Pejabat::with(['skpd.kecamatan', 'jabatan'])
             ->where('id_skpd', $idSkpdCamat)
-            ->first();
+            ->where(function ($q) {
+                $q->where('id_jabatan', 2)
+                  ->orWhereHas('jabatan', function ($jabatan) {
+                      $jabatan->whereRaw('LOWER(nama) LIKE ?', ['%camat%']);
+                  });
+            })
+            ->first()
+            ?: Pejabat::with(['skpd.kecamatan', 'jabatan'])
+                ->where('id_skpd', $idSkpdCamat)
+                ->first();
+    }
+
+    /**
+     * Mengambil nama kecamatan untuk header template Word/PDF.
+     * Fallback dipakai jika relasi skpds->kecamatan tidak terbaca.
+     */
+    protected function resolveSkpdKecamatanName($skpd, array $residentData = []): string
+    {
+        $name = optional(optional($skpd)->kecamatan)->nama;
+
+        if (!$name && !empty($skpd->id_kec)) {
+            $kecamatanSkpd = Skpd::where('id_region', trim((string) $skpd->id_kec))->first();
+            $name = optional($kecamatanSkpd)->nama;
+        }
+
+        if (!$name && !empty($residentData['kecamatan_nm'])) {
+            $name = $residentData['kecamatan_nm'];
+        }
+
+        return strtoupper(trim((string) $name));
+    }
+
+    protected function isSuperAdminUser($user = null): bool
+    {
+        $user = $user ?: Auth::user();
+        return $user && (int) $user->role_id === 7;
+    }
+
+    protected function currentUserKelurahanIds($user = null): ?array
+    {
+        $user = $user ?: Auth::user();
+
+        if (!$user) {
+            return [];
+        }
+
+        if ($this->isSuperAdminUser($user)) {
+            return null;
+        }
+
+        $roleId = (int) $user->role_id;
+        $idInstansi = (int) ($user->id_instansi ?? 0);
+
+        if ($idInstansi <= 0) {
+            return [];
+        }
+
+        if (in_array($roleId, [5, 6], true)) {
+            $skpdKecamatan = Skpd::find($idInstansi);
+            $idKec = trim((string) optional($skpdKecamatan)->id_kec);
+
+            if ($idKec === '') {
+                return [];
+            }
+
+            return Skpd::query()
+                ->where('id_kec', $idKec)
+                ->get(['id', 'id_region'])
+                ->filter(fn ($skpd) => substr_count((string) $skpd->id_region, '.') >= 3)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        return [$idInstansi];
+    }
+
+    protected function scopeSuratPengajuanToCurrentUser($query, $user = null)
+    {
+        $user = $user ?: Auth::user();
+        $kelurahanIds = $this->currentUserKelurahanIds($user);
+
+        if ($kelurahanIds === null) {
+            return $query;
+        }
+
+        if (empty($kelurahanIds)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereIn('id_kel', $kelurahanIds);
+    }
+
+    protected function resolveCamatForKelurahanId($idKel): ?Pejabat
+    {
+        $kelurahanSkpd = Skpd::with('kecamatan')->find((int) $idKel);
+        if (!$kelurahanSkpd) {
+            return null;
+        }
+
+        $idKec = trim((string) $kelurahanSkpd->id_kec);
+        $kecamatanSkpd = $idKec !== '' ? Skpd::where('id_region', $idKec)->first() : null;
+
+        if (!$kecamatanSkpd) {
+            return $this->resolveCamatByDistrictName(optional($kelurahanSkpd->kecamatan)->nama);
+        }
+
+        return Pejabat::with(['skpd.kecamatan', 'jabatan'])
+            ->where('id_skpd', $kecamatanSkpd->id)
+            ->where(function ($q) {
+                $q->where('id_jabatan', 2)
+                    ->orWhereHas('jabatan', function ($jabatan) {
+                        $jabatan->whereRaw('LOWER(nama) LIKE ?', ['%camat%']);
+                    });
+            })
+            ->first()
+            ?: Pejabat::with(['skpd.kecamatan', 'jabatan'])->where('id_skpd', $kecamatanSkpd->id)->first();
     }
 
     protected function resolveSignerContext(?SuratPengajuan $surat = null): array
@@ -811,7 +934,7 @@ class EsignController extends Controller
         $context = $this->requireUniversalSignerContext($surat);
         $skpd = $context['skpd'];
         $pejabat = $context['pejabat'];
-        $camat = $this->resolveCamatByDistrictName(optional($skpd->kecamatan)->nama);
+        $camat = $this->resolveCamatForKelurahanId((int) $surat->id_kel);
 
         $tglSurat = Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
         $nomorSurat = $this->getNoSrt($surat);
@@ -825,7 +948,7 @@ class EsignController extends Controller
         );
 
         $data = [
-            'skpd_kec'         => strtoupper(optional($skpd->kecamatan)->nama ?? ''),
+            'skpd_kec'         => $this->resolveSkpdKecamatanName($skpd, $residentData),
             'skpd_kel'         => strtoupper($skpd->nama ?? ''),
             'skpd_alamat'      => $skpd->instansi_alamat ?? '',
             'skpd_telp'        => $skpd->instansi_telp ?? '',
@@ -854,6 +977,10 @@ class EsignController extends Controller
             'surat_kategori'   => $variableData['surat_kategori'] ?? '',
             'surat_catatan'    => $variableData['surat_catatan'] ?? '',
             'link'             => $verifyUrl,
+            // Jangan isi qr dengan gambar saat proses TTE. Template cukup menyisakan tag ~ untuk Lurah.
+            'qr'               => '${qr}',
+            // Tag Camat sengaja berupa teks biasa agar tetap bisa dicari API saat TTE Camat.
+            'qr_camat'         => '~camat~',
         ];
 
         foreach ($residentData as $key => $value) {
@@ -866,6 +993,55 @@ class EsignController extends Controller
             if (!is_array($value)) {
                 $data[$key] = $value;
             }
+        }
+
+
+        if (strtolower((string) $surat->jenis_surat) === 'sktm') {
+            $takeSktmValue = function (string $key, string $fallbackKey = null) use ($variableData, $surat) {
+                $fallbackKey = $fallbackKey ?: $key;
+                $value = $variableData[$key] ?? $variableData[$fallbackKey] ?? null;
+
+                if (($value === null || $value === '') && isset($surat->{$key})) {
+                    $value = $surat->{$key};
+                }
+
+                if (($value === null || $value === '') && isset($surat->{$fallbackKey})) {
+                    $value = $surat->{$fallbackKey};
+                }
+
+                return $value ?? '';
+            };
+
+            $formatSktmDate = function ($value) {
+                $value = trim((string) ($value ?? ''));
+                if ($value === '') {
+                    return '';
+                }
+
+                try {
+                    // Kalau masih format tanggal database/input, ubah menjadi format surat.
+                    if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value) || preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $value)) {
+                        return strtoupper(Carbon::parse($value)->isoFormat('D MMMM Y'));
+                    }
+                } catch (\Throwable $e) {
+                    // Biarkan nilai asli kalau tidak bisa diparse.
+                }
+
+                return strtoupper($value);
+            };
+
+            // Data anak/penerima SKTM Sekolah wajib diisi ulang saat proses TTE.
+            // Sebelumnya hanya terisi saat preview admin, sehingga saat naik ke Sekkel/Lurah/Sekcam/Camat
+            // placeholder SKTM_SEKOLAH masih muncul mentah di PDF.
+            $data['surat_kepada'] = $surat->kepada ?? $takeSktmValue('kepada');
+            $data['surat_kepada_tempat_lhr'] = strtoupper((string) $takeSktmValue('kepada_tempat_lhr'));
+            $data['surat_kepada_tgl_lhr'] = $formatSktmDate($takeSktmValue('kepada_tgl_lhr'));
+            $data['surat_kepada_sekolah'] = strtoupper((string) $takeSktmValue('kepada_sekolah'));
+            $data['surat_kepada_kelas'] = strtoupper((string) $takeSktmValue('kepada_kelas'));
+            $data['surat_kepada_gender'] = $takeSktmValue('kepada_gender');
+            $data['surat_kepada_gender_nm'] = strtoupper((string) ($takeSktmValue('kepada_gender_nm', 'kepada_gender') ?: $takeSktmValue('kepada_gender')));
+            $data['surat_kepada_hubungan'] = strtoupper((string) $takeSktmValue('kepada_hubungan'));
+            $data['surat_kepada_alamat_sekolah'] = strtoupper((string) $takeSktmValue('kepada_alamat_sekolah'));
         }
 
         switch ($surat->jenis_surat) {
@@ -902,20 +1078,37 @@ class EsignController extends Controller
         $jenisSurat = $output['jenis'] ?? null;
         $role = (int) ($output['role'] ?? 0);
 
-        $suratPengajuan = SuratPengajuan::find($id);
+        $suratPengajuan = $this->scopeSuratPengajuanToCurrentUser(SuratPengajuan::query())->whereKey($id)->first();
         if ($suratPengajuan) {
+            $authRole = (int) optional(Auth::user())->role_id;
+            if ($authRole !== 7 && $role !== $authRole) {
+                return response()->json(['message' => 'Role TTE tidak sesuai dengan user login.', 'status' => 'error'], 403);
+            }
+
+            if ($authRole === 7 && !in_array($role, [3, 5], true)) {
+                return response()->json(['message' => 'Super Admin hanya boleh menjalankan TTE pada level Lurah atau Camat.', 'status' => 'error'], 403);
+            }
+
             if (!(($role === 3 && (int) $suratPengajuan->status === 3) || ($role === 5 && (int) $suratPengajuan->status === 8))) {
                 return response()->json(['message' => 'Status surat belum sesuai untuk TTE pada level ini.', 'status' => 'error'], 422);
             }
 
             try {
                 $variableData = $this->decodeFlexibleValueUniversal($suratPengajuan->variable);
-                $data = $this->buildPdfDataUniversal($suratPengajuan);
-                $templateFile = $this->resolveTemplateFileUniversal($suratPengajuan->jenis_surat, (int) $suratPengajuan->id_kel, $variableData);
-                $outputPdfName = strtoupper($suratPengajuan->jenis_surat) . "_{$suratPengajuan->id}_signed";
-                $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
-                    ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
-                    : $this->generatePdf($data, $templateFile, $outputPdfName);
+                $outputPdfName = strtoupper($suratPengajuan->jenis_surat) . "_{$suratPengajuan->id}_signed" . ($role === 5 ? '_camat' : '');
+
+                // KHUSUS CAMAT: pakai PDF hasil TTE Lurah yang sudah tersimpan.
+                // Jangan generate ulang dari template agar QR/TTE Lurah tidak hilang.
+                if ($role === 5 && !empty($suratPengajuan->file) && file_exists(public_path($suratPengajuan->file))) {
+                    $pdfPath = public_path($suratPengajuan->file);
+                } else {
+                    $data = $this->buildPdfDataUniversal($suratPengajuan);
+                    $templateFile = $this->resolveTemplateFileUniversal($suratPengajuan->jenis_surat, (int) $suratPengajuan->id_kel, $variableData);
+                    $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
+                        ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
+                        : $this->generatePdf($data, $templateFile, $outputPdfName);
+                }
+
                 $context = $this->requireUniversalSignerContext($suratPengajuan);
             } catch (\Throwable $e) {
                 return response()->json([
@@ -925,30 +1118,35 @@ class EsignController extends Controller
             }
 
             $pejabat = $context['pejabat'];
-            $camat = $this->resolveCamatByDistrictName(optional($context['skpd']->kecamatan)->nama);
-            $signer = ($role === 5 && $camat) ? $camat : $pejabat;
-            $imgTte = $role === 5
-                ? $this->generateTte($signer, true, $this->getNoSrt($suratPengajuan))
-                : $this->generateTte($signer);
+            $camat = $this->resolveCamatForKelurahanId((int) $suratPengajuan->id_kel);
+            $isSktm = strtolower((string) $suratPengajuan->jenis_surat) === 'sktm';
+            $verifyUrl = config('app.url') . '/verify/' . $suratPengajuan->jenis_surat . '/' . $suratPengajuan->id;
 
+            // KHUSUS SKTM Lurah/Camat: jangan kirim gambar TTE custom,
+            // supaya BSrE menampilkan barcode/QR bawaan, bukan stamp tulisan.
             $res = $this->TTE_sign([
                 'path'       => $pdfPath,
                 'file_name'  => $outputPdfName . '.pdf',
                 'nik'        => $output['nik'] ?? '',
                 'passphrase' => $output['passphrase'] ?? '',
-                'qr_loc'     => $role === 5 ? '|' : '~',
-                'image_path' => $imgTte['path'],
+                'qr_loc'     => $role === 5
+                    ? ['~camat~']
+                    : ['${qr}~'],
+                'verify'     => $verifyUrl,
+                'use_custom_image' => false,
+                'role'      => $role,
             ]);
-
-            if (file_exists(public_path($imgTte['path']))) {
-                @unlink(public_path($imgTte['path']));
-            }
 
             if ($res['status'] !== 'success') {
                 return response()->json($res, 500);
             }
 
+            // Alur final:
+            // - Selain SKTM: TTE Lurah langsung selesai (status 4) seperti proses lama.
+            // - SKTM Perorangan/Sekolah: setelah TTE Lurah belum final; Lurah masih harus klik Naikkan ke Kecamatan/Camat.
+            // - Setelah TTE Camat, baru final (status 9).
             $finalStatus = $role === 5 ? 9 : 4;
+
             $suratPengajuan->update([
                 'status' => $finalStatus,
                 'file'   => 'storage/pdf/' . $outputPdfName . '.pdf',
@@ -1009,7 +1207,7 @@ class EsignController extends Controller
             ], 422);
         }
 
-        $camat = $this->resolveCamatByDistrictName(optional($skpd->kecamatan)->nama);
+        $camat = $this->resolveCamatForKelurahanId((int) $surat->id_kel);
 
         $tahun   = Carbon::parse($surat->tgl_surat)->format('Y');
         $nomorSurat = "{$surat->kd_jenis_surat}/{$surat->no_urut_surat}/{$skpd->instansi_kode}/{$tahun}";
@@ -1020,7 +1218,7 @@ class EsignController extends Controller
         $tglLhr   = !empty($penduduk['tgl_lhr']) ? Carbon::parse($penduduk['tgl_lhr'])->isoFormat('D MMMM Y') : '';
 
         $data = [
-            'skpd_kec'        => strtoupper(optional($skpd->kecamatan)->nama ?? ''),
+            'skpd_kec'        => $this->resolveSkpdKecamatanName($skpd, $penduduk),
             'skpd_kel'        => strtoupper($skpd->nama ?? ''),
             'skpd_alamat'     => $skpd->instansi_alamat ?? '',
             'skpd_telp'       => $skpd->instansi_telp ?? '',
@@ -1074,20 +1272,16 @@ class EsignController extends Controller
         }
 
         $isCamat = (($output['role'] ?? 0) == 5);
-        $signer = ($isCamat && $camat) ? $camat : $pejabat;
-        $imgTte = $isCamat ? $this->generateTte($signer, true, $surat->no_register) : $this->generateTte($signer);
         $res = $this->TTE_sign([
             'path'       => $pdfPath,
             'file_name'  => $outputPdfName . '.pdf',
             'nik'        => $output['nik'],
             'passphrase' => $output['passphrase'],
-            'qr_loc'     => $isCamat ? '|' : '~',
-            'image_path' => $imgTte['path']
+            'qr_loc'     => $isCamat ? ['~camat~'] : ['${qr}~'],
+            'verify'     => $verifyUrl,
+            'use_custom_image' => false,
+                'role'      => (int) ($output['role'] ?? 0),
         ]);
-
-        if (file_exists(public_path($imgTte['path']))) {
-            unlink(public_path($imgTte['path']));
-        }
 
         if ($res['status'] == 'success') {
             $surat->update([

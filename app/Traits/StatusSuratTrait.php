@@ -68,6 +68,10 @@ trait StatusSuratTrait
             ];
         }
 
+        if (strtolower((string) ($this->jenis_surat ?? '')) === 'sktm' && (int) $this->status === 4) {
+            return ['name' => 'SKTM - TTE Lurah Selesai', 'color' => '#B2784A'];
+        }
+
         return match ((int) $this->status) {
             0 => ['name' => 'Warga', 'color' => '#6B7280'],
             1 => ['name' => $isWarga ? 'Warga Mandiri' : 'Admin Kelurahan', 'color' => 'blue'],
@@ -78,7 +82,8 @@ trait StatusSuratTrait
             6 => ['name' => $isWarga ? 'Ditolak Warga' : 'Ditolak Lurah', 'color' => 'red'],
             7 => ['name' => 'Dihapus', 'color' => 'red'],
             8 => ['name' => $isWarga ? 'Warga - Camat' : 'Admin - Camat', 'color' => '#B2784A'],
-            9 => ['name' => $isWarga ? 'Disetujui Camat Warga' : 'Disetujui Admin', 'color' => '#A78BFA'],
+            9 => ['name' => $isWarga ? 'Disetujui Camat Warga' : 'Disetujui Camat Admin', 'color' => '#A78BFA'],
+            11 => ['name' => 'SKTM - Sudah Naik Sekcam', 'color' => '#B2784A'],
             default => ['name' => 'Pengajuan', 'color' => 'black'],
         };
     }

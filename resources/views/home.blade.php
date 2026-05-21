@@ -60,10 +60,8 @@
             <div class="col-md-12">
                 <h3 class="mb-0 fw-bold">{{ $title }}</h3>
             </div>
-
-            @if (auth()->user()->role_id == 1 ||  auth()->user()->role_id == 9)
             <h6 class="text-muted mt-1 mb-3">
-                Statistik seluruh pengajuan surat keterangan warga <b>Kota Kediri.</b>
+                Statistik seluruh pengajuan surat keterangan warga <b>{{ $dashboardWilayahLabel ?? 'Kota Kediri' }}.</b>
             </h6>
             {{-- CARD CHART --}}
             <div class="col-md-12 mb-3">
@@ -73,7 +71,6 @@
                     </div>
                 </div>
             </div>
-            @endif
 
             <div class="col-md-12 d-flex align-items-center justify-content-between">
                 {{-- @if (auth()->user()->role_id == 8)
@@ -164,6 +161,8 @@
                             </table>
                         </div>
                     </div>
+
+
                 </div>
             </div>
         </div>
@@ -177,6 +176,8 @@
         <script src="https://code.highcharts.com/modules/drilldown.js"></script>
         <script src="{{ asset('assets/js/actions.js') }}"></script>
         <script type="text/javascript">
+            const dashboardWilayahLabel = @json($dashboardWilayahLabel ?? 'Kota Kediri');
+
             $(function() {
                 var table = $('#tableSurat').DataTable({
                     processing: true,
@@ -297,7 +298,7 @@
                         '#7896B2', '#AEA07A', '#B2784A', '#FF9B9B', '#D8CFC4',
                         '#A8B6BF', '#E2B84C', '#92A8A1', '#7A9E7E'
                     ],
-                    title: { text: "Statistik Semua Surat E-SUKET" },
+                    title: { text: "Statistik Semua Surat E-SUKET " + dashboardWilayahLabel },
                     subtitle: { text: "Klik bar untuk melihat detail status" },
                     xAxis: { type: "category" },
                     yAxis: { title: { text: "Jumlah Surat" } },

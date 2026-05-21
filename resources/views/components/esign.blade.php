@@ -94,7 +94,7 @@
 
             $.ajax({
                 type: 'POST',
-                url: `/api/esign/sign`,
+                url: @json(route('admin.esign.sign')),
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                 },

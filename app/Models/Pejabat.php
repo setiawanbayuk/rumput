@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Pejabat extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'id_skpd',
+        'nip',
+        'nama',
+        'id_jabatan',
+        'id_pangkat',
+    ];
     public function jabatan(): BelongsTo
     {
         return $this->belongsTo(Jabatan::class, 'id_jabatan', 'id');

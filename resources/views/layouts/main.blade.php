@@ -38,6 +38,51 @@
             border: 1px solid #fff;
             color: #fff;
         }
+
+        .topbar-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,.75);
+            box-shadow: 0 6px 16px rgba(0,0,0,.16);
+            background: rgba(255,255,255,.18);
+        }
+
+        .topbar-avatar-placeholder {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255,255,255,.75);
+            background: rgba(255,255,255,.18);
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(0,0,0,.16);
+        }
+
+        .dropdown-user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid #e5e7eb;
+            background: #f8fafc;
+        }
+
+        .dropdown-user-avatar-placeholder {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            background: #f8fafc;
+            color: #64748b;
+        }
+
     </style>
     @routes
 </head>
@@ -113,10 +158,31 @@
                                 <span class="sidebar-text">Beranda</span>
                             </a>
                         </li>
+                        @if (auth()->user()->role_id == 7)
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" href="{{ route('super-admin.dashboard') }}">
+                                    <i class="ri-shield-keyhole-line"></i>
+                                    <span class="sidebar-text">Super Admin</span>
+                                </a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" href="{{ route('super-admin.surat.index') }}">
+                                    <i class="ri-file-shield-2-line"></i>
+                                    <span class="sidebar-text">Kontrol Surat</span>
+                                </a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" href="{{ route('super-admin.users.index') }}">
+                                    <i class="ri-user-settings-line"></i>
+                                    <span class="sidebar-text">Tambah Akun ALL User</span>
+                                </a>
+                            </li>
+                        @endif
+
                         {{-- SECTION: MENU LAYANAN --}}
                         @if (auth()->user()->role_id != 2)
                             <li class="sidebar-item">
-                                <a class="sidebar-link" href="{{ url('admin/surat') }}">
+                                <a class="sidebar-link" href="{{ auth()->user()->role_id == 7 ? route('super-admin.pelayanan.index') : url('admin/surat') }}">
                                     <i class="ri-file-edit-line"></i>
                                     <span class="sidebar-text">Pelayanan Warga</span>
                                 </a>
@@ -272,23 +338,33 @@
                                 </li>
                                 @if (auth()->user()->role_id != 2)
                                     <li class="sidebar-item">
-                                        <a href="{{ url('/') }}" class="sidebar-link">
+                                        <a href="{{ route('tools.rekap') }}" class="sidebar-link">
                                             <i class="ri-file-list-line"></i>
                                             <span class="sidebar-text">Rekap</span>
                                         </a>
                                     </li>
                                     <li class="sidebar-item">
-                                        <a href="{{ url('/') }}" class="sidebar-link">
+                                        <a href="{{ auth()->user()->role_id == 7 ? route('super-admin.profil-instansi') : route('tools.profil-instansi') }}" class="sidebar-link">
                                             <i class="ri-building-fill"></i>
                                             <span class="sidebar-text">Profil Instansi</span>
                                         </a>
                                     </li>
-                                    <li class="sidebar-item">
-                                        <a href="{{ url('/template') }}" class="sidebar-link">
-                                            <i class="ri-file-2-line"></i>
-                                            <span class="sidebar-text">Template Surat</span>
-                                        </a>
-                                    </li>
+                                    @if (auth()->user()->role_id == 1)
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('admin.manajemen-warga.index') }}" class="sidebar-link">
+                                                <i class="ri-user-settings-line"></i>
+                                                <span class="sidebar-text">Manajemen Kontrol</span>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if (in_array(auth()->user()->role_id, [1, 7]))
+                                        <li class="sidebar-item">
+                                            <a href="{{ url('/template') }}" class="sidebar-link">
+                                                <i class="ri-file-2-line"></i>
+                                                <span class="sidebar-text">Template Surat</span>
+                                            </a>
+                                        </li>
+                                    @endif
                                 @endif
                                 @if (auth()->user()->role_id == 7)
                                     <li class="sidebar-item">
@@ -336,16 +412,30 @@
                         </a>
                     </div>
 
+                    @php
+                        $topbarUser = Auth::user();
+                        $topbarFoto = $topbarUser->foto ?? null;
+                        $topbarFotoUrl = $topbarFoto ? asset('storage/' . $topbarFoto) : null;
+                    @endphp
                     <div class="topbar-right">
-                        <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center text-white"
+                        <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center text-white gap-2"
                             href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
                             aria-expanded="false">
-                            <i class="ri-user-fill me-2"></i>
+                            @if($topbarFotoUrl)
+                                <img src="{{ $topbarFotoUrl }}" alt="Foto Profil" class="topbar-avatar">
+                            @else
+                                <span class="topbar-avatar-placeholder"><i class="ri-user-fill"></i></span>
+                            @endif
                         </a>
 
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a class="dropdown-item" href="{{ route('profile') }}">
-                                <i class="ri-user-fill me-2"></i> {{ Auth::user()->name }}
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('profile') }}">
+                                @if($topbarFotoUrl)
+                                    <img src="{{ $topbarFotoUrl }}" alt="Foto Profil" class="dropdown-user-avatar">
+                                @else
+                                    <span class="dropdown-user-avatar-placeholder"><i class="ri-user-fill"></i></span>
+                                @endif
+                                <span>{{ Auth::user()->name }}</span>
                             </a>
                             <a class="dropdown-item" href="{{ route('logout') }}"
                                 onclick="event.preventDefault(); document.getElementById('logout-form').submit();">

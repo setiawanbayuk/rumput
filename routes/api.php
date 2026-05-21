@@ -45,6 +45,9 @@ Route::prefix('auth')->group(function () {
 
 Route::post('/resident/simpan', [ResidentController::class, 'simpan']);
 Route::post('/registermobile', [RegisterController::class, 'registermobile']);
+Route::get('/registermobile/list', [RegisterController::class, 'listRegisterMobile']);
+Route::get('/registermobile/detail/{id}', [RegisterController::class, 'detailRegisterMobile']);
+Route::get('/profile/{id}', [RegisterController::class, 'profile']);
 Route::get('/agama/splp', [AgamaController::class, 'splp']);
 Route::get('/gender/splp', [GenderController::class, 'splp']);
 Route::get('/provinsi/splp', [ProvinsiController::class, 'splp']);
@@ -122,6 +125,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/surat/form-config', [SuratApiController::class, 'formConfig']);
     Route::get('/surat/history', [SuratApiController::class, 'history']);
     Route::get('/surat/detail/{id}', [SuratApiController::class, 'detail']);
+    Route::get('/surat/{id}/tracking', [SuratApiController::class, 'tracking']);
+    Route::get('/surat/{id}/pdf-url', [SuratApiController::class, 'pdfUrl']);
+    Route::get('/surat/{id}/download-pdf', [SuratApiController::class, 'downloadPdf']);
 
     // Submit baru dari Super App.
     // Catatan: endpoint lama tetap aman dipakai.

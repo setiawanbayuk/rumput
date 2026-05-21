@@ -14,12 +14,15 @@ use App\Models\Pendidikan;
 use App\Models\Provinsi;
 use App\Models\Resident;
 use App\Models\RtRw;
+use App\Models\Skpd;
 use App\Models\StatusKwn;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
@@ -42,9 +45,21 @@ class ProfileController extends Controller
     public function index()
     {
         $title = "Profile";
+        $user = Auth::user();
 
-        $resident = Resident::where('nik', Auth::user()->nik)->first();
-        $surat = JenisSurat::where(['is_active' => true])->get();
+        if ((int) $user->role_id !== 2) {
+            $skpd = $user->skpd;
+            return view('profile.admin', compact('title', 'user', 'skpd'));
+        }
+
+        $resident = Resident::where('nik', $user->nik)->first();
+        $suratQuery = JenisSurat::query();
+
+        if (Schema::hasColumn('jenis_surats', 'is_active')) {
+            $suratQuery->where('is_active', true);
+        }
+
+        $surat = $suratQuery->get();
         $penduduk = [];
 
         if ($resident) {
@@ -56,6 +71,20 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
+        $user = $request->user();
+
+        if ((int) $user->role_id !== 2) {
+            if ($this->isAdminKelurahan($user)) {
+                return $this->updateAdminKelurahanProfile($request, $user);
+            }
+
+            if ($this->canUpdatePhotoOnly($user)) {
+                return $this->updatePejabatProfilePhoto($request, $user);
+            }
+
+            return back()->with('error', 'Profil ini tidak dapat diubah dari halaman ini.');
+        }
+
         $request->validate([
             'nik' => ['required', 'min:16'],
             'kk' => ['required', 'min:16'],
@@ -78,15 +107,19 @@ class ProfileController extends Controller
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        $user = $request->user();
-
         if ($request->hasFile('avatar')) {
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
+            $fotoColumn = $this->profilePhotoColumn();
 
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->forceFill(['avatar' => $path])->save();
+            if ($fotoColumn) {
+                $oldPath = $user->{$fotoColumn};
+
+                if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+
+                $path = $request->file('avatar')->store('users/foto', 'public');
+                $user->forceFill([$fotoColumn => $path])->save();
+            }
         }
 
         $gender = Gender::find($request->gender);
@@ -153,6 +186,109 @@ class ProfileController extends Controller
         }
 
         return redirect()->route('profile')->with('status', 'Data pribadi berhasil di update!');
+    }
+
+    private function updateAdminKelurahanProfile(Request $request, User $user)
+    {
+        if (! $this->isAdminKelurahan($user)) {
+            return back()->with('error', 'Edit profil ini khusus untuk Admin Kelurahan.');
+        }
+
+        $validated = $request->validate([
+            'nik' => ['required', 'regex:/^[0-9]{16}$/', Rule::unique('users', 'nik')->ignore($user->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
+            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'nik.regex' => 'NIK wajib angka dan tepat 16 digit.',
+            'phone.regex' => 'Nomor HP hanya boleh angka.',
+            'email.email' => 'Format email tidak valid.',
+        ]);
+
+        $payload = [
+            'nik' => preg_replace('/\D/', '', $validated['nik']),
+            'name' => mb_strtoupper(trim($validated['name']), 'UTF-8'),
+            'email' => mb_strtolower(trim($validated['email']), 'UTF-8'),
+            'phone' => preg_replace('/\D/', '', $validated['phone']),
+        ];
+
+        $fotoColumn = $this->profilePhotoColumn();
+
+        if ($fotoColumn && $request->hasFile('foto')) {
+            $oldPath = $user->{$fotoColumn};
+
+            if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            $payload[$fotoColumn] = $request->file('foto')->store('users/foto', 'public');
+        }
+
+        // Wilayah, role, RW, dan RT sengaja tidak diambil dari request.
+        // Jadi walaupun field dimanipulasi dari browser, akun tetap berada di kelurahan login.
+        $user->forceFill($payload)->save();
+
+        return redirect()->route('profile')->with('status', 'Profil Admin Kelurahan berhasil diperbarui. Wilayah tetap terkunci.');
+    }
+
+    private function isAdminKelurahan(User $user): bool
+    {
+        if ((int) $user->role_id !== 1) {
+            return false;
+        }
+
+        $skpd = Skpd::find($user->id_instansi);
+
+        return $skpd && strlen((string) $skpd->id_region) === 13;
+    }
+
+    private function canUpdatePhotoOnly(User $user): bool
+    {
+        return in_array((int) $user->role_id, [3, 4, 5, 6], true);
+    }
+
+    private function updatePejabatProfilePhoto(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'foto.required' => 'Foto profil wajib dipilih.',
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format foto hanya boleh JPG, JPEG, PNG, atau WEBP.',
+            'foto.max' => 'Ukuran foto maksimal 2 MB.',
+        ]);
+
+        $fotoColumn = $this->profilePhotoColumn();
+
+        if (! $fotoColumn) {
+            return back()->with('error', 'Kolom foto pada tabel users belum tersedia.');
+        }
+
+        $oldPath = $user->{$fotoColumn};
+
+        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        $user->forceFill([
+            $fotoColumn => $request->file('foto')->store('users/foto', 'public'),
+        ])->save();
+
+        return redirect()->route('profile')->with('status', 'Foto profil berhasil diperbarui. Data akun, jabatan, role, dan wilayah tetap terkunci.');
+    }
+
+    private function profilePhotoColumn(): ?string
+    {
+        if (Schema::hasColumn('users', 'foto')) {
+            return 'foto';
+        }
+
+        if (Schema::hasColumn('users', 'avatar')) {
+            return 'avatar';
+        }
+
+        return null;
     }
 
     public function akun(Request $request, $id)

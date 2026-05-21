@@ -91,6 +91,36 @@ trait GeneratePDF
         }
     }
 
+    /**
+     * Isi placeholder teks biasa, tetapi JANGAN menyentuh marker TTE.
+     *
+     * Penting:
+     * - ${qr} dipakai sebagai patokan posisi TTE Lurah.
+     * - [[qr_camat]] / ~camat~ dipakai sebagai patokan posisi TTE Camat.
+     *
+     * Jika key 'qr' ikut di-setValue kosong, marker ${qr} akan hilang dari DOCX/PDF.
+     * Akibatnya proses TTE berikutnya tidak menemukan posisi barcode dan hasilnya kosong.
+     */
+    protected function fillTemplateValuesSafely(TemplateProcessor $templateProcessor, array $data): void
+    {
+        $reservedTteMarkers = [
+            'qr',
+            'qr_camat',
+        ];
+
+        foreach ($data as $key => $value) {
+            if (in_array((string) $key, $reservedTteMarkers, true)) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                continue;
+            }
+
+            $templateProcessor->setValue($key, (string) ($value ?? ''));
+        }
+    }
+
     protected function convertDocxToPdf(string $tempDocxPath, string $outputPdfPath, string $outputPdf): string
     {
         $sourcePdfPath = rtrim($outputPdfPath, '\\/') . DIRECTORY_SEPARATOR . pathinfo($tempDocxPath, PATHINFO_FILENAME) . '.pdf';
@@ -159,9 +189,7 @@ trait GeneratePDF
     {
         $templateProcessor = new TemplateProcessor($templateFile);
 
-        foreach ($data as $key => $value) {
-            $templateProcessor->setValue($key, is_array($value) ? '' : (string) ($value ?? ''));
-        }
+        $this->fillTemplateValuesSafely($templateProcessor, $data);
 
         $this->ensurePdfFolders();
 
@@ -203,11 +231,7 @@ trait GeneratePDF
     {
         $templateProcessor = new TemplateProcessor($templateFile);
 
-        foreach ($data as $key => $value) {
-            if (!is_array($value)) {
-                $templateProcessor->setValue($key, (string) ($value ?? ''));
-            }
-        }
+        $this->fillTemplateValuesSafely($templateProcessor, $data);
 
         $headerCellStyle = ['valign' => 'center'];
         $headerTextStyle = ['name' => 'Arial', 'color' => '000000', 'size' => 12, 'bold' => true];

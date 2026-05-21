@@ -11,11 +11,6 @@ use Yajra\DataTables\DataTables;
 
 class TemplateController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
@@ -24,86 +19,94 @@ class TemplateController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            // $data = SuratTemplate::query()->with('skpd')->where('id_kel', '=', auth()->user()->id_instansi)
-            //     ->orWhere('id_kel', '=', '0');
-            $data = SuratTemplate::where('id_kel', '=', auth()->user()->id_instansi)->orWhere('id_kel', '=', '67')->get();
+            $data = SuratTemplate::where(function ($q) {
+                    $q->where('id_kel', auth()->user()->id_instansi)
+                        ->orWhere('id_kel', '67')
+                        ->orWhere('id_kel', '0');
+                })
+                ->orderByRaw("CASE WHEN state = 'custom' THEN 0 ELSE 1 END")
+                ->orderByDesc('updated_at');
+
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
                     $data = $row;
-                    // dd($data);
                     return view('includes.button-template', compact('data'));
                 })
                 ->rawColumns(['action'])
                 ->make(true);
-        };
-        $title = "TEMPLATE SURAT";
+        }
+
+        $title = 'TEMPLATE SURAT';
         return view('template.index', compact('title'));
     }
 
     public function add()
     {
-        $title = "TEMPLATE SURAT";
+        $title = 'TEMPLATE SURAT';
         return view('template.add', compact('title'));
     }
 
     public function store(Request $request)
     {
+        $request->validate([
+            'name' => ['required', 'string'],
+            'jenis' => ['required', 'string'],
+            'file' => ['required', 'mimes:docx'],
+        ]);
 
-        $template = SuratTemplate::where(['jenis' => $request->jenis, 'state' => 'custom'])->first();
-        if ($template) {
-            return Redirect::back()->withErrors(['msg' => 'Template sudah ada!!']);
-        } else {
-            $request->validate([
-                'name' => ['required', 'string'],
-                'jenis' => ['required', 'string'],
-                'file' => ['mimes:docx']
-            ]);
+        $path = 'templates/';
+        $fileName = $request->file('file')->hashName();
+        $fileLocation = $path . $fileName;
+        $request->file('file')->move(public_path($path), $fileName);
 
-            if ($request->file('file')) {
-                $path = 'templates/';
-                $fileName = $request->file('file')->hashName();
-                $fileLocation = $path . $fileName;
-                $request->file('file')->move(public_path($path), $fileName);
-            }
-            $defaultTemplate = SuratTemplate::where(['jenis' => $request->jenis, 'state' => 'default'])->first();
-            $defaultProcessor = new TemplateProcessor(public_path($defaultTemplate->path_docs));
-            $defaultVariable = $defaultProcessor->getVariables();
-            $templateProcessor = new TemplateProcessor(public_path($fileLocation));
-            $variable = $templateProcessor->getVariables();
-
-            $array_diff = array_values(array_diff($variable, $defaultVariable));
-
-            SuratTemplate::create([
-                'id_kel'    => auth()->user()->id_instansi,
-                'name'      => $request->name,
-                'path_docs' => $request->file('file') ? $fileLocation : '',
-                'jenis'     => $request->jenis,
-                'state'     => 'custom',
-                'variable'  => $array_diff // Cukup masukkan array-nya saja, jangan di-serialize
-            ]);
-
-            return redirect()->route('template.index');
+        $defaultTemplate = SuratTemplate::where(['jenis' => $request->jenis, 'state' => 'default'])->first();
+        if (! $defaultTemplate) {
+            return Redirect::back()->withErrors(['msg' => 'Template default untuk jenis surat ini belum tersedia.']);
         }
+
+        $defaultProcessor = new TemplateProcessor(public_path($defaultTemplate->path_docs));
+        $defaultVariable = $defaultProcessor->getVariables();
+        $templateProcessor = new TemplateProcessor(public_path($fileLocation));
+        $variable = $templateProcessor->getVariables();
+        $arrayDiff = array_values(array_diff($variable, $defaultVariable));
+
+        SuratTemplate::updateOrCreate(
+            [
+                'id_kel' => auth()->user()->id_instansi,
+                'jenis' => $request->jenis,
+                'state' => 'custom',
+            ],
+            [
+                'name' => $request->name,
+                'path_docs' => $fileLocation,
+                'variable' => $arrayDiff,
+            ]
+        );
+
+        return redirect()->route('template.index')->with('status', 'Template berhasil disimpan. Preview/cetak jenis surat tersebut akan memakai template custom terbaru untuk kelurahan ini.');
     }
 
     public function download($id)
     {
-        $template = SuratTemplate::find($id);
+        $template = SuratTemplate::findOrFail($id);
         $file = public_path() . '/' . $template->path_docs;
-        $headers = array('Content-Type: application/pdf',);
+        $headers = ['Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         return Response::download($file, $template->name . '.docx', $headers);
     }
 
     public function hapus($id)
     {
-        // return $id;
-        $suratTemplate = SuratTemplate::find($id);
+        $suratTemplate = SuratTemplate::where('id', $id)
+            ->where('state', 'custom')
+            ->where('id_kel', auth()->user()->id_instansi)
+            ->first();
+
         if ($suratTemplate) {
             $suratTemplate->delete();
-            return response()->json(['message' => 'Data berhasil dihapus.']);
-        } else {
-            return response()->json(['message' => 'Data updated failed.']);
+            return response()->json(['message' => 'Template custom berhasil dihapus. Sistem akan kembali memakai template default.']);
         }
+
+        return response()->json(['message' => 'Template default tidak boleh dihapus atau data tidak ditemukan.'], 422);
     }
 }

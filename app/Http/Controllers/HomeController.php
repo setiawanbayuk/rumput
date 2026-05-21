@@ -12,6 +12,7 @@ use App\Models\SuratKelahiran;
 use App\Models\SuratKematian;
 use App\Models\SuratKeterangan;
 use App\Models\SuratPenghasilan;
+use App\Models\SuratPengajuan;
 use App\Models\SuratSkbn;
 use App\Models\SuratSktm;
 use App\Models\SuratUsaha;
@@ -22,6 +23,8 @@ use App\Traits\GetNoSurat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity;
 use Yajra\DataTables\DataTables;
@@ -48,12 +51,28 @@ class HomeController extends Controller
     public function index(SuratCollection $service)
     {
         $user = auth()->user();
+        // Sementara: akun warga belum diarahkan ke dashboard web.
+        // Jika warga membuka/login lewat website, langsung logout dan kembali ke halaman login.
+        // Akun warga tetap bisa digunakan untuk mobile/API.
+        if ((int) $user->role_id === 2) {
+            auth()->logout();
+
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->withErrors([
+                    'email' => 'Akun warga untuk sementara hanya dapat digunakan melalui aplikasi mobile.',
+                ]);
+        }
+
+        if ((int) $user->role_id === 7 && !request()->ajax()) {
+            return $this->superAdminBeranda();
+        }
+
         $rt = $user->id_rt;
         $rw = $user->id_rw;
-
-        if ($user->role_id == 2) {
-            return redirect()->route('warga');
-        }
+        $dashboardWilayahLabel = $this->dashboardWilayahLabel($user);
 
         $resident = Resident::where('nik', $user->nik)->first();
         if ($user->role_id != 2) {
@@ -63,15 +82,13 @@ class HomeController extends Controller
             //         ->with('status', 'Lengkapi data pribadi dahulu! Terima kasih');
             // }
         }
-        if ($user->role_id == 2) {
-            return redirect()->route('warga');
-        }
-
         if (request()->ajax()) {
             // TABEL BERANDA:
             // Hanya tampilkan surat yang sudah final/disetujui saja.
             // Grafik tetap ALL status; filter ini hanya untuk tabel di bawah grafik.
             $data = $service->getAllForUser($user)
+                // Role Camat (5) dan Sekretaris Camat/Sekcam (6) di Beranda hanya boleh melihat SKTM.
+                ->filter(fn($row) => !in_array((int) $user->role_id, [5, 6], true) || strtolower((string) $row->jenis) === 'sktm')
                 ->filter(fn($row) => $this->isFinalForHomeTable($row))
                 ->values();
 
@@ -82,6 +99,18 @@ class HomeController extends Controller
                 })
                 ->addColumn('jenis', function ($row) {
                     return $row->jenis_label;
+                })
+                ->addColumn('tgl_surat', function ($row) {
+                    // Beranda memakai waktu realtime dari surat_pengajuans.updated_at/created_at.
+                    // Jika updated_at kosong, fallback ke created_at, terakhir baru tgl_surat.
+                    $tanggal = data_get($row, 'raw.updated_at')
+                        ?? data_get($row, 'updated_at')
+                        ?? data_get($row, 'raw.created_at')
+                        ?? data_get($row, 'created_at')
+                        ?? data_get($row, 'raw.tgl_surat')
+                        ?? data_get($row, 'tgl_surat');
+
+                    return $tanggal ? \Carbon\Carbon::parse($tanggal)->format('Y-m-d H:i:s') : '-';
                 })
                 ->addColumn('peruntukan', function ($row) {
                     // SK KELAHIRAN → tampilkan nama anak
@@ -109,43 +138,188 @@ class HomeController extends Controller
                     $jenis  = $row->jenis;
                     $route  = $row->route_edit;
 
-                    /**
-                     * Aksi tabel Beranda harus khusus final saja.
-                     * Untuk TTD Basah yang sudah upload bukti, aksi wajib hanya:
-                     * - Preview TTD Basah
-                     * - Preview Bukti Upload
-                     *
-                     * Karena tabel Beranda memang sudah difilter oleh isFinalForHomeTable(),
-                     * maka jangan munculkan tombol proses seperti naikkan/edit/delete/tolak.
-                     */
                     $variable = $this->rowVariableArray($row);
                     $statusName = strtolower(trim((string) data_get($row, 'raw.st.name', data_get($row, 'st.name', ''))));
-                    $submitter_type = $variable['submitter_type'] ?? data_get($row, 'raw.submitter_type', (((int) $status === 0) ? 'warga' : 'admin'));
-                    $manual_signature = !empty($variable['manual_signature'])
-                        || (($variable['signature_mode'] ?? null) === 'manual')
-                        || $statusName === 'sudah upload bukti'
-                        || $statusName === 'ttd basah - bukti uploaded';
-                    $bukti_ttd_basah = $variable['bukti_ttd_basah']
-                        ?? data_get($row, 'raw.bukti_ttd_basah')
-                        ?? data_get($row, 'raw.bukti_upload')
-                        ?? data_get($row, 'raw.bukti');
 
-                    if (in_array($role, [1, 8, 9])) {
-                        return view('includes.button-admin', compact('id', 'route', 'status', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
-                    } elseif (in_array($role, [3, 5])) {
-                        $nomorSurat = $this->getNoSrt($row->raw);
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
-                    } else {
+                    /**
+                     * KHUSUS "Sudah Upload Bukti": kembalikan proses Beranda seperti semula.
+                     * Jangan dipaksa menjadi tombol Cetak biasa, supaya tombol/preview bukti TTD Basah
+                     * tetap mengikuti view button lama yang sudah berjalan.
+                     */
+                    if ($statusName === 'sudah upload bukti') {
+                        $submitter_type = $variable['submitter_type'] ?? data_get($row, 'raw.submitter_type', (((int) $status === 0) ? 'warga' : 'admin'));
+                        $manual_signature = !empty($variable['manual_signature'])
+                            || (($variable['signature_mode'] ?? null) === 'manual');
+                        $bukti_ttd_basah = $variable['bukti_ttd_basah']
+                            ?? data_get($row, 'raw.bukti_ttd_basah')
+                            ?? data_get($row, 'raw.bukti_upload')
+                            ?? data_get($row, 'raw.bukti');
+
+                        if (in_array($role, [1, 8, 9])) {
+                            return view('includes.button-admin', compact('id', 'route', 'status', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
+                        } elseif (in_array($role, [3, 5])) {
+                            $nomorSurat = $this->getNoSrt($row->raw);
+                            return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
+                        }
+
                         return view('includes.button-verifikator', compact('id', 'status', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     }
+
+                    /**
+                     * Selain "Sudah Upload Bukti", Beranda cukup tombol Cetak/download saja.
+                     */
+                    $url = $this->homeCetakUrl($id);
+
+                    return '<a href="' . e($url) . '" class="btn btn-sm btn-success d-inline-flex align-items-center justify-content-center" style="width:32px;height:30px;border-radius:7px;" target="_blank" rel="noopener" title="Download" aria-label="Download">'
+                        . '<i class="ri-download-2-line"></i>'
+                        . '</a>';
                 })
                 ->rawColumns(['action', 'no_surat'])
                 ->make(true);
         }
 
         $title = "Dashboard";
-        return view('home', compact('title'));
+        return view('home', compact('title', 'dashboardWilayahLabel'));
     }
+
+
+    private function superAdminBeranda()
+    {
+        $title = 'Beranda Monitoring Super Admin';
+
+        $statusLabels = [
+            0 => 'Pengajuan Warga',
+            1 => 'Diproses Admin',
+            2 => 'Naik Sekkel',
+            3 => 'Menunggu TTE Lurah',
+            4 => 'Disetujui Lurah',
+            5 => 'Dinilai Warga',
+            6 => 'Ditolak',
+            7 => 'TTD Basah / Dihapus',
+            8 => 'Menunggu TTE Camat',
+            9 => 'Final SKTM',
+            11 => 'Naik Sekcam',
+        ];
+
+        $totalSurat = SuratPengajuan::count();
+        $totalAkun = DB::table('users')->count();
+        $totalWarga = DB::table('users')->where('role_id', 2)->count();
+        $totalPejabat = DB::table('users')->whereIn('role_id', [1, 3, 4, 5, 6, 8, 9])->count();
+        $totalSkpd = Skpd::count();
+        $kelurahanRegionIds = Skpd::query()->whereRaw('CHAR_LENGTH(id_region) = 13')->pluck('id_region');
+
+        $menungguProses = SuratPengajuan::whereIn('status', [0, 1, 2, 3, 8, 11])->count();
+        $tteLurah = SuratPengajuan::where('status', 3)->count();
+        $tteCamat = SuratPengajuan::where('jenis_surat', 'sktm')->where('status', 8)->count();
+        $selesai = SuratPengajuan::where(function ($q) {
+            $q->where('status', 9)
+              ->orWhere(function ($qq) {
+                  $qq->where('status', 4)->where('jenis_surat', '<>', 'sktm');
+              });
+        })->count();
+        $ditolak = SuratPengajuan::where('status', 6)->count();
+        $manual = SuratPengajuan::where('status', 7)->count();
+
+        $kpis = [
+            'total_surat' => $totalSurat,
+            'hari_ini' => SuratPengajuan::whereDate('created_at', now()->toDateString())->count(),
+            'bulan_ini' => SuratPengajuan::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count(),
+            'menunggu' => $menungguProses,
+            'menunggu_tte' => $tteLurah + $tteCamat,
+            'tte_lurah' => $tteLurah,
+            'tte_camat' => $tteCamat,
+            'manual' => $manual,
+            'selesai' => $selesai,
+            'ditolak' => $ditolak,
+            'total_akun' => $totalAkun,
+            'total_warga' => $totalWarga,
+            'total_pejabat' => $totalPejabat,
+            'total_skpd' => $totalSkpd,
+            'total_kecamatan' => Skpd::query()->whereRaw('CHAR_LENGTH(id_region) = 8')->count(),
+            'total_kelurahan' => Skpd::query()->whereRaw('CHAR_LENGTH(id_region) = 13')->count(),
+            'total_rw' => DB::table('rt_rws')->whereIn('kode_kelurahan', $kelurahanRegionIds)->select('kode_kelurahan', 'rw')->distinct()->count(),
+            'total_rt' => DB::table('rt_rws')->whereIn('kode_kelurahan', $kelurahanRegionIds)->count(),
+        ];
+
+        $statusRows = SuratPengajuan::select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->orderBy('status')
+            ->get()
+            ->map(fn ($row) => [
+                'status' => (int) $row->status,
+                'label' => $statusLabels[(int) $row->status] ?? 'Status ' . $row->status,
+                'total' => (int) $row->total,
+            ]);
+
+        $jenisRows = SuratPengajuan::select('jenis_surat', DB::raw('COUNT(*) as total'))
+            ->groupBy('jenis_surat')
+            ->orderByDesc('total')
+            ->orderBy('jenis_surat')
+            ->get();
+
+        $wilayahRows = SuratPengajuan::query()
+            ->leftJoin('skpds', 'skpds.id', '=', 'surat_pengajuans.id_kel')
+            ->select('skpds.id as id_skpd', 'skpds.nama as nama', DB::raw('COUNT(*) as total'))
+            ->groupBy('skpds.id', 'skpds.nama')
+            ->orderByDesc('total')
+            ->orderBy('skpds.id')
+            ->limit(15)
+            ->get();
+
+        $kecamatanRows = SuratPengajuan::query()
+            ->leftJoin('skpds as kel', 'kel.id', '=', 'surat_pengajuans.id_kel')
+            ->leftJoin('skpds as kec', 'kec.id_region', '=', 'kel.id_kec')
+            ->select(DB::raw('COALESCE(kec.nama, kel.nama, "TIDAK DIKETAHUI") as nama'), DB::raw('COUNT(*) as total'))
+            ->groupBy(DB::raw('COALESCE(kec.nama, kel.nama, "TIDAK DIKETAHUI")'))
+            ->orderByDesc('total')
+            ->get();
+
+        $roleRows = DB::table('users')
+            ->leftJoin('user_roles', 'user_roles.id', '=', 'users.role_id')
+            ->select('users.role_id', DB::raw('COALESCE(user_roles.name, CONCAT("Role ", users.role_id)) as role_name'), DB::raw('COUNT(*) as total'))
+            ->groupBy('users.role_id', 'user_roles.name')
+            ->orderBy('users.role_id')
+            ->get()
+            ->map(function ($row) {
+                $row->role_name = $row->role_name === 'Client' ? 'Warga' : $row->role_name;
+                return $row;
+            });
+
+        $rawMonthly = SuratPengajuan::query()
+            ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
+            ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as bulan'), DB::raw('COUNT(*) as total'))
+            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%Y-%m")'))
+            ->orderBy('bulan')
+            ->pluck('total', 'bulan');
+
+        $monthlyRows = collect(range(5, 0))->map(function ($minus) use ($rawMonthly) {
+            $date = now()->subMonths($minus);
+            $key = $date->format('Y-m');
+            return [
+                'bulan' => $key,
+                'label' => $date->translatedFormat('M Y'),
+                'total' => (int) ($rawMonthly[$key] ?? 0),
+            ];
+        });
+
+        $recentRows = SuratPengajuan::with('kelurahan')
+            ->orderByDesc(DB::raw('COALESCE(surat_pengajuans.updated_at, surat_pengajuans.created_at)'))
+            ->limit(12)
+            ->get();
+
+        return view('super_admin.beranda', compact(
+            'title',
+            'kpis',
+            'statusRows',
+            'jenisRows',
+            'wilayahRows',
+            'kecamatanRows',
+            'roleRows',
+            'monthlyRows',
+            'recentRows'
+        ));
+    }
+
 
     public function landing()
     {
@@ -181,7 +355,7 @@ class HomeController extends Controller
                 $item['deskripsi'] = strip_tags($item['deskripsi']);
             }
         }
-        $surat = JenisSurat::where(['is_active' => true])->get();
+        $surat = $this->activeJenisSuratQuery()->get();
         $skpd = new Skpd_resource(Skpd::find(auth()->user()->id_instansi));
         // dd($skpd);
         return view('warga', compact('berita', 'surat', 'skpd'));
@@ -190,6 +364,49 @@ class HomeController extends Controller
     public function activity()
     {
         return Activity::all();
+    }
+
+    public function rekap(SuratCollection $service)
+    {
+        $user = auth()->user();
+
+        if (request()->ajax()) {
+            $data = $service->getAllForUser($user)
+                ->filter(fn($row) => !in_array((int) $user->role_id, [5, 6], true) || strtolower((string) $row->jenis) === 'sktm')
+                ->values();
+
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('no_surat', fn($row) => $this->getNoSrt($row->raw))
+                ->addColumn('jenis', fn($row) => $row->jenis_label)
+                ->addColumn('nik', fn($row) => $row->nik ?? data_get($row, 'raw.nik') ?? data_get($row, 'raw.nik_pelapor') ?? '-')
+                ->addColumn('tgl_surat', function ($row) {
+                    $tanggal = data_get($row, 'raw.updated_at')
+                        ?? data_get($row, 'updated_at')
+                        ?? data_get($row, 'raw.created_at')
+                        ?? data_get($row, 'created_at')
+                        ?? data_get($row, 'raw.tgl_surat')
+                        ?? data_get($row, 'tgl_surat');
+
+                    return $tanggal ? \Carbon\Carbon::parse($tanggal)->format('Y-m-d H:i:s') : '-';
+                })
+                ->addColumn('status', fn($row) => data_get($row, 'raw.st.name', data_get($row, 'st.name', '-')))
+                ->addColumn('action', function ($row) {
+                    $route = $row->route_edit ?? null;
+
+                    if (! $route || ! Route::has($route)) {
+                        return '-';
+                    }
+
+                    return '<a href="' . e(route($route, $row->id)) . '" class="btn btn-sm btn-primary" title="Lihat"><i class="ri-eye-line"></i></a>';
+                })
+                ->rawColumns(['action', 'no_surat'])
+                ->make(true);
+        }
+
+        return view('rekap.index', [
+            'title' => 'Rekap Surat',
+        ]);
     }
 
 
@@ -203,7 +420,7 @@ class HomeController extends Controller
         $user  = auth()->user();
         $q     = strtolower(request('q'));
 
-        $surat = JenisSurat::where('is_active', true)->get(['jenis', 'assets', 'name']);
+        $surat = $this->activeJenisSuratQuery()->get(['jenis', 'assets', 'name']);
         $items = $service->getAllForUser($user);
 
         $items = $items->map(function ($row) {
@@ -362,6 +579,69 @@ class HomeController extends Controller
 
 
 
+
+    /**
+     * Label wilayah untuk judul Dashboard/Grafik Beranda.
+     * Dibuat berdasarkan user login agar Admin/Sekkel/Lurah/Camat tahu data wilayah mana yang sedang tampil.
+     */
+    private function dashboardWilayahLabel($user): string
+    {
+        $skpd = Skpd::find($user->id_instansi);
+
+        if (!$skpd) {
+            return 'Kota Kediri';
+        }
+
+        $nama = Str::of((string) $skpd->nama)
+            ->lower()
+            ->title()
+            ->toString();
+
+        $roleId = (int) ($user->role_id ?? 0);
+        $isKecamatan = in_array($roleId, [5, 6], true)
+            || in_array(strtoupper((string) $skpd->nama), ['MOJOROTO', 'KOTA', 'PESANTREN'], true)
+            || in_array((int) $skpd->id, [64, 65, 66], true);
+
+        if ($isKecamatan) {
+            return 'Kecamatan ' . $nama . ' Kota Kediri';
+        }
+
+        return 'Kelurahan ' . $nama . ' Kota Kediri';
+    }
+
+    private function activeJenisSuratQuery()
+    {
+        $query = JenisSurat::query();
+
+        if (Schema::hasColumn('jenis_surats', 'is_active')) {
+            $query->where('is_active', true);
+        }
+
+        return $query;
+    }
+
+    /**
+     * URL cetak khusus tombol Beranda.
+     * Dibuat aman terhadap perbedaan nama route di project lama/baru.
+     */
+    private function homeCetakUrl(int $id): string
+    {
+        if (Route::has('admin.surat.cetak')) {
+            return route('admin.surat.cetak', $id);
+        }
+
+        if (Route::has('surat.cetak')) {
+            return route('surat.cetak', $id);
+        }
+
+        if (Route::has('admin.surat.download')) {
+            return route('admin.surat.download', $id);
+        }
+
+        return action([\App\Http\Controllers\Admin\SuratAdminController::class, 'cetak'], $id);
+    }
+
+
     /**
      * Ambil variable surat sebagai array, aman untuk JSON baru, array cast Laravel,
      * JSON double-encoded lama, dan serialize lama.
@@ -424,6 +704,12 @@ class HomeController extends Controller
         $status = (int) ($row->status ?? data_get($row, 'raw.status', -999));
         $statusName = strtolower(trim((string) data_get($row, 'raw.st.name', data_get($row, 'st.name', ''))));
 
+        $jenis = strtolower((string) ($row->jenis ?? data_get($row, 'raw.jenis_surat', '')));
+
+        if ($jenis === 'sktm') {
+            return $status === 9 || $statusName === 'sudah upload bukti';
+        }
+
         return in_array($status, [4, 9], true)
             || $statusName === 'sudah upload bukti';
     }
@@ -448,7 +734,15 @@ class HomeController extends Controller
             return 4; // Selesai
         }
 
-        return (int) ($row->status ?? data_get($row, 'raw.status', 0));
+        $status = (int) ($row->status ?? data_get($row, 'raw.status', 0));
+        $jenis = strtolower((string) ($row->jenis ?? data_get($row, 'raw.jenis_surat', '')));
+
+        // Status 4 untuk SKTM berarti TTE Lurah selesai, tetapi belum final karena masih wajib Camat.
+        if ($jenis === 'sktm' && $status === 4) {
+            return 11;
+        }
+
+        return $status;
     }
 
     public function chartDrilldown(SuratCollection $service)
@@ -477,6 +771,7 @@ class HomeController extends Controller
             7 => 'Dihapus Warga',
             8 => 'Dinaikkan ke Camat (SKTM)',
             9 => 'Selesai (SKTM)',
+            11 => 'Dinaikkan ke Sekcam (SKTM)',
         ];
 
         // ============================

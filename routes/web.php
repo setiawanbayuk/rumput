@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\SuratAdminController;
+use App\Http\Controllers\Admin\ManajemenWargaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JenisController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Requests\GenderController;
 use App\Http\Controllers\Requests\PekerjaanController;
 use App\Http\Controllers\Requests\PendidikanController;
 use App\Http\Controllers\Requests\ResidentController;
+use App\Http\Controllers\Requests\EsignController as TteEsignController;
 use App\Http\Controllers\SkbnController;
 use App\Http\Controllers\SkboroController;
 use App\Http\Controllers\SkdomController;
@@ -20,6 +22,7 @@ use App\Http\Controllers\SktmController;
 use App\Http\Controllers\SkusahaController;
 use App\Http\Controllers\SuketController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\WargaController;
 use App\Models\JenisSurat;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +39,9 @@ Route::get('/', [HomeController::class, 'landing'])->name('landing');
 Route::get('/login-admin', function () {
     return view('auth.login');
 })->name('login.admin');
+Route::get('/super-admin/login', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'login'])
+    ->middleware('guest')
+    ->name('super-admin.login');
 // Route::get('/', function () {
 //     if (auth()->check()) {
 //         if (auth()->user()->role_id == 2) {
@@ -285,15 +291,65 @@ Route::get('/sso', [LoginController::class, 'sso'])->name('sso.login');
 Route::get('/callback', [LoginController::class, 'callback'])->name('sso.callback');
 Route::get('/users/profile', [LoginController::class, 'profile'])->name('users.profile');
 
+
+Route::middleware(['auth', 'role:1'])->prefix('admin/manajemen-warga')->name('admin.manajemen-warga.')->group(function () {
+    Route::get('/', [ManajemenWargaController::class, 'index'])->name('index');
+    Route::get('/create', [ManajemenWargaController::class, 'create'])->name('create');
+    Route::post('/store', [ManajemenWargaController::class, 'store'])->name('store');
+    Route::get('/edit/{id}', [ManajemenWargaController::class, 'edit'])->name('edit');
+    Route::put('/update/{id}', [ManajemenWargaController::class, 'update'])->name('update');
+    Route::delete('/destroy/{id}', [ManajemenWargaController::class, 'destroy'])->name('destroy');
+    Route::get('/options/provinsi', [ManajemenWargaController::class, 'provinsiOptions'])->name('options.provinsi');
+    Route::get('/options/kabko', [ManajemenWargaController::class, 'kabkoOptions'])->name('options.kabko');
+    Route::get('/options/kecamatan', [ManajemenWargaController::class, 'kecamatanOptions'])->name('options.kecamatan');
+    Route::get('/options/kelurahan', [ManajemenWargaController::class, 'kelurahanOptions'])->name('options.kelurahan');
+    Route::get('/options/rt-rw', [ManajemenWargaController::class, 'rtRwOptions'])->name('options.rtrw');
+});
+
+Route::middleware(['auth'])->prefix('tools')->name('tools.')->group(function () {
+    Route::get('/rekap', [ToolsController::class, 'rekap'])->name('rekap');
+    Route::get('/rekap/export', [ToolsController::class, 'exportRekap'])->name('rekap.export');
+    Route::get('/profil-instansi', [ToolsController::class, 'profilInstansi'])->name('profil-instansi');
+    Route::post('/profil-instansi', [ToolsController::class, 'updateProfilInstansi'])->name('profil-instansi.update');
+});
+
 Route::middleware(['auth'])->prefix('profile')->group(function () {
     Route::get('/', [ProfileController::class, 'index'])->name('profile');
     Route::post('/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/akun/{id}', [ProfileController::class, 'akun'])->name('profile.akun'); // update password
 });
 
+Route::middleware(['auth', 'role:7'])->prefix('super-admin')->name('super-admin.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/surat', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'surat'])->name('surat.index');
+    Route::post('/surat/{id}/action', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'actionSurat'])->name('surat.action');
+    Route::delete('/surat/{id}', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'destroySurat'])->name('surat.destroy');
+
+    Route::get('/pelayanan-warga', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'pelayanan'])->name('pelayanan.index');
+    Route::get('/pelayanan-warga/create/{jenis}', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'createPelayanan'])->name('pelayanan.create');
+
+    Route::get('/profil-instansi', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'profilInstansi'])->name('profil-instansi');
+    Route::post('/profil-instansi', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'updateProfilInstansi'])->name('profil-instansi.update');
+
+    Route::get('/akun', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'index'])->name('users.index');
+    Route::get('/akun/create', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'create'])->name('users.create');
+    Route::post('/akun', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'store'])->name('users.store');
+    Route::get('/akun/{id}/edit', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'edit'])->name('users.edit');
+    Route::put('/akun/{id}', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'update'])->name('users.update');
+    Route::delete('/akun/{id}', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'destroy'])->name('users.destroy');
+
+    Route::get('/akun-options/provinsi', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'provinsiOptions'])->name('users.options.provinsi');
+    Route::get('/akun-options/kabko', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'kabkoOptions'])->name('users.options.kabko');
+    Route::get('/akun-options/kecamatan', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'kecamatanOptions'])->name('users.options.kecamatan');
+    Route::get('/akun-options/kelurahan', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'kelurahanOptions'])->name('users.options.kelurahan');
+    Route::get('/akun-options/rt-rw', [\App\Http\Controllers\SuperAdmin\SuperAdminUserController::class, 'rtRwOptions'])->name('users.options.rtrw');
+});
+
 Route::get('phpmyinfo', function () {
     phpinfo();
 })->name('phpmyinfo');
+
+Route::post('/admin/esign/sign', [TteEsignController::class, 'sign'])->middleware(['auth'])->name('admin.esign.sign');
 
 Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' => ['auth']], function () {
     // Tampilan Utama & DataTables

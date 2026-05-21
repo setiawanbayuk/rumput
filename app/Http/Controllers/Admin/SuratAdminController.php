@@ -16,6 +16,7 @@ use Yajra\DataTables\DataTables;
 use App\Models\Pejabat;
 use App\Models\SuratTemplate;
 use App\Models\User;
+use App\Models\Skpd;
 
 class SuratAdminController extends Controller
 {
@@ -23,24 +24,153 @@ class SuratAdminController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $roleId = (int) $user->role_id;
+
+        // Kondisi umum untuk menyembunyikan surat TTD Basah yang sudah upload bukti
+        // dari Pelayanan Warga agar tidak dobel dengan Beranda.
+        $buktiTtdBasahEmptyWhere = "(CASE WHEN variable IS NOT NULL AND variable <> '' AND JSON_VALID(variable) THEN COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(variable, '$.bukti_ttd_basah')), ''), '') ELSE '' END) = ''";
+        $manualUploadedEmptyWhere = $buktiTtdBasahEmptyWhere;
+
+        // Deteksi TTD Basah dibuat fleksibel karena di data real ada dua kemungkinan:
+        // 1) status sudah berubah menjadi 7, atau
+        // 2) status masih Warga/Admin, tetapi variable JSON sudah punya manual_signature/signature_mode manual.
+        // Dengan ini, surat TTD Basah tidak ikut lagi ke notifikasi Surat Warga Masuk.
+        $manualSignatureWhere = "(status = 7 OR (variable IS NOT NULL AND variable <> '' AND JSON_VALID(variable) AND (LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(variable, '$.signature_mode')), '')) = 'manual' OR LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(variable, '$.manual_signature')), '')) IN ('1', 'true', 'yes', 'manual'))))";
+        $manualPendingWhere = "($manualSignatureWhere AND $buktiTtdBasahEmptyWhere)";
+        $notManualPendingWhere = "NOT ($manualPendingWhere)";
+
+        $buildAdminSuratCounts = function () use ($user, $roleId, $manualUploadedEmptyWhere, $manualPendingWhere, $notManualPendingWhere) {
+            $statusCounts = [
+                'default' => 0,
+                'to_sekkel' => 0,
+                'to_lurah' => 0,
+                'to_camat' => 0,
+                'manual_pending' => 0,
+                'rejected' => 0,
+                'approved' => 0,
+            ];
+
+            $wargaMasukCount = 0;
+            $manualPendingCount = 0;
+
+            if ($roleId === 1) {
+                $adminBaseCountQuery = $this->scopeSuratToCurrentUser(SuratPengajuan::query())->whereRaw($manualUploadedEmptyWhere);
+
+                $statusCounts['default']   = (clone $adminBaseCountQuery)->whereIn('status', [0, 1])->whereRaw($notManualPendingWhere)->count();
+                $statusCounts['to_sekkel'] = (clone $adminBaseCountQuery)->where('status', 2)->count();
+                $statusCounts['to_lurah']  = (clone $adminBaseCountQuery)->where('status', 3)->count();
+                $statusCounts['to_camat']  = (clone $adminBaseCountQuery)->whereIn('status', [8, 11])->where('jenis_surat', 'sktm')->count();
+                $statusCounts['manual_pending'] = $this->scopeSuratToCurrentUser(SuratPengajuan::query())->whereRaw($manualPendingWhere)->count();
+                $statusCounts['rejected']  = (clone $adminBaseCountQuery)->where('status', 6)->count();
+                $statusCounts['approved']  = (clone $adminBaseCountQuery)
+                    ->where(function ($q) {
+                        $q->where('status', 9)
+                          ->orWhere(function ($qq) {
+                              $qq->where('status', 4)->where('jenis_surat', '<>', 'sktm');
+                          });
+                    })->count();
+
+                // Notifikasi keras khusus surat murni dari warga yang belum disentuh Admin.
+                $wargaMasukCount = (clone $adminBaseCountQuery)->where('status', 0)->whereRaw($notManualPendingWhere)->count();
+
+                // Notifikasi terpisah khusus TTD Basah yang belum upload bukti.
+                $manualPendingCount = $statusCounts['manual_pending'];
+            }
+
+            return [
+                'statusCounts' => $statusCounts,
+                'wargaMasukCount' => $wargaMasukCount,
+                'manualPendingCount' => $manualPendingCount,
+            ];
+        };
+
+        if (request()->ajax() && request()->boolean('notif_counts')) {
+            return response()->json($buildAdminSuratCounts())
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+                ->header('Pragma', 'no-cache');
+        }
 
         if (request()->ajax()) {
             // Query ke tabel tunggal
-			$query = SuratPengajuan::with('penduduk')->orderByDesc('id');
+            $query = $this->scopeSuratToCurrentUser(SuratPengajuan::with('penduduk'))->orderByDesc('id');
 
-            // Filter berdasarkan Role (RT/RW hanya lihat wilayahnya)
-            if ($user->role_id == 8) {
-                $query->where('id_kel', $user->id_instansi)
-                    ->where('id_rw', $user->id_rw)
-                    ->where('id_rt', $user->id_rt);
-            } elseif (in_array($user->role_id, [3, 4, 5, 6])) {
-                $query->where('id_kel', $user->id_instansi);
+            // Filter wilayah sudah diterapkan oleh scopeSuratToCurrentUser().
+            // Jangan menambah where id_kel = id_instansi lagi di sini,
+            // karena Camat/Sekcam memakai id_instansi kecamatan dan harus membaca semua kelurahan dalam id_kec yang sama.
+
+            if ($roleId === 1) {
+                // Hilangkan surat TTD Basah yang sudah upload bukti dari Pelayanan Warga.
+                // Data selesai seperti ini cukup tampil di Beranda agar laporan tidak dobel/menumpuk.
+                $query->whereRaw($manualUploadedEmptyWhere);
+
+                // Default Admin: hanya surat yang belum diproses/belum dinaikkan.
+                // Jika dropdown filter dipilih, status akan mengikuti filter di bawah.
+                if (!request()->filled('filter_status')) {
+                    $query->whereIn('status', [0, 1])
+                        ->whereRaw($notManualPendingWhere);
+                }
+            } elseif ($roleId === 4) {
+                // Sekkel hanya fokus pada surat yang menunggu verifikasi Sekkel.
+                $query->where('status', 2);
+            } elseif ($roleId === 3) {
+                // Lurah melihat surat yang menunggu TTE Lurah (status 3).
+                // Khusus SKTM yang sudah TTE Lurah (status 4) tetap tampil agar Lurah bisa klik Naikkan ke Kecamatan/Camat.
+                $query->where(function ($q) {
+                    $q->where('status', 3)
+                      ->orWhere(function ($qq) {
+                          $qq->where('status', 4)->where('jenis_surat', 'sktm');
+                      });
+                });
+            } elseif ($roleId === 6) {
+                // Sekretaris/Adm Camat melihat SKTM yang sudah dinaikkan dari Lurah ke Kecamatan.
+                $query->where('jenis_surat', 'sktm')->where('status', 11);
+            } elseif ($roleId === 5) {
+                // Camat melihat SKTM yang sudah dinaikkan oleh Sekretaris/Adm Camat.
+                $query->where('jenis_surat', 'sktm')->where('status', 8);
             }
 
-            // Filter berdasarkan Jenis Surat (Opsional jika ingin difilter via URL)
-            if (request()->has('jenis') && request()->jenis != '') {
+            // Filter berdasarkan Jenis Surat (Opsional jika ingin difilter via dropdown)
+            if (request()->filled('jenis')) {
                 $query->where('jenis_surat', request()->jenis);
             }
+
+            // Filter Status Pengajuan dari dropdown daftar pengajuan surat.
+            // KHUSUS Admin role_id 1 saja.
+            // Role Sekkel/Lurah/Sekcam/Camat tidak memakai filter ini karena datanya sudah dibatasi otomatis dari backend.
+            if ($roleId === 1 && request()->filled('filter_status')) {
+                switch (request()->filter_status) {
+                    case 'approved':
+                        $query->where(function ($q) {
+                            $q->where('status', 9)
+                              ->orWhere(function ($qq) {
+                                  $qq->where('status', 4)->where('jenis_surat', '<>', 'sktm');
+                              });
+                        });
+                        break;
+
+                    case 'rejected':
+                        $query->where('status', 6);
+                        break;
+
+
+                    case 'to_sekkel':
+                        $query->where('status', 2);
+                        break;
+
+                    case 'to_lurah':
+                        $query->where('status', 3);
+                        break;
+
+                    case 'to_camat':
+                        $query->where('jenis_surat', 'sktm')->whereIn('status', [8, 11]);
+                        break;
+
+                    case 'manual_pending':
+                        $query->whereRaw($manualPendingWhere);
+                        break;
+                }
+            }
+
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('no_surat', function ($row) {
@@ -71,7 +201,7 @@ class SuratAdminController extends Controller
                     } elseif (in_array($role, [3, 5])) {
                         return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
                     }
                 })
                 ->rawColumns(['action', 'tipe'])
@@ -79,8 +209,243 @@ class SuratAdminController extends Controller
         }
 
         $title = "Daftar Pengajuan Surat";
-        return view('admin.surat.index', compact('title'));
+
+        $adminCounts = $buildAdminSuratCounts();
+        $statusCounts = $adminCounts['statusCounts'];
+        $wargaMasukCount = $adminCounts['wargaMasukCount'];
+        $manualPendingCount = $adminCounts['manualPendingCount'];
+
+        return view('admin.surat.index', compact('title', 'statusCounts', 'wargaMasukCount', 'manualPendingCount'));
     }
+
+    /**
+     * Role E-SUKET:
+     * 1 = Admin kelurahan, 3 = Lurah, 4 = Sekkel, 5 = Camat, 6 = Sekcam,
+     * 7 = Super Admin/Template, 8 = RT/RW, 9 = Admin kelurahan tambahan.
+     *
+     * Prinsip keamanan:
+     * - Akun kelurahan hanya boleh mengakses surat dengan surat_pengajuans.id_kel = users.id_instansi.
+     * - Akun Camat/Sekcam hanya boleh mengakses kelurahan dalam kecamatan yang sama berdasarkan skpds.id_kec.
+     * - Super Admin role 7 boleh melihat semua wilayah.
+     */
+    protected function isSuperAdminUser($user = null): bool
+    {
+        $user = $user ?: auth()->user();
+        return $user && (int) $user->role_id === 7;
+    }
+
+    protected function isKecamatanRole($user = null): bool
+    {
+        $user = $user ?: auth()->user();
+        return $user && in_array((int) $user->role_id, [5, 6], true);
+    }
+
+    protected function currentUserKelurahanIds($user = null): ?array
+    {
+        $user = $user ?: auth()->user();
+
+        if (!$user) {
+            return [];
+        }
+
+        if ($this->isSuperAdminUser($user)) {
+            return null; // null = boleh semua wilayah
+        }
+
+        $roleId = (int) $user->role_id;
+        $idInstansi = (int) ($user->id_instansi ?? 0);
+
+        if ($idInstansi <= 0) {
+            return [];
+        }
+
+        if (in_array($roleId, [5, 6], true)) {
+            $skpdInstansi = Skpd::find($idInstansi);
+
+            if (!$skpdInstansi) {
+                return [];
+            }
+
+            // Akun kecamatan/Sekcam bisa memakai id_instansi baris kecamatan atau baris kelurahan.
+            // Baris kecamatan biasanya punya id_region seperti 35.71.01 dan id_kec bisa kosong.
+            // Baris kelurahan biasanya punya id_region seperti 35.71.01.1001 dan id_kec berisi 35.71.01.
+            $candidateKecRegions = [];
+            $idKec = trim((string) ($skpdInstansi->id_kec ?? ''));
+            $idRegion = trim((string) ($skpdInstansi->id_region ?? ''));
+
+            if ($idKec !== '') {
+                $candidateKecRegions[] = $idKec;
+            }
+
+            if ($idRegion !== '' && substr_count($idRegion, '.') === 2) {
+                $candidateKecRegions[] = $idRegion;
+            }
+
+            // Fallback aman: jika id_instansi adalah baris kecamatan tetapi id_region/id_kec tidak rapi,
+            // cari kelurahan yang punya id_kec sama dengan id_region baris tersebut.
+            $candidateKecRegions = array_values(array_unique(array_filter($candidateKecRegions)));
+
+            if (empty($candidateKecRegions)) {
+                return [];
+            }
+
+            return Skpd::query()
+                ->where(function ($q) use ($candidateKecRegions) {
+                    $q->whereIn('id_kec', $candidateKecRegions)
+                      ->orWhereIn('id_region', $candidateKecRegions);
+                })
+                ->get(['id', 'id_region'])
+                ->filter(function ($skpd) {
+                    // Kelurahan punya id_region seperti 35.71.01.1001 (minimal 3 titik).
+                    // Kecamatan punya id_region seperti 35.71.01 (2 titik), jadi tidak ikut.
+                    return substr_count((string) $skpd->id_region, '.') >= 3;
+                })
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        return [$idInstansi];
+    }
+
+    protected function scopeSuratToCurrentUser($query, $user = null)
+    {
+        $user = $user ?: auth()->user();
+        $kelurahanIds = $this->currentUserKelurahanIds($user);
+
+        if ($kelurahanIds === null) {
+            return $query;
+        }
+
+        if (empty($kelurahanIds)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $query->whereIn('id_kel', $kelurahanIds);
+
+        if ((int) $user->role_id === 8) {
+            if (!is_null($user->id_rw) && $user->id_rw !== '') {
+                $query->where('id_rw', $user->id_rw);
+            }
+            if (!is_null($user->id_rt) && $user->id_rt !== '') {
+                $query->where('id_rt', $user->id_rt);
+            }
+        }
+
+        return $query;
+    }
+
+    protected function findSuratForCurrentUser($id)
+    {
+        return $this->scopeSuratToCurrentUser(SuratPengajuan::query())
+            ->whereKey($id)
+            ->first();
+    }
+
+    protected function findSuratForCurrentUserOrFail($id)
+    {
+        return $this->scopeSuratToCurrentUser(SuratPengajuan::query())
+            ->whereKey($id)
+            ->firstOrFail();
+    }
+
+    protected function resolveCamatForKelurahanId($idKel): ?Pejabat
+    {
+        $kelurahanSkpd = Skpd::with('kecamatan')->find((int) $idKel);
+        if (!$kelurahanSkpd) {
+            return null;
+        }
+
+        $idKec = trim((string) $kelurahanSkpd->id_kec);
+        $kecamatanSkpd = null;
+
+        if ($idKec !== '') {
+            // Di tabel skpds, baris kecamatan memakai id_region = id_kec, contoh 35.71.01.
+            $kecamatanSkpd = Skpd::where('id_region', $idKec)->first();
+        }
+
+        if (!$kecamatanSkpd) {
+            $kecamatanSkpd = Skpd::whereIn('nama', [
+                strtoupper((string) optional($kelurahanSkpd->kecamatan)->nama),
+                optional($kelurahanSkpd->kecamatan)->nama,
+            ])->first();
+        }
+
+        if (!$kecamatanSkpd) {
+            return $this->resolveCamatByDistrictName(optional($kelurahanSkpd->kecamatan)->nama);
+        }
+
+        return Pejabat::with(['jabatan', 'skpd.kecamatan'])
+            ->where('id_skpd', $kecamatanSkpd->id)
+            ->where(function ($q) {
+                $q->where('id_jabatan', 2)
+                  ->orWhereHas('jabatan', function ($jabatan) {
+                      $jabatan->whereRaw('LOWER(nama) LIKE ?', ['%camat%']);
+                  });
+            })
+            ->first()
+            ?: Pejabat::with(['jabatan', 'skpd.kecamatan'])->where('id_skpd', $kecamatanSkpd->id)->first();
+    }
+
+    /**
+     * Mengambil nama kecamatan untuk header template Word/PDF.
+     * Dibuat fallback berlapis karena pada beberapa data relasi skpds->kecamatan
+     * bisa kosong, sementara kelurahan tetap terbaca dari skpds.nama.
+     */
+    protected function resolveSkpdKecamatanName($skpd, array $residentData = []): string
+    {
+        $name = optional(optional($skpd)->kecamatan)->nama;
+
+        if (!$name && !empty($skpd->id_kec)) {
+            $kecamatanSkpd = Skpd::where('id_region', trim((string) $skpd->id_kec))->first();
+            $name = optional($kecamatanSkpd)->nama;
+        }
+
+        if (!$name && !empty($residentData['kecamatan_nm'])) {
+            $name = $residentData['kecamatan_nm'];
+        }
+
+        return strtoupper(trim((string) $name));
+    }
+
+    protected function assertRoleCanTransition(SuratPengajuan $surat, int $nextStatus): ?string
+    {
+        $roleId = (int) auth()->user()->role_id;
+        $currentStatus = (int) $surat->status;
+
+        // Role 7 adalah Super Admin: boleh override transisi dari rumah kontrol baru tanpa mengubah alur role lain.
+        if ($roleId === 7) {
+            return null;
+        }
+
+        if (in_array($roleId, [1, 8, 9], true) && in_array($currentStatus, [0, 1], true) && $nextStatus === 2) {
+            return null;
+        }
+
+        if ($roleId === 4 && $currentStatus === 2 && $nextStatus === 3) {
+            return null;
+        }
+
+        // Khusus SKTM: setelah TTE Lurah status 4, Lurah baru boleh menaikkan ke Kecamatan/Sekcam (status 11).
+        if ($roleId === 3 && $currentStatus === 4 && $nextStatus === 11 && strtolower((string) $surat->jenis_surat) === 'sktm') {
+            return null;
+        }
+
+        // Sekretaris/Adm Camat menaikkan SKTM dari meja kecamatan ke Camat untuk TTE.
+        if ($roleId === 6 && $currentStatus === 11 && $nextStatus === 8 && strtolower((string) $surat->jenis_surat) === 'sktm') {
+            return null;
+        }
+
+        // Camat hanya final setelah TTE Camat, bukan dari tombol naik biasa.
+        if ($roleId === 5 && $currentStatus === 8 && $nextStatus === 9) {
+            return null;
+        }
+
+        return 'Role Anda tidak memiliki akses untuk mengubah status surat ini.';
+    }
+
+
 
             // Form input surat baru oleh Admin
             public function create($jenis)
@@ -253,6 +618,10 @@ class SuratAdminController extends Controller
                     'tgl_surat'      => 'nullable|date',
                 ];
 
+                if ((int) auth()->user()->role_id === 7) {
+                    $rules['id_kel'] = ['required', 'integer', 'exists:skpds,id'];
+                }
+
                 if ($request->jenis_surat === 'skbn') {
                     $rules['bin_binti'] = 'nullable|string|max:255';
 
@@ -366,6 +735,13 @@ class SuratAdminController extends Controller
                 try {
                     return DB::transaction(function () use ($request) {
                         $user = auth()->user();
+                        $isSuperAdminStore = ((int) $user->role_id === 7);
+                        $targetSkpd = $isSuperAdminStore
+                            ? Skpd::findOrFail((int) $request->id_kel)
+                            : Skpd::find($user->id_instansi);
+                        $targetInstansiId = $targetSkpd->id ?? $user->id_instansi;
+                        $targetRw = $request->filled('rw') ? $request->rw : $user->id_rw;
+                        $targetRt = $request->filled('rt') ? $request->rt : $user->id_rt;
 
                         // Cari resident berdasarkan NIK
                         $resident = Resident::where('nik', $request->nik)->first();
@@ -401,6 +777,7 @@ class SuratAdminController extends Controller
                         'rt_nm'               => $request->rt_nm,
                         'alamat'              => strtoupper($request->alamat ?? ''),
                     ];
+
 
                         if (!$resident) {
                             // Jika belum ada → insert baru
@@ -600,9 +977,9 @@ class SuratAdminController extends Controller
                             'kd_jenis_surat' => $request->kd_jenis_surat,
                             'no_urut_surat'  => $request->no_urut_surat,
                             'nik'            => $request->nik,
-                            'id_kel'         => $user->id_instansi,
-                            'id_rw'          => $user->id_rw,
-                            'id_rt'          => $user->id_rt,
+                            'id_kel'         => $targetInstansiId,
+                            'id_rw'          => $targetRw,
+                            'id_rt'          => $targetRt,
                             'tahun'          => date('Y'),
                             'tgl_surat'      => $request->tgl_surat ?: now(),
                             'peruntukan'     => $request->peruntukan,
@@ -621,7 +998,7 @@ class SuratAdminController extends Controller
                         ]);
 
                         return redirect()
-                            ->route('admin.surat.index')
+                            ->route($isSuperAdminStore ? 'super-admin.pelayanan.index' : 'admin.surat.index', $isSuperAdminStore ? ['id_kel' => $targetInstansiId] : [])
                             ->with('success', 'Surat berhasil dibuat.');
                     });
                 } catch (\Exception $e) {
@@ -635,7 +1012,7 @@ class SuratAdminController extends Controller
         // Simpan data Edit Web Admin
         public function edit($id)
         {
-            $surat = SuratPengajuan::findOrFail($id);
+            $surat = $this->findSuratForCurrentUserOrFail($id);
             $currentUser = auth()->user();
             $jenis = $surat->jenis_surat;
 
@@ -870,7 +1247,7 @@ class SuratAdminController extends Controller
             try {
                 return DB::transaction(function () use ($request, $id) {
                     $user = auth()->user();
-                    $surat = SuratPengajuan::findOrFail($id);
+                    $surat = $this->findSuratForCurrentUserOrFail($id);
 
                     $resident = Resident::where('nik', $request->nik)->first();
 
@@ -1264,15 +1641,12 @@ class SuratAdminController extends Controller
                     }
                 }
 
-                $user = \App\Models\User::with('skpd.kecamatan')->find(auth()->id());
-                $pejabat = \App\Models\Pejabat::with(['skpd.kecamatan', 'jabatan'])
-                    ->where('id_skpd', $user->id_instansi)
+                $skpdSurat = Skpd::with('kecamatan')->find((int) $surat->id_kel);
+                $pejabat = Pejabat::with(['skpd.kecamatan', 'jabatan'])
+                    ->where('id_skpd', (int) $surat->id_kel)
                     ->first();
-                $camat = $this->resolveCamatByDistrictName(optional(optional($pejabat)->skpd)->kecamatan->nama ?? null);
+                $camat = $this->resolveCamatForKelurahanId((int) $surat->id_kel);
 
-                if (!$pejabat) {
-                    abort(404, 'Data pejabat penandatangan tidak ditemukan.');
-                }
 
                 $tglSurat = \Carbon\Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y');
                 $nomorSurat = $this->getNoSrt($surat);
@@ -1286,14 +1660,14 @@ class SuratAdminController extends Controller
                 );
 
                 $data = [
-                    'skpd_kec'            => strtoupper(optional(optional($pejabat->skpd)->kecamatan)->nama ?? ''),
-                    'skpd_kel'            => strtoupper(optional($pejabat->skpd)->nama ?? ''),
-                    'skpd_alamat'         => optional($pejabat->skpd)->instansi_alamat ?? '',
-                    'skpd_telp'           => optional($pejabat->skpd)->instansi_telp ?? '',
-                    'skpd_pos'            => optional($pejabat->skpd)->instansi_kode_pos ?? '',
+                    'skpd_kec'            => $this->resolveSkpdKecamatanName($skpdSurat, $residentData),
+                    'skpd_kel'            => strtoupper(optional($skpdSurat)->nama ?? ''),
+                    'skpd_alamat'         => optional($skpdSurat)->instansi_alamat ?? '',
+                    'skpd_telp'           => optional($skpdSurat)->instansi_telp ?? '',
+                    'skpd_pos'            => optional($skpdSurat)->instansi_kode_pos ?? '',
                     'skpd_kepala'         => $pejabat->nama ?? '',
                     'skpd_nip_kepala'     => $pejabat->nip ?? '',
-                    'skpd_jabatan'        => trim(ucfirst(optional(optional($pejabat)->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower(optional(optional($pejabat)->skpd)->nama ?? ''))),
+                    'skpd_jabatan'        => trim(ucfirst(optional(optional($pejabat)->jabatan)->nama ?? '') . ' ' . ucfirst(strtolower(optional($skpdSurat)->nama ?? ''))),
                     'skpd_camat'          => optional($camat)->nama ?? '',
                     'skpd_nip_camat'      => optional($camat)->nip ?? '',
                     'skpd_jabatan_camat'  => strtoupper(optional(optional($camat)->jabatan)->nama ?? 'CAMAT'),
@@ -1317,6 +1691,10 @@ class SuratAdminController extends Controller
                     'surat_catatan'       => $variableData['surat_catatan'] ?? $this->buildAutoSuratMeta($surat->peruntukan, $variableData['keperluan_lainnya'] ?? null)['catatan'],
                     'link'                => $verifyUrl,
                     'show_qr'             => in_array((int) $surat->status, [4, 9], true),
+                    // Marker kosong untuk Lurah tetap menyisakan tanda ~ di template.
+                    // Marker Camat tetap disiapkan agar PDF sebelum TTE Camat masih punya titik tag.
+                    'qr'                  => '',
+                    'qr_camat'            => '[[qr_camat]]',
 
                     'jenis_surat'         => $surat->jenis_surat ?? '',
                     'kd_jenis_surat'      => $surat->kd_jenis_surat ?? '',
@@ -1432,9 +1810,58 @@ class SuratAdminController extends Controller
         return [$pdfPath, $data];
     }
 
+            /**
+             * Percepat download: jika PDF final sudah pernah dibuat dan datanya belum berubah,
+             * langsung kirim file PDF yang ada tanpa generate DOCX/PDF ulang.
+             */
+            protected function getCachedAdminPdfFile(\App\Models\SuratPengajuan $surat, bool $manualSignature = false): array
+            {
+                $suffix = $manualSignature ? '_BASAH' : '';
+                $outputPdf = hash('sha256', strtoupper($surat->jenis_surat) . '_' . $surat->id . $suffix);
+
+                $candidates = [
+                    storage_path('app/public/pdf/' . $outputPdf . '.pdf'),
+                    public_path('storage/pdf/' . $outputPdf . '.pdf'),
+                    storage_path('app/pdf/' . $outputPdf . '.pdf'),
+                ];
+
+                $updatedAt = $surat->updated_at ? strtotime((string) $surat->updated_at) : null;
+
+                foreach ($candidates as $path) {
+                    if (is_file($path) && (!$updatedAt || filemtime($path) >= $updatedAt)) {
+                        return [$path, []];
+                    }
+                }
+
+                return $this->generateAdminPdfFile($surat, $manualSignature);
+            }
+
+            protected function getSignedPdfPathForSktmFlow(\App\Models\SuratPengajuan $surat): ?string
+            {
+                $isSktm = strtolower((string) $surat->jenis_surat) === 'sktm';
+                $status = (int) $surat->status;
+
+                // Khusus SKTM setelah TTE Lurah / proses Camat, preview harus membuka file signed
+                // dari kolom file. Jangan generate ulang dari template, karena TTE Lurah akan hilang.
+                if (!$isSktm || !in_array($status, [4, 11, 8, 9], true) || empty($surat->file)) {
+                    return null;
+                }
+
+                $candidate = public_path($surat->file);
+                return is_file($candidate) ? $candidate : null;
+            }
+
             public function preview($id)
             {
-                $surat = \App\Models\SuratPengajuan::findOrFail($id);
+                $surat = $this->findSuratForCurrentUserOrFail($id);
+
+                if ($signedPath = $this->getSignedPdfPathForSktmFlow($surat)) {
+                    return response()->file($signedPath, [
+                        'Content-Type' => 'application/pdf',
+                        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                    ]);
+                }
+
                 [$pdfPath, $data] = $this->generateAdminPdfFile($surat);
 
                 return response()->file($pdfPath);
@@ -1442,8 +1869,12 @@ class SuratAdminController extends Controller
 
             public function cetak($id)
             {
-                $surat = \App\Models\SuratPengajuan::findOrFail($id);
-                [$pdfPath, $data] = $this->generateAdminPdfFile($surat);
+                $surat = $this->findSuratForCurrentUserOrFail($id);
+                $pdfPath = $this->getSignedPdfPathForSktmFlow($surat);
+
+                if (!$pdfPath) {
+                    [$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, false);
+                }
 
                 $namaFile = strtoupper($surat->jenis_surat) . '_' . preg_replace('/[^A-Za-z0-9\-]+/', '_', $this->getNoSrt($surat)) . '.pdf';
 
@@ -1452,16 +1883,20 @@ class SuratAdminController extends Controller
 			
 			public function previewBasah($id)
 			{
-				$surat = \App\Models\SuratPengajuan::findOrFail($id);
-				[$pdfPath, $data] = $this->generateAdminPdfFile($surat, true);
+				$surat = $this->findSuratForCurrentUserOrFail($id);
 			
-				return response()->file($pdfPath);
+				[$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, true);
+			
+				return response()->file($pdfPath, [
+					'Content-Type' => 'application/pdf',
+					'Cache-Control' => 'public, max-age=3600',
+				]);
 			}
 			
 			public function cetakBasah($id)
 			{
-				$surat = \App\Models\SuratPengajuan::findOrFail($id);
-				[$pdfPath, $data] = $this->generateAdminPdfFile($surat, true);
+				$surat = $this->findSuratForCurrentUserOrFail($id);
+				[$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, true);
 			
 				$namaFile = strtoupper($surat->jenis_surat)
 					. '_TTD_BASAH_'
@@ -1476,7 +1911,7 @@ class SuratAdminController extends Controller
 
         public function naik($id)
                 {
-                    $surat = SuratPengajuan::find($id);
+                    $surat = $this->findSuratForCurrentUser($id);
 
                     if (!$surat) {
                         return response()->json([
@@ -1490,23 +1925,24 @@ class SuratAdminController extends Controller
                     $message = 'Pengajuan berhasil diajukan ke atasan yang lebih tinggi.';
 
                     // Alur universal admin surat
-                    // 0 = Warga -> 2 = Dinaikkan ke Sekkel
-                    // 1 = Draft -> 2 = Dinaikkan ke Sekkel
-                    // 2 = Dinaikkan ke Sekkel -> 3 = Dinaikkan ke Lurah
-                    // 3 = Dinaikkan ke Lurah -> 8 = Dinaikkan ke Camat
-                    // 8 = Dinaikkan ke Camat -> 9 = Disetujui Camat
+                    // 0/1 -> 2 = Admin naik ke Sekkel
+                    // 2   -> 3 = Sekkel naik ke Lurah
+                    // Non-SKTM: status 3 menunggu TTE Lurah, setelah TTE langsung final status 4.
+                    // SKTM: status 3 TTE Lurah -> status 4, lalu Lurah klik Naikkan ke Kecamatan (11),
+                    //       Sekretaris/Adm Camat klik Naikkan ke Camat (8), Camat TTE -> final status 9.
+                    $isSktm = strtolower((string) $surat->jenis_surat) === 'sktm';
                     if (in_array($currentStatus, [0, 1], true)) {
                         $nextStatus = 2;
                         $message = 'Pengajuan berhasil diajukan ke Sekkel.';
                     } elseif ($currentStatus === 2) {
                         $nextStatus = 3;
                         $message = 'Pengajuan berhasil diajukan ke Lurah.';
-                    } elseif ($currentStatus === 3) {
+                    } elseif ($currentStatus === 4 && $isSktm) {
+                        $nextStatus = 11;
+                        $message = 'SKTM berhasil dinaikkan ke Kecamatan/Sekretaris Camat.';
+                    } elseif ($currentStatus === 11 && $isSktm) {
                         $nextStatus = 8;
-                        $message = 'Pengajuan berhasil diajukan ke Camat.';
-                    } elseif ($currentStatus === 8) {
-                        $nextStatus = 9;
-                        $message = 'Pengajuan berhasil disetujui Camat.';
+                        $message = 'SKTM berhasil dinaikkan ke Camat untuk TTE.';
                     }
 
                     if ($nextStatus === null) {
@@ -1514,6 +1950,13 @@ class SuratAdminController extends Controller
                             'status'  => 'error',
                             'message' => 'Status surat ini tidak bisa diajukan ke level berikutnya.'
                         ], 422);
+                    }
+
+                    if ($error = $this->assertRoleCanTransition($surat, $nextStatus)) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => $error,
+                        ], 403);
                     }
 
                     $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
@@ -1544,7 +1987,7 @@ class SuratAdminController extends Controller
 
                 public function naikLurah($id)
                 {
-                    $surat = SuratPengajuan::find($id);
+                    $surat = $this->findSuratForCurrentUser($id);
 
                     if (!$surat) {
                         return response()->json([
@@ -1560,11 +2003,19 @@ class SuratAdminController extends Controller
                     if (!in_array($currentStatus, [1, 2], true)) {
                         return response()->json([
                             'status'  => 'error',
+
                             'message' => 'Status surat ini tidak bisa diajukan ke Lurah.'
                         ], 422);
                     }
 
                     $nextStatus = 3;
+
+                    if ($error = $this->assertRoleCanTransition($surat, $nextStatus)) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => $error,
+                        ], 403);
+                    }
 
                     $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
                     $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
@@ -1601,7 +2052,7 @@ class SuratAdminController extends Controller
             'komentar.required' => 'Alasan penolakan wajib diisi.',
         ]);
 
-        $surat = SuratPengajuan::find($id);
+        $surat = $this->findSuratForCurrentUser($id);
 
         if (!$surat) {
             return response()->json([
@@ -1648,8 +2099,8 @@ class SuratAdminController extends Controller
         }
 
         $map = [
-            'MOJOROTO' => 64,
-            'KOTA' => 65,
+            'MOJOROTO'  => 64,
+            'KOTA'      => 65,
             'PESANTREN' => 66,
         ];
 
@@ -1658,27 +2109,53 @@ class SuratAdminController extends Controller
             return null;
         }
 
+
+
+
         return \App\Models\Pejabat::with(['jabatan', 'skpd.kecamatan'])
             ->where('id_skpd', $idSkpd)
-            ->where('id_jabatan', 2)
-            ->first();
+            ->where(function ($q) {
+                $q->where('id_jabatan', 2)
+                  ->orWhereHas('jabatan', function ($jabatan) {
+                      $jabatan->whereRaw('LOWER(nama) LIKE ?', ['%camat%']);
+                  });
+            })
+            ->first()
+            ?: \App\Models\Pejabat::with(['jabatan', 'skpd.kecamatan'])
+                ->where('id_skpd', $idSkpd)
+                ->first();
     }
 
     protected function applyManualSignatureData(array $data): array
     {
+        // Khusus TTD Basah: yang dihilangkan hanya marker TTE/QR.
+        // Data pejabat seperti skpd_kepala dan skpd_jabatan tetap wajib hidup
+        // karena dipakai di badan surat: "Yang bertanda tangan dibawah ini".
         $data['qr'] = '';
         $data['qr_camat'] = '';
         $data['show_qr'] = false;
 
-        $data['skpd_kepala'] = '';
-        $data['skpd_jabatan'] = '';
-        $data['skpd_nip_kepala'] = '';
-
-        $data['skpd_camat'] = '';
-        $data['skpd_jabatan_camat'] = '';
-        $data['skpd_nip_camat'] = '';
-
         return $data;
+    }
+
+    protected function replaceLastTextOccurrence(string $text, string $search, string $replace = ''): string
+    {
+        $pos = strrpos($text, $search);
+        if ($pos === false) {
+            return $text;
+        }
+
+        return substr_replace($text, $replace, $pos, strlen($search));
+    }
+
+
+    protected function removeTextRunAndOptionalFollowingComma(string $xml, string $literal): string
+    {
+        $quoted = preg_quote($literal, '/');
+        $pattern = '/<w:r\b[^>]*>(?:(?!<\/w:r>).)*<w:t\b[^>]*>\s*' . $quoted . '\s*<\/w:t>(?:(?!<\/w:r>).)*<\/w:r>\s*(?:<w:r\b[^>]*>(?:(?!<\/w:r>).)*<w:t\b[^>]*>\s*,\s*<\/w:t>(?:(?!<\/w:r>).)*<\/w:r>)?/s';
+        $updated = preg_replace($pattern, '', $xml, 1);
+
+        return is_string($updated) ? $updated : $xml;
     }
 
     protected function buildManualSignatureTemplate(string $templateFile): string
@@ -1703,24 +2180,53 @@ class SuratAdminController extends Controller
         if ($zip->open($newFile) === true) {
             $documentXml = $zip->getFromName('word/document.xml');
             if ($documentXml !== false) {
-                $search = [
+                // Bersihkan hanya area tanda tangan untuk TTD Basah.
+                // Jangan hapus ${skpd_kepala}/${skpd_jabatan} secara global,
+                // karena placeholder itu juga dipakai pada badan surat:
+                // "Yang bertanda tangan dibawah ini".
+                $hasCamatSignatureArea = str_contains($documentXml, '${skpd_jabatan_camat}')
+                    || str_contains($documentXml, '${skpd_camat}')
+                    || str_contains($documentXml, '${skpd_nip_camat}')
+                    || str_contains($documentXml, '~camat~')
+                    || str_contains($documentXml, '[[qr_camat]]')
+                    || str_contains($documentXml, '${qr_camat}');
+
+                $documentXml = str_replace([
                     '${qr}~',
+                    '${qr}',
                     '[[qr_camat]]',
-                    '${skpd_kepala}',
-                    '${skpd_jabatan}',
-                    '${skpd_nip_kepala}',
-                    '${skpd_camat}',
-                    '${skpd_jabatan_camat}',
-                    '${skpd_nip_camat}',
-                    'NIP. ${skpd_nip_kepala}',
-                    'NIP. ${skpd_nip_camat}',
-                    'NIP.${skpd_nip_kepala}',
-                    'NIP.${skpd_nip_camat}',
-                    'NIP. ',
-                    'NIP.',
-                ];
-                $replace = array_fill(0, count($search), '');
-                $documentXml = str_replace($search, $replace, $documentXml);
+                    '${qr_camat}',
+                    '~camat~',
+                ], '', $documentXml);
+
+                // Khusus TTD Basah: teks di bawah "Mengetahui," tidak boleh menampilkan
+                // LURAH/Kelurahan. Jadi "Mengetahui, LURAH CAMPUREJO" menjadi hanya "Mengetahui,".
+                // Ini hanya menghapus run tanda tangan bawah: "LURAH ${skpd_kel}".
+                $documentXml = $this->removeTextRunAndOptionalFollowingComma($documentXml, 'LURAH ${skpd_kel}');
+
+                // Hapus identitas tanda tangan bawah saja dengan mengambil kemunculan terakhir.
+                // Kemunculan pertama ${skpd_kepala}/${skpd_jabatan} pada badan surat tetap dipertahankan.
+                $documentXml = $this->replaceLastTextOccurrence($documentXml, 'NIP. ${skpd_nip_kepala}', '');
+                $documentXml = $this->replaceLastTextOccurrence($documentXml, 'NIP.${skpd_nip_kepala}', '');
+                $documentXml = $this->replaceLastTextOccurrence($documentXml, '${skpd_nip_kepala}', '');
+                $documentXml = $this->replaceLastTextOccurrence($documentXml, '${skpd_kepala}', '');
+
+                // SKTM/area Camat: setelah "Mengetahui," tidak boleh menyisakan CAMAT/MOJOROTO/NIP.
+                // ${skpd_kec} di header tetap aman karena yang dihapus hanya kemunculan terakhir
+                // dan hanya jika template memang punya area tanda tangan Camat.
+                if ($hasCamatSignatureArea) {
+                    $documentXml = $this->replaceLastTextOccurrence($documentXml, '${skpd_jabatan_camat}', '');
+                    $documentXml = $this->replaceLastTextOccurrence($documentXml, '${skpd_kec}', '');
+                    $documentXml = $this->replaceLastTextOccurrence($documentXml, 'NIP. ${skpd_nip_camat}', '');
+                    $documentXml = $this->replaceLastTextOccurrence($documentXml, 'NIP.${skpd_nip_camat}', '');
+                    $documentXml = $this->replaceLastTextOccurrence($documentXml, '${skpd_nip_camat}', '');
+                    $documentXml = $this->replaceLastTextOccurrence($documentXml, '${skpd_camat}', '');
+                }
+
+                // Setelah placeholder NIP dikosongkan, beberapa template masih menyisakan teks label "NIP."
+                // di area tanda tangan bawah. Khusus TTD Basah, label ini juga harus hilang.
+                // Fungsi ini hanya dipakai untuk mode TTD Basah, sehingga proses TTE digital tetap aman.
+                $documentXml = str_replace(['NIP. ', 'NIP.'], '', $documentXml);
 
                 $zip->addFromString('word/document.xml', $documentXml);
             }
@@ -1745,7 +2251,7 @@ class SuratAdminController extends Controller
     public function proses($id)
     {
         // 1. Cari data di tabel tunggal (surat_pengajuans)
-        $surat = SuratPengajuan::find($id);
+        $surat = $this->findSuratForCurrentUser($id);
 
         if ($surat) {
             // 2. Update status ke 1 (Proses)
@@ -1782,7 +2288,7 @@ class SuratAdminController extends Controller
 
     public function turunkan($id)
     {
-        $surat = SuratPengajuan::find($id);
+        $surat = $this->findSuratForCurrentUser($id);
 
         if (!$surat) {
             return response()->json([
@@ -1798,7 +2304,8 @@ class SuratAdminController extends Controller
         $nextStatus = match ($currentStatus) {
             2 => ($isFromWarga ? 0 : 1),
             3 => 2,
-            8 => 3,
+            11 => 4,
+            8 => 11,
             default => null,
         };
 
@@ -1838,7 +2345,7 @@ class SuratAdminController extends Controller
 
     public function hapus($id)
     {
-        $surat = SuratPengajuan::find($id);
+        $surat = $this->findSuratForCurrentUser($id);
 
         if (!$surat) {
             return response()->json([

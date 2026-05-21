@@ -61,9 +61,13 @@ class LoginController extends Controller
 
             if (auth()->user()->role_id == 2) {
                 return redirect()->intended(route('warga'));
-            } else {
-                return redirect()->intended(route('home'));
             }
+
+            if ((int) auth()->user()->role_id === 7) {
+                return redirect()->intended(route('super-admin.dashboard'));
+            }
+
+            return redirect()->intended(route('home'));
         }
 
         return back()->with('error', 'Email atau Password anda salah!');
@@ -125,6 +129,11 @@ class LoginController extends Controller
         }
 
         Auth::login($user);
+
+        if ((int) $user->role_id === 7) {
+            return redirect()->route('super-admin.dashboard');
+        }
+
         return redirect()->route('home');
     }
 
@@ -165,6 +174,12 @@ class LoginController extends Controller
 
         if ($response = $this->authenticated($request, $this->guard()->user())) {
             return $response;
+        }
+
+        if ((int) $this->guard()->user()->role_id === 7) {
+            return $request->wantsJson()
+                ? new JsonResponse([], 204)
+                : to_route('super-admin.dashboard');
         }
 
         return $request->wantsJson()

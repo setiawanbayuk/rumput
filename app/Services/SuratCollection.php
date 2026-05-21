@@ -13,6 +13,7 @@ use App\Models\SuratKelahiran;
 use App\Models\SuratKematian;
 use App\Models\SuratPengajuan;
 use App\Models\User;
+use App\Models\Skpd;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -29,6 +30,67 @@ class SuratCollection
         'skkelahiran' => ['model' => SuratKelahiran::class,   'route' => 'skkelahiran.edit', 'title' => 'Surat Keterangan Kelahiran'],
         'skkematian'  => ['model' => SuratKematian::class,    'route' => 'skkematian.edit',  'title' => 'Surat Keterangan Kematian'],
     ];
+
+    protected function isSuperAdminUser(User $user): bool
+    {
+        return (int) $user->role_id === 7;
+    }
+
+    protected function accessibleKelurahanIds(User $user): ?array
+    {
+        if ($this->isSuperAdminUser($user)) {
+            return null;
+        }
+
+        $roleId = (int) $user->role_id;
+        $idInstansi = (int) ($user->id_instansi ?? 0);
+
+        if ($idInstansi <= 0) {
+            return [];
+        }
+
+        if (in_array($roleId, [5, 6], true)) {
+            $skpdKecamatan = Skpd::find($idInstansi);
+            $idKec = trim((string) optional($skpdKecamatan)->id_kec);
+
+            if ($idKec === '') {
+                return [];
+            }
+
+            return Skpd::query()
+                ->where('id_kec', $idKec)
+                ->get(['id', 'id_region'])
+                ->filter(fn ($skpd) => substr_count((string) $skpd->id_region, '.') >= 3)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        return [$idInstansi];
+    }
+
+    protected function applyWilayahScope($query, User $user)
+    {
+        $kelurahanIds = $this->accessibleKelurahanIds($user);
+
+        if ($kelurahanIds === null) {
+            return $query;
+        }
+
+        if (empty($kelurahanIds)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $query->whereIn('id_kel', $kelurahanIds);
+
+        if ((int) $user->role_id === 8) {
+            $query->where('id_rw', $user->id_rw)
+                ->where('id_rt', $user->id_rt);
+        }
+
+        return $query;
+    }
 
     public function getAllForUser(User $user, ?array $universalStatusFilter = null): Collection
     {
@@ -47,12 +109,8 @@ class SuratCollection
                 } else {
                     $query->where('nik', $user->nik);
                 }
-            } elseif ($user->role_id == 8) {
-                $query->where('id_kel', $user->id_instansi)
-                    ->where('id_rw', $user->id_rw)
-                    ->where('id_rt', $user->id_rt);
-            } elseif (in_array($user->role_id, [3, 4, 5, 6])) {
-                $query->where('id_kel', $user->id_instansi);
+            } else {
+                $this->applyWilayahScope($query, $user);
             }
 
             $rows = $query->get()->map(function ($row) use ($jenis, $cfg) {
@@ -86,15 +144,13 @@ class SuratCollection
                 $universal->whereIn('status', $universalStatusFilter);
             }
 
-            if ($user->role_id == 8) {
-                $universal->where('id_kel', $user->id_instansi)
-                    ->where('id_rw', $user->id_rw)
-                    ->where('id_rt', $user->id_rt);
-            } elseif (in_array($user->role_id, [1, 3, 4, 5, 6, 9])) {
-                if (!in_array($user->role_id, [1, 9])) {
-                    $universal->where('id_kel', $user->id_instansi);
-                }
+            // Role Camat (5) dan Sekretaris Camat/Sekcam (6) hanya boleh melihat SKTM.
+            // Ini juga berlaku untuk data universal dari tabel surat_pengajuans, termasuk Beranda.
+            if (in_array((int) $user->role_id, [5, 6], true)) {
+                $universal->where('jenis_surat', 'sktm');
             }
+
+            $this->applyWilayahScope($universal, $user);
 
             $universalRows = $universal->get()->map(function ($row) {
                 return (object) [
