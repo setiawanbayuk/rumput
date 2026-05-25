@@ -343,6 +343,14 @@
                                             <span class="sidebar-text">Rekap</span>
                                         </a>
                                     </li>
+                                    @if (in_array((int) auth()->user()->role_id, [3, 5], true))
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('tools.rating') }}" class="sidebar-link">
+                                                <i class="ri-star-smile-line"></i>
+                                                <span class="sidebar-text">Rating</span>
+                                            </a>
+                                        </li>
+                                    @endif
                                     <li class="sidebar-item">
                                         <a href="{{ auth()->user()->role_id == 7 ? route('super-admin.profil-instansi') : route('tools.profil-instansi') }}" class="sidebar-link">
                                             <i class="ri-building-fill"></i>

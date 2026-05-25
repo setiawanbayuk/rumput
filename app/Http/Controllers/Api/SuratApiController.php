@@ -541,6 +541,7 @@ class SuratApiController extends Controller
 		};
 	
 		$pdfInfo = $this->resolvePdfInfo($surat);
+		$ratingInfo = $this->ratingResponseFields($surat);
 
 		$data = [
 			'id' => $surat->id,
@@ -559,6 +560,11 @@ class SuratApiController extends Controller
 			'download_pdf_url' => $pdfInfo ? url('/api/surat/' . $surat->id . '/download-pdf') : null,
 			'pengantar' => $surat->pengantar,
 			'variable' => $this->getExistingVariableData($surat),
+			'rating' => $ratingInfo['rating'],
+			'bintang' => $ratingInfo['bintang'],
+			'komentar' => $ratingInfo['komentar'],
+			'rating_at' => $ratingInfo['rating_at'],
+			'sudah_rating' => $ratingInfo['sudah_rating'],
 	
 			// FIX UTAMA: jangan kirim Carbon mentah ke JSON
 			'tgl_surat' => $formatTanggal($surat->tgl_surat),
@@ -588,6 +594,7 @@ class SuratApiController extends Controller
 
         if ($pengajuanId) {
             return $this->revisiDitolak($request, $pengajuanId);
+
         }
 
         $allowedJenis = $this->masterJenisCollection()->pluck('jenis')->filter()->values()->all();
@@ -802,6 +809,261 @@ class SuratApiController extends Controller
                 'message' => 'Gagal memperbarui revisi: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+
+    protected function ratingResponseFields(SuratPengajuan $surat): array
+    {
+        $variable = $this->getExistingVariableData($surat);
+
+        $rating = null;
+        foreach (['rating', 'bintang'] as $column) {
+            if (Schema::hasColumn('surat_pengajuans', $column)) {
+                $value = $surat->{$column} ?? null;
+                if ($value !== null && $value !== '' && is_numeric($value)) {
+                    $rating = round((float) $value, 1);
+                    break;
+                }
+            }
+        }
+
+        if ($rating === null) {
+            foreach (['rating', 'bintang'] as $key) {
+                $value = $variable[$key] ?? null;
+                if ($value !== null && $value !== '' && is_numeric($value)) {
+                    $rating = round((float) $value, 1);
+                    break;
+                }
+            }
+        }
+
+        $komentar = null;
+        foreach (['komentar', 'comment', 'coment'] as $column) {
+            if (Schema::hasColumn('surat_pengajuans', $column)) {
+                $value = $surat->{$column} ?? null;
+                if ($value !== null && trim((string) $value) !== '') {
+                    $komentar = (string) $value;
+                    break;
+                }
+            }
+        }
+
+        if ($komentar === null) {
+            foreach (['komentar', 'comment', 'coment'] as $key) {
+                if (isset($variable[$key]) && trim((string) $variable[$key]) !== '') {
+                    $komentar = (string) $variable[$key];
+                    break;
+                }
+            }
+        }
+
+        $ratingAt = null;
+        foreach (['rating_at', 'rated_at', 'tgl_rating'] as $column) {
+            if (Schema::hasColumn('surat_pengajuans', $column)) {
+                $value = $surat->{$column} ?? null;
+                if ($value) {
+                    $ratingAt = Carbon::parse($value)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s');
+                    break;
+                }
+            }
+        }
+
+        if ($ratingAt === null) {
+            foreach (['rating_at', 'rated_at', 'tgl_rating'] as $key) {
+                if (!empty($variable[$key])) {
+                    try {
+                        $ratingAt = Carbon::parse($variable[$key])->timezone('Asia/Jakarta')->format('Y-m-d H:i:s');
+                    } catch (\Throwable $e) {
+                        $ratingAt = (string) $variable[$key];
+                    }
+                    break;
+                }
+            }
+        }
+
+        return [
+            'rating' => $rating,
+            'bintang' => $rating,
+            'komentar' => $komentar,
+            'rating_at' => $ratingAt,
+            'sudah_rating' => $rating !== null,
+        ];
+    }
+
+    public function rating(Request $request, $id)
+    {
+        $identifier = trim((string) $id);
+
+        if (preg_match('/^\d{16}$/', $identifier)) {
+            $surat = SuratPengajuan::query()
+                ->where('nik', $identifier)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->first();
+        } else {
+            $surat = SuratPengajuan::find($identifier);
+        }
+
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengajuan surat tidak ditemukan untuk ID/NIK tersebut.',
+            ], 404);
+        }
+
+        if ($request->filled('nik') && (string) $request->nik !== (string) $surat->nik) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'NIK tidak sesuai dengan data pengajuan surat.',
+            ], 422);
+        }
+
+        $ratingFields = $this->ratingResponseFields($surat);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $ratingFields['sudah_rating'] ? 'Data penilaian ditemukan.' : 'Surat ini belum memiliki penilaian.',
+            'data' => [
+                'id' => $surat->id,
+                'pengajuan_id' => $surat->id,
+                'nik' => $surat->nik,
+                'jenis_surat' => $surat->jenis_surat,
+                'rating' => $ratingFields['rating'],
+                'bintang' => $ratingFields['bintang'],
+                'komentar' => $ratingFields['komentar'],
+                'rating_at' => $ratingFields['rating_at'],
+                'sudah_rating' => $ratingFields['sudah_rating'],
+            ],
+        ]);
+    }
+
+    public function simpanRating(Request $request, $id)
+    {
+        $request->validate([
+            'nik' => ['nullable', 'digits:16'],
+            'rating' => ['nullable', 'numeric', 'min:1', 'max:5'],
+            'bintang' => ['nullable', 'numeric', 'min:1', 'max:5'],
+            'komentar' => ['nullable', 'string', 'max:1000'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+            'coment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $identifier = trim((string) $id);
+
+        if (preg_match('/^\d{16}$/', $identifier)) {
+            $surat = SuratPengajuan::query()
+                ->where('nik', $identifier)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->first();
+        } else {
+            $surat = SuratPengajuan::find($identifier);
+        }
+
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengajuan surat tidak ditemukan untuk ID/NIK tersebut.',
+            ], 404);
+        }
+
+        if ($request->filled('nik') && (string) $request->nik !== (string) $surat->nik) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'NIK tidak sesuai dengan data pengajuan surat.',
+            ], 422);
+        }
+
+        $rawRating = $request->input('rating', $request->input('bintang'));
+        if ($rawRating === null || $rawRating === '' || !is_numeric($rawRating)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Rating atau bintang wajib diisi dengan angka 1 sampai 5.',
+            ], 422);
+        }
+
+        $rating = round((float) $rawRating, 1);
+        if ($rating < 1 || $rating > 5) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Rating hanya boleh bernilai 1 sampai 5.',
+            ], 422);
+        }
+
+        $komentar = $request->input('komentar', $request->input('comment', $request->input('coment')));
+        $komentar = $komentar === null ? null : trim((string) $komentar);
+        $now = Carbon::now('Asia/Jakarta')->format('Y-m-d H:i:s');
+
+        $variableData = $this->getExistingVariableData($surat);
+        $variableData['rating'] = $rating;
+        $variableData['bintang'] = $rating;
+        $variableData['komentar'] = $komentar;
+        $variableData['rating_at'] = $now;
+
+        $updateData = [];
+
+        if (Schema::hasColumn('surat_pengajuans', 'variable')) {
+            $updateData['variable'] = $variableData;
+        }
+
+        if (Schema::hasColumn('surat_pengajuans', 'rating')) {
+            $updateData['rating'] = $rating;
+        }
+
+        if (Schema::hasColumn('surat_pengajuans', 'bintang')) {
+            $updateData['bintang'] = $rating;
+        }
+
+        foreach (['komentar', 'comment', 'coment'] as $column) {
+            if (Schema::hasColumn('surat_pengajuans', $column)) {
+                $updateData[$column] = $komentar;
+            }
+        }
+
+        foreach (['rating_at', 'rated_at', 'tgl_rating'] as $column) {
+            if (Schema::hasColumn('surat_pengajuans', $column)) {
+                $updateData[$column] = $now;
+            }
+        }
+
+        if (empty($updateData)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Kolom penyimpanan rating belum tersedia di tabel surat_pengajuans.',
+            ], 500);
+        }
+
+        try {
+            DB::transaction(function () use ($surat, $updateData) {
+                // Rating tidak mengubah alur/status surat, sehingga updated_at sengaja tidak disentuh.
+                $surat->timestamps = false;
+                $surat->forceFill($updateData)->save();
+            });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menyimpan rating: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        $freshSurat = $surat->fresh();
+        $ratingFields = $this->ratingResponseFields($freshSurat);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Penilaian berhasil disimpan.',
+            'data' => [
+                'id' => $freshSurat->id,
+                'pengajuan_id' => $freshSurat->id,
+                'nik' => $freshSurat->nik,
+                'jenis_surat' => $freshSurat->jenis_surat,
+                'rating' => $ratingFields['rating'],
+                'bintang' => $ratingFields['bintang'],
+                'komentar' => $ratingFields['komentar'],
+                'rating_at' => $ratingFields['rating_at'],
+                'sudah_rating' => $ratingFields['sudah_rating'],
+            ],
+        ]);
     }
 
     public function detail(Request $request, int $id)

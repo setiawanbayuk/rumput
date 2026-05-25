@@ -125,6 +125,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/surat/form-config', [SuratApiController::class, 'formConfig']);
     Route::get('/surat/history', [SuratApiController::class, 'history']);
     Route::get('/surat/detail/{id}', [SuratApiController::class, 'detail']);
+    Route::get('/surat/{id}/rating', [SuratApiController::class, 'rating']);
+    Route::match(['post', 'put'], '/surat/{id}/rating', [SuratApiController::class, 'simpanRating']);
     Route::get('/surat/{id}/tracking', [SuratApiController::class, 'tracking']);
     Route::get('/surat/{id}/pdf-url', [SuratApiController::class, 'pdfUrl']);
     Route::get('/surat/{id}/download-pdf', [SuratApiController::class, 'downloadPdf']);

@@ -28,6 +28,7 @@
                 class="btn btn-primary btn-sm btn-naik-surat"
                 data-url="{{ $routeNaik }}"
                 data-title="Naikkan SKTM ini ke Camat untuk TTE?"
+                data-register-kecamatan="1"
                 title="Naikkan ke Camat">
                 <i class="ri-arrow-up-double-line"></i>
             </button>

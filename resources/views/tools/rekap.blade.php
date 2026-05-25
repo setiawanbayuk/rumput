@@ -41,7 +41,7 @@
                 @endif
 
                 <form method="GET" action="{{ route('tools.rekap.export') }}" class="row g-3 align-items-end">
-                    <div class="col-lg-5">
+                    <div class="col-lg-4">
                         <label class="form-label fw-semibold">Jenis Surat</label>
                         <select name="jenis" id="jenis" class="form-select" required>
                             <option value="">- Pilih Jenis Surat -</option>
@@ -51,7 +51,22 @@
                         </select>
                     </div>
 
-                    <div class="col-lg-4 d-none" id="skbnFilterWrap">
+                    <div class="col-lg-2">
+                        <label class="form-label fw-semibold">Bulan</label>
+                        <select name="bulan" id="bulan" class="form-select">
+                            <option value="">Semua Bulan</option>
+                            @foreach (($bulanOptions ?? []) as $num => $namaBulan)
+                                <option value="{{ $num }}">{{ $namaBulan }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2">
+                        <label class="form-label fw-semibold">Tahun</label>
+                        <input type="number" name="tahun" id="tahun" class="form-control" min="2000" max="2100" value="{{ $currentYear ?? now('Asia/Jakarta')->year }}">
+                    </div>
+
+                    <div class="col-lg-2 d-none" id="skbnFilterWrap">
                         <label class="form-label fw-semibold">Filter Khusus SKBN</label>
                         <select name="skbn_kategori" id="skbn_kategori" class="form-select">
                             <option value="menikah">Menikah</option>
@@ -60,7 +75,7 @@
                         <div class="form-text">Filter ini hanya berlaku untuk SKBN.</div>
                     </div>
 
-                    <div class="col-lg-3">
+                    <div class="col-lg-2">
                         <button type="submit" class="btn btn-success btn-download w-100 py-2">
                             <i class="ri-file-excel-2-line me-1"></i> Download Excel
                         </button>

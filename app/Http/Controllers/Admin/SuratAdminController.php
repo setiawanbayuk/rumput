@@ -12,6 +12,7 @@ use App\Traits\GeneratePDF;
 use App\Traits\GetNoSurat;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Yajra\DataTables\DataTables;
 use App\Models\Pejabat;
 use App\Models\SuratTemplate;
@@ -92,7 +93,9 @@ class SuratAdminController extends Controller
 
         if (request()->ajax()) {
             // Query ke tabel tunggal
-            $query = $this->scopeSuratToCurrentUser(SuratPengajuan::with('penduduk'))->orderByDesc('id');
+            $query = $this->scopeSuratToCurrentUser(SuratPengajuan::with('penduduk'))
+                ->orderByRaw('COALESCE(updated_at, created_at) DESC')
+                ->orderByDesc('id');
 
             // Filter wilayah sudah diterapkan oleh scopeSuratToCurrentUser().
             // Jangan menambah where id_kel = id_instansi lagi di sini,
@@ -350,6 +353,27 @@ class SuratAdminController extends Controller
             ->firstOrFail();
     }
 
+    protected function findPejabatBySkpdAndJabatan($idSkpd, int $idJabatan): ?Pejabat
+    {
+        $idSkpd = (int) $idSkpd;
+        if ($idSkpd <= 0) {
+            return null;
+        }
+
+        return Pejabat::with(['jabatan', 'pangkat', 'skpd.kecamatan'])
+            ->where('id_skpd', $idSkpd)
+            ->where('id_jabatan', $idJabatan)
+            ->latest('id')
+            ->first();
+    }
+
+    protected function resolveLurahForKelurahanId($idKel): ?Pejabat
+    {
+        // Lurah wajib diambil dari tabel pejabats sesuai wilayah kelurahan + id_jabatan = 1.
+        // Jangan pakai first() berdasarkan id_skpd saja karena tabel pejabats juga berisi Kasi/Sekkel/Admin.
+        return $this->findPejabatBySkpdAndJabatan($idKel, 1);
+    }
+
     protected function resolveCamatForKelurahanId($idKel): ?Pejabat
     {
         $kelurahanSkpd = Skpd::with('kecamatan')->find((int) $idKel);
@@ -376,16 +400,9 @@ class SuratAdminController extends Controller
             return $this->resolveCamatByDistrictName(optional($kelurahanSkpd->kecamatan)->nama);
         }
 
-        return Pejabat::with(['jabatan', 'skpd.kecamatan'])
-            ->where('id_skpd', $kecamatanSkpd->id)
-            ->where(function ($q) {
-                $q->where('id_jabatan', 2)
-                  ->orWhereHas('jabatan', function ($jabatan) {
-                      $jabatan->whereRaw('LOWER(nama) LIKE ?', ['%camat%']);
-                  });
-            })
-            ->first()
-            ?: Pejabat::with(['jabatan', 'skpd.kecamatan'])->where('id_skpd', $kecamatanSkpd->id)->first();
+        // Camat wajib diambil dari pejabats sesuai wilayah kecamatan + id_jabatan = 2.
+        // Jangan fallback ke first() karena bisa mengambil Sekcam/Kasi/Admin kecamatan.
+        return $this->findPejabatBySkpdAndJabatan($kecamatanSkpd->id, 2);
     }
 
     /**
@@ -1642,9 +1659,7 @@ class SuratAdminController extends Controller
                 }
 
                 $skpdSurat = Skpd::with('kecamatan')->find((int) $surat->id_kel);
-                $pejabat = Pejabat::with(['skpd.kecamatan', 'jabatan'])
-                    ->where('id_skpd', (int) $surat->id_kel)
-                    ->first();
+                $pejabat = $this->resolveLurahForKelurahanId((int) $surat->id_kel);
                 $camat = $this->resolveCamatForKelurahanId((int) $surat->id_kel);
 
 
@@ -1836,14 +1851,20 @@ class SuratAdminController extends Controller
                 return $this->generateAdminPdfFile($surat, $manualSignature);
             }
 
-            protected function getSignedPdfPathForSktmFlow(\App\Models\SuratPengajuan $surat): ?string
+            protected function getSignedPdfPathForTteFlow(\App\Models\SuratPengajuan $surat): ?string
             {
-                $isSktm = strtolower((string) $surat->jenis_surat) === 'sktm';
                 $status = (int) $surat->status;
+                if (empty($surat->file) || !in_array($status, [4, 9, 11, 8], true)) {
+                    return null;
+                }
 
-                // Khusus SKTM setelah TTE Lurah / proses Camat, preview harus membuka file signed
-                // dari kolom file. Jangan generate ulang dari template, karena TTE Lurah akan hilang.
-                if (!$isSktm || !in_array($status, [4, 11, 8, 9], true) || empty($surat->file)) {
+                $variable = $this->decodeFlexibleValue($surat->variable);
+                $isManualSignature = !empty($variable['manual_signature'])
+                    || (($variable['signature_mode'] ?? null) === 'manual');
+
+                // Untuk surat yang sudah TTE, preview/cetak wajib membuka file hasil TTE dari kolom file.
+                // Kalau digenerate ulang dari template, QR/img TTE hilang dan nama pejabat bisa kembali salah.
+                if ($isManualSignature) {
                     return null;
                 }
 
@@ -1855,7 +1876,7 @@ class SuratAdminController extends Controller
             {
                 $surat = $this->findSuratForCurrentUserOrFail($id);
 
-                if ($signedPath = $this->getSignedPdfPathForSktmFlow($surat)) {
+                if ($signedPath = $this->getSignedPdfPathForTteFlow($surat)) {
                     return response()->file($signedPath, [
                         'Content-Type' => 'application/pdf',
                         'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
@@ -1870,7 +1891,7 @@ class SuratAdminController extends Controller
             public function cetak($id)
             {
                 $surat = $this->findSuratForCurrentUserOrFail($id);
-                $pdfPath = $this->getSignedPdfPathForSktmFlow($surat);
+                $pdfPath = $this->getSignedPdfPathForTteFlow($surat);
 
                 if (!$pdfPath) {
                     [$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, false);
@@ -1906,10 +1927,34 @@ class SuratAdminController extends Controller
 				return response()->download($pdfPath, $namaFile);
 			}
 
+            protected function normalizeRegistrasiKecamatan(Request $request): string
+            {
+                $directValue = trim((string) $request->input('register_kecamatan', $request->input('register', '')));
+                if ($directValue !== '') {
+                    return preg_replace('/\s+/', '', $directValue);
+                }
+
+                $nomor = trim((string) $request->input('register_nomor', ''));
+                $kode = trim((string) $request->input('register_kode', ''));
+                $instansi = trim((string) $request->input('register_instansi', ''));
+                $unit = trim((string) $request->input('register_unit', ''));
+                $tahun = trim((string) $request->input('register_tahun', ''));
+
+                if ($nomor === '' && $kode === '' && $instansi === '' && $unit === '' && $tahun === '') {
+                    return '';
+                }
+
+                if ($nomor === '' || $kode === '' || $instansi === '' || $unit === '' || $tahun === '') {
+                    return '';
+                }
+
+                return preg_replace('/\s+/', '', "{$nomor}/{$kode}/{$instansi}.{$unit}/{$tahun}");
+            }
+
 
             // Naikan Ke Atasan Yang Lebih tinggi Web Admin
 
-        public function naik($id)
+        public function naik(Request $request, $id)
                 {
                     $surat = $this->findSuratForCurrentUser($id);
 
@@ -1962,10 +2007,61 @@ class SuratAdminController extends Controller
                     $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
             $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
 
-                    $surat->update([
+                    $updateData = [
                         'status' => $nextStatus,
-                        'variable' => $variable,
-                    ]);
+                    ];
+
+                    // Khusus Role Sekcam: sebelum SKTM naik ke Camat wajib mengisi nomor registrasi kecamatan.
+                    if ((int) auth()->user()->role_id === 6 && $currentStatus === 11 && $nextStatus === 8 && $isSktm) {
+                        $registrasiKecamatan = $this->normalizeRegistrasiKecamatan($request);
+
+                        if ($registrasiKecamatan === '') {
+                            return response()->json([
+                                'status' => 'error',
+                                'message' => 'Silahkan isi Data Registrasi Kecamatan Anda terlebih dahulu.',
+                            ], 422);
+                        }
+
+                        if (!preg_match('/^[0-9A-Za-z.\-\/]+$/', $registrasiKecamatan)) {
+                            return response()->json([
+                                'status' => 'error',
+                                'message' => 'Format Registrasi Kecamatan tidak valid. Contoh: 145/14/419.407/2026.',
+                            ], 422);
+                        }
+
+                        $duplicateRegistrasi = SuratPengajuan::query()
+                            ->where('id', '!=', $surat->id)
+                            ->where(function ($query) use ($registrasiKecamatan) {
+                                if (Schema::hasColumn('surat_pengajuans', 'no_register')) {
+                                    $query->where('no_register', $registrasiKecamatan);
+                                }
+
+                                $query->orWhereRaw(
+                                    "(variable IS NOT NULL AND variable <> '' AND JSON_VALID(variable) AND (JSON_UNQUOTE(JSON_EXTRACT(variable, '$.no_register_kecamatan')) = ? OR JSON_UNQUOTE(JSON_EXTRACT(variable, '$.register_kecamatan')) = ?))",
+                                    [$registrasiKecamatan, $registrasiKecamatan]
+                                );
+                            })
+                            ->exists();
+
+                        if ($duplicateRegistrasi && !$request->boolean('force_register_duplicate')) {
+                            return response()->json([
+                                'status' => 'warning',
+                                'duplicate' => true,
+                                'message' => 'Nomor Registrasi yang anda cantumkan sudah pernah digunakan. Apakah anda tetap ingin lanjut atau ganti registrasi anda?',
+                            ], 409);
+                        }
+
+                        $variable['no_register_kecamatan'] = $registrasiKecamatan;
+                        $variable['register_kecamatan'] = $registrasiKecamatan;
+
+                        if (Schema::hasColumn('surat_pengajuans', 'no_register')) {
+                            $updateData['no_register'] = $registrasiKecamatan;
+                        }
+                    }
+
+                    $updateData['variable'] = $variable;
+
+                    $surat->update($updateData);
 
                     Log_surat::create([
                         'nik'          => $surat->nik,
@@ -2112,18 +2208,7 @@ class SuratAdminController extends Controller
 
 
 
-        return \App\Models\Pejabat::with(['jabatan', 'skpd.kecamatan'])
-            ->where('id_skpd', $idSkpd)
-            ->where(function ($q) {
-                $q->where('id_jabatan', 2)
-                  ->orWhereHas('jabatan', function ($jabatan) {
-                      $jabatan->whereRaw('LOWER(nama) LIKE ?', ['%camat%']);
-                  });
-            })
-            ->first()
-            ?: \App\Models\Pejabat::with(['jabatan', 'skpd.kecamatan'])
-                ->where('id_skpd', $idSkpd)
-                ->first();
+        return $this->findPejabatBySkpdAndJabatan($idSkpd, 2);
     }
 
     protected function applyManualSignatureData(array $data): array

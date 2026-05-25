@@ -1969,13 +1969,23 @@
                 const btn = $(this);
                 const url = btn.data('url');
                 const title = btn.data('title') || 'Naikkan surat ini ke level berikutnya?';
+                const requireRegisterKecamatan = String(btn.data('register-kecamatan') || '') === '1';
 
-                const runRequest = function () {
+                const requestNaik = function (registerKecamatan = null, forceDuplicate = false) {
                     btn.prop('disabled', true);
+
+                    const requestData = { _token: '{{ csrf_token() }}' };
+                    if (registerKecamatan) {
+                        requestData.register_kecamatan = registerKecamatan;
+                    }
+                    if (forceDuplicate) {
+                        requestData.force_register_duplicate = 1;
+                    }
+
                     $.ajax({
                         url: url,
                         type: 'POST',
-                        data: { _token: '{{ csrf_token() }}' },
+                        data: requestData,
                         success: function (res) {
                             if (window.Swal) {
                                 Swal.fire('Berhasil', res.message || 'Status surat berhasil diperbarui.', 'success');
@@ -1987,7 +1997,37 @@
                             }
                         },
                         error: function (xhr) {
-                            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal memperbarui status surat.';
+                            const response = xhr.responseJSON || {};
+                            const msg = response.message || 'Gagal memperbarui status surat.';
+
+                            if (response.duplicate && registerKecamatan) {
+                                if (window.Swal) {
+                                    Swal.fire({
+                                        title: 'Nomor Registrasi Sudah Pernah Digunakan',
+                                        text: 'Nomor Registrasi yang anda cantumkan sudah pernah. Apakah anda tetap ingin lanjut atau ganti registrasi anda?',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        showDenyButton: true,
+                                        confirmButtonText: 'Tetap Lanjut',
+                                        denyButtonText: 'Ganti Registrasi',
+                                        cancelButtonText: 'Batal'
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            requestNaik(registerKecamatan, true);
+                                        } else if (result.isDenied) {
+                                            promptRegisterKecamatan(registerKecamatan);
+                                        }
+                                    });
+                                } else {
+                                    if (confirm('Nomor Registrasi yang anda cantumkan sudah pernah. Tekan OK untuk tetap lanjut, atau Cancel untuk ganti registrasi.')) {
+                                        requestNaik(registerKecamatan, true);
+                                    } else {
+                                        promptRegisterKecamatan(registerKecamatan);
+                                    }
+                                }
+                                return;
+                            }
+
                             if (window.Swal) {
                                 Swal.fire('Gagal', msg, 'error');
                             } else {
@@ -2000,21 +2040,97 @@
                     });
                 };
 
-                if (window.Swal) {
-                    Swal.fire({
-                        title: title,
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ya, Naikkan',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) runRequest();
-                    });
-                } else if (confirm(title)) {
-                    runRequest();
-                }
-            });
+                const confirmNaik = function (registerKecamatan = null, forceDuplicate = false) {
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: title,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Naikkan',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) requestNaik(registerKecamatan, forceDuplicate);
+                        });
+                    } else if (confirm(title)) {
+                        requestNaik(registerKecamatan, forceDuplicate);
+                    }
+                };
 
+                const promptRegisterKecamatan = function (defaultRegister = '') {
+                    const normalized = String(defaultRegister || '').trim();
+                    const parts = normalized ? normalized.split(/[\/.]/) : [];
+                    const defaults = {
+                        1: parts[0] || '',
+                        2: parts[1] || '',
+                        3: parts[2] || '',
+                        4: parts[3] || '',
+                        5: parts[4] || ''
+                    };
+
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: 'Silahkan isi Data Registrasi Kecamatan Anda',
+                            icon: 'info',
+                            html: `
+                                <div class="text-start">
+                                    <label class="form-label fw-semibold mb-2">No Registrasi Kecamatan</label>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <input id="reg-kec-1" class="swal2-input m-0" style="width:92px" placeholder="145" autocomplete="off" value="${defaults[1]}">
+                                        <span class="fw-bold">/</span>
+                                        <input id="reg-kec-2" class="swal2-input m-0" style="width:76px" placeholder="14" autocomplete="off" value="${defaults[2]}">
+                                        <span class="fw-bold">/</span>
+                                        <input id="reg-kec-3" class="swal2-input m-0" style="width:88px" placeholder="419" autocomplete="off" value="${defaults[3]}">
+                                        <span class="fw-bold">.</span>
+                                        <input id="reg-kec-4" class="swal2-input m-0" style="width:88px" placeholder="407" autocomplete="off" value="${defaults[4]}">
+                                        <span class="fw-bold">/</span>
+                                        <input id="reg-kec-5" class="swal2-input m-0" style="width:92px" placeholder="2026" autocomplete="off" value="${defaults[5]}">
+                                    </div>
+                                    <div class="small text-muted mt-2">Format hasil: 145/14/419.407/2026. Kolom sengaja kosong agar diisi manual oleh Sekcam.</div>
+                                </div>
+                            `,
+                            showCancelButton: true,
+                            confirmButtonText: 'Lanjut Naikkan',
+                            cancelButtonText: 'Batal',
+                            focusConfirm: false,
+                            didOpen: () => {
+                                const firstInput = document.getElementById('reg-kec-1');
+                                if (firstInput) firstInput.focus();
+                            },
+                            preConfirm: () => {
+                                const values = [1, 2, 3, 4, 5].map((n) => (document.getElementById('reg-kec-' + n)?.value || '').trim());
+                                if (values.some((value) => value === '')) {
+                                    Swal.showValidationMessage('Semua bagian No Registrasi Kecamatan wajib diisi.');
+                                    return false;
+                                }
+
+                                const registerKecamatan = `${values[0]}/${values[1]}/${values[2]}.${values[3]}/${values[4]}`.replace(/\s+/g, '');
+                                if (!/^[0-9A-Za-z.\-\/]+$/.test(registerKecamatan)) {
+                                    Swal.showValidationMessage('Format hanya boleh angka/huruf, titik, strip, dan garis miring.');
+                                    return false;
+                                }
+
+                                return registerKecamatan;
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed && result.value) {
+                                confirmNaik(result.value);
+                            }
+                        });
+                    } else {
+                        const registerKecamatan = prompt('Silahkan isi Data Registrasi Kecamatan Anda\nContoh: 145/14/419.407/2026', normalized);
+                        if (registerKecamatan && registerKecamatan.trim() !== '') {
+                            confirmNaik(registerKecamatan.trim());
+                        }
+                    }
+                };
+
+                if (requireRegisterKecamatan) {
+                    promptRegisterKecamatan();
+                    return;
+                }
+
+                confirmNaik();
+            });
         </script>
     @endpush
 @endsection

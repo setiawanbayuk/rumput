@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PengajuanController;
 use App\Models\SuratUsaha;
+use App\Http\Controllers\VerifySuratController;
 
 // Route::get('/', function () {
 //     return view('home', ['title' => 'Dashboard']);
@@ -57,6 +58,10 @@ Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->nam
 Route::get('/chart/surat', [HomeController::class, 'chartDrilldown']);
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
 Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');
+
+// PUBLIC: Halaman verifikasi surat dari scan QR/Barcode TTE
+// Diletakkan di luar middleware auth agar bisa dibuka masyarakat tanpa login.
+Route::get('/verify/{jenis}/{id}', [VerifySuratController::class, 'show'])->name('verify.surat');
 
 Route::middleware(['auth', 'role:1,7'])->prefix('template')->group(function () {
     Route::get('/', [TemplateController::class, 'index'])->name('template.index');
@@ -309,6 +314,7 @@ Route::middleware(['auth', 'role:1'])->prefix('admin/manajemen-warga')->name('ad
 Route::middleware(['auth'])->prefix('tools')->name('tools.')->group(function () {
     Route::get('/rekap', [ToolsController::class, 'rekap'])->name('rekap');
     Route::get('/rekap/export', [ToolsController::class, 'exportRekap'])->name('rekap.export');
+    Route::get('/rating', [ToolsController::class, 'rating'])->name('rating');
     Route::get('/profil-instansi', [ToolsController::class, 'profilInstansi'])->name('profil-instansi');
     Route::post('/profil-instansi', [ToolsController::class, 'updateProfilInstansi'])->name('profil-instansi.update');
 });

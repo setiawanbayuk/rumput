@@ -79,10 +79,16 @@ trait GlobalFunction
                 $coord = $hasil['data'] ?? [0, 0, 0, 0];
 
                 $qrSize = (int) ($params['qr_size'] ?? 95);
-                // Koordinat dari signminer sekarang adalah bbox marker yang tepat.
-                // QR dipusatkan persis pada marker Word, bukan memakai offset tetap.
+                // Koordinat marker Word dipakai sebagai titik tengah patokan.
+                // Jika memakai gambar gabungan QR + kartu TTE, seluruh blok gambar dipusatkan pada marker.
                 $markerCenterX = $coord[0] + (($coord[2] - $coord[0]) / 2);
                 $markerCenterY = $coord[1] + (($coord[3] - $coord[1]) / 2);
+
+                $useCustomImage = !empty($params['use_custom_image']) && !empty($params['image_path']);
+                $imageWidth = (int) ($params['image_width'] ?? 330);
+                $imageHeight = (int) ($params['image_height'] ?? 90);
+                $offsetX = (float) ($params['offset_x'] ?? 0);
+                $offsetY = (float) ($params['offset_y'] ?? 0);
 
                 $signData = [
                     'nik'        => $params['nik'] ?? '',
@@ -90,12 +96,17 @@ trait GlobalFunction
                     'file_name'  => $fileName,
                     'verify'     => $params['verify'] ?? config('app.url'),
                     'page'       => (int) ($hasil['page'] ?? 1),
-                    'x'          => (float) ($markerCenterX - ($qrSize / 2)),
-                    'y'          => (float) ($markerCenterY - ($qrSize / 2)),
+                    'x'          => (float) ($useCustomImage ? ($markerCenterX - ($imageWidth / 2) + $offsetX) : ($markerCenterX - ($qrSize / 2) + $offsetX)),
+                    'y'          => (float) ($useCustomImage ? ($markerCenterY - ($imageHeight / 2) + $offsetY) : ($markerCenterY - ($qrSize / 2) + $offsetY)),
                     'qr_size'    => $qrSize,
+                    'image_path' => $params['image_path'] ?? null,
+                    'image_width' => $imageWidth,
+                    'image_height' => $imageHeight,
                 ];
 
-                $response = $this->TTE_Visible_QR($signData);
+                $response = $useCustomImage
+                    ? $this->TTE_Visible_Image($signData)
+                    : $this->TTE_Visible_QR($signData);
 
                 if (($response['status'] ?? false) === true) {
                     return ['status' => 'success', 'message' => 'Esign Berhasil', 'tag' => $tag];
@@ -111,6 +122,9 @@ trait GlobalFunction
             if (($params['allow_coordinate_fallback'] ?? true) !== false) {
                 $role = (int) ($params['role'] ?? 0);
                 $isCamat = $role === 5;
+                $useCustomImage = !empty($params['use_custom_image']) && !empty($params['image_path']);
+                $fallbackImageWidth = (int) ($params['image_width'] ?? 330);
+                $fallbackImageHeight = (int) ($params['image_height'] ?? 90);
                 $fallback = [
                     'nik'        => $params['nik'] ?? '',
                     'passphrase' => $params['passphrase'] ?? '',
@@ -120,6 +134,9 @@ trait GlobalFunction
                     'x'          => (float) ($params['fallback_x'] ?? ($isCamat ? 255 : 390)),
                     'y'          => (float) ($params['fallback_y'] ?? ($isCamat ? 85 : 230)),
                     'qr_size'    => (int) ($params['qr_size'] ?? 95),
+                    'image_path' => $params['image_path'] ?? null,
+                    'image_width' => $fallbackImageWidth,
+                    'image_height' => $fallbackImageHeight,
                 ];
 
                 Log::warning('Marker TTE tidak ditemukan, memakai fallback koordinat SKTM.', [
@@ -129,7 +146,9 @@ trait GlobalFunction
                     'last_error' => $lastError,
                 ]);
 
-                $fallbackResponse = $this->TTE_Visible_QR($fallback);
+                $fallbackResponse = $useCustomImage
+                    ? $this->TTE_Visible_Image($fallback)
+                    : $this->TTE_Visible_QR($fallback);
                 if (($fallbackResponse['status'] ?? false) === true) {
                     return ['status' => 'success', 'message' => 'Esign Berhasil dengan fallback koordinat', 'tag' => 'fallback-coordinate'];
                 }
@@ -260,83 +279,315 @@ trait GlobalFunction
         }
     }
 
+    public function TTE_Visible_Image(array $request)
+    {
+        $imagePath = $request['image_path'] ?? null;
+        $imageWidth = (int) ($request['image_width'] ?? 330);
+        $imageHeight = (int) ($request['image_height'] ?? 90);
+
+        if (!$imagePath || !file_exists($imagePath) || filesize($imagePath) <= 0) {
+            return ['message' => 'File gambar TTE tidak ditemukan atau kosong.', 'status' => false];
+        }
+
+        $data = [
+            'nik'        => $request['nik'],
+            'passphrase' => $request['passphrase'],
+            'tampilan'   => 'visible',
+            'page'       => $request['page'],
+            'reason'     => 'Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang diterbitkan BSrE',
+            'location'   => 'Kota Kediri',
+            'image'      => true,
+            'linkQR'     => '',
+            'xAxis'      => $request['x'],
+            'yAxis'      => max(0, (float) $request['y']),
+            'width'      => $request['x'] + $imageWidth,
+            'height'     => max(0, (float) $request['y']) + $imageHeight,
+        ];
+
+        $arrContextOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ],
+        ];
+
+        $filePath = storage_path('app/public/pdf/' . $request['file_name']);
+        if (!file_exists($filePath)) {
+            return ['message' => 'File PDF untuk dikirim ke BSrE tidak ditemukan.', 'status' => false];
+        }
+
+        try {
+            $query = http_build_query($data);
+            $r = Http::withBasicAuth(env('ESIGN_USER'), env('ESIGN_PASS'))
+                ->asMultipart()
+                ->attach('file', file_get_contents($filePath, false, stream_context_create($arrContextOptions)), $request['file_name'])
+                ->attach('imageTTD', file_get_contents($imagePath, false, stream_context_create($arrContextOptions)), basename($imagePath))
+                ->post(env('APP_URL_TTE') . '/sign/pdf?' . $query);
+
+            $json = null;
+            try {
+                $json = $r->json();
+            } catch (\Throwable $e) {
+                $json = null;
+            }
+
+            $body = $r->body();
+            $looksLikePdf = is_string($body) && substr($body, 0, 4) === '%PDF';
+            if (($looksLikePdf || !$json) && $r->successful()) {
+                file_put_contents($filePath, $body);
+                clearstatcache(true, $filePath);
+
+                if (file_exists($filePath) && filesize($filePath) > 0) {
+                    return ['message' => 'Esign image done successfully.', 'status' => true];
+                }
+
+                return ['message' => 'BSrE sukses tetapi file hasil kosong.', 'status' => false];
+            }
+
+            $message = is_array($json)
+                ? ($json['error'] ?? $json['message'] ?? json_encode($json))
+                : ($r->body() ?: 'Kemungkinan passphrase salah atau gambar TTE tidak valid.');
+
+            return ['message' => $message, 'status' => false];
+        } catch (\Throwable $e) {
+            return ['message' => $e->getMessage(), 'status' => false];
+        }
+    }
+
+    protected function saveSingleTteSampleImage(?string $sourcePath): void
+    {
+        try {
+            if (!$sourcePath || !file_exists($sourcePath) || filesize($sourcePath) <= 0) {
+                return;
+            }
+
+            $samplePath = public_path('img/tte_contoh.png');
+            if (!is_dir(dirname($samplePath))) {
+                @mkdir(dirname($samplePath), 0777, true);
+            }
+
+            @copy($sourcePath, $samplePath);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal menyimpan 1 contoh gambar TTE.', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    protected function cleanupTemporaryGeneratedTteImages(): void
+    {
+        try {
+            foreach ((array) glob(public_path('img/tte_*.png')) as $file) {
+                if (is_string($file) && basename($file) !== 'tte_contoh.png' && file_exists($file)) {
+                    @unlink($file);
+                }
+            }
+            foreach ((array) glob(public_path('img/qr_tte_*.png')) as $file) {
+                if (is_string($file) && file_exists($file)) {
+                    @unlink($file);
+                }
+            }
+            foreach ((array) glob(public_path('img/tte_qr_*.png')) as $file) {
+                if (is_string($file) && basename($file) !== 'tte_contoh.png' && file_exists($file)) {
+                    @unlink($file);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal membersihkan file gambar TTE lama.', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function generateTteWithQr($request, string $verifyUrl, $kec = null, $no_reg = null): ?array
+    {
+        try {
+            $this->cleanupTemporaryGeneratedTteImages();
+            $manager = new ImageManager(Driver::class);
+            $qrName = 'qr_tte_' . hash('sha256', now()->format('YmdHisv') . '|' . uniqid('', true)) . '.png';
+            $qrPath = public_path('img/' . $qrName);
+
+            if (!is_dir(dirname($qrPath))) {
+                @mkdir(dirname($qrPath), 0777, true);
+            }
+
+            // QR dibuat lebih proporsional agar hasil Lurah/Camat serasi dan tidak terlalu besar.
+            \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(200)->margin(1)->generate($verifyUrl ?: config('app.url'), $qrPath);
+
+            $card = $this->generateTte($request, $kec, $no_reg);
+            $cardPath = $card['full_path'] ?? (isset($card['path']) ? public_path($card['path']) : null);
+
+            if (!$cardPath || !file_exists($cardPath) || filesize($cardPath) <= 0) {
+                return null;
+            }
+
+            $qrImage = $manager->read($qrPath);
+            $qrImage->resize(200, 200);
+            $cardImage = $manager->read($cardPath);
+            $cardImage->resize(610, 190);
+
+            $composite = $manager->create(820, 200)->fill('white');
+            $composite->place($qrImage, 'left', 0, 0);
+            $composite->place($cardImage, 'left', 210, 5);
+
+            $imgName = 'tte_qr_' . hash('sha256', implode('|', [
+                now()->format('YmdHisv'),
+                $request->id ?? '',
+                $request->nip ?? '',
+                uniqid('', true),
+            ])) . '.png';
+
+            $outputTte = 'img/' . $imgName;
+            $fullOutputTte = public_path($outputTte);
+            $composite->toPng()->save($fullOutputTte);
+            $this->saveSingleTteSampleImage($fullOutputTte);
+
+            return [
+                'filename' => $imgName,
+                'path' => $outputTte,
+                'full_path' => $fullOutputTte,
+                // Bersihkan semua file hasil generate sementara setelah proses TTE selesai,
+                // cukup sisakan 1 contoh saja di public/img/tte_contoh.png
+                'cleanup_paths' => array_values(array_filter([$qrPath, $cardPath, $fullOutputTte])),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Gagal membuat gambar TTE gabungan QR.', [
+                'message' => $e->getMessage(),
+                'pejabat_id' => $request->id ?? null,
+            ]);
+            return null;
+        }
+    }
+
     public function generateTte($request, $kec = null, $no_reg = null)
     {
         $manager = new ImageManager(Driver::class);
-        $image = $manager->create(600, 200)->fill('white');
+        $registrationNumber = trim((string) ($no_reg ?? ''));
+        $showKecamatanRegister = ($kec == true && $registrationNumber !== '');
+        $image = $manager->create(610, 190)->fill('white');
         $image->drawRectangle(0, 0, function (RectangleFactory $rectangle) {
-            $rectangle->size(600, 200); // width & height of rectangle
-            $rectangle->background('white'); // background color of rectangle
-            $rectangle->border('black', 5); // border color & size of rectangle
+            $rectangle->size(610, 190);
+            $rectangle->background('white');
+            $rectangle->border('black', 3);
         });
-        $image->place(public_path('img/logo.png'), 'left', 10);
-        if ($kec == true) {
-            // dd($kec);
-            $image->text('Register : ' . $no_reg, 180, 25, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Medium.ttf');
-                $font->size(20);
-                $font->color('black');
-            });
-            $image->text('Ditandatangani secara elektronik oleh:', 180, 50, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Medium.ttf');
-                $font->size(20);
-                $font->color('black');
-            });
-            $image->text('Camat Kecamatan ' . ucfirst(strtolower($request->skpd->nama)) . ',', 180, 75, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Bold.ttf');
-                $font->size(24);
-                $font->color('black');
-            });
-            $image->text('Kota Kediri', 180, 100, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Bold.ttf');
-                $font->size(24);
-                $font->color('black');
-            });
-            $image->text($request->nama, 180, 150, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Bold.ttf');
-                $font->size(24);
-                $font->color('black');
-            });
-            $image->text('NIP. ' . $request->nip, 180, 175, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Medium.ttf');
-                $font->size(24);
-                $font->color('black');
-            });
-        } else {
-            $image->text('Ditandatangani secara elektronik oleh:', 180, 50, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Medium.ttf');
-                $font->size(20);
-                $font->color('black');
-            });
-            $image->text('Lurah Kelurahan ' . ucfirst(strtolower($request->skpd->nama)) . ',', 180, 75, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Bold.ttf');
-                $font->size(24);
-                $font->color('black');
-            });
-            $image->text('Kota Kediri', 180, 100, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Bold.ttf');
-                $font->size(24);
-                $font->color('black');
-            });
-            $image->text($request->nama, 180, 150, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Bold.ttf');
-                $font->size(24);
 
+        $logoPath = public_path('img/logo.png');
+        if (file_exists($logoPath)) {
+            $logo = $manager->read($logoPath);
+            $logo->resize($showKecamatanRegister ? 108 : 135, $showKecamatanRegister ? 108 : 135);
+            $image->place($logo, 'left', 10, $showKecamatanRegister ? 28 : 22);
+        }
+
+        $namaSkpd = ucfirst(strtolower((string) optional($request->skpd)->nama));
+        $namaPejabat = trim((string) ($request->nama ?? ''));
+        $nipPejabat = trim((string) ($request->nip ?? ''));
+        $pangkatPejabat = trim((string) optional($request->pangkat)->nama);
+        $jabatanPejabat = trim((string) optional($request->jabatan)->nama);
+
+        if ($kec == true) {
+            $jabatanBaris = ($jabatanPejabat !== '' ? $jabatanPejabat : 'Camat') . ' Kecamatan ' . $namaSkpd . ',';
+        } else {
+            $jabatanBaris = ($jabatanPejabat !== '' ? $jabatanPejabat : 'Lurah') . ' Kelurahan ' . $namaSkpd . ',';
+        }
+
+        $regularFontCandidates = [
+            public_path('fonts/arial.ttf'),
+            public_path('fonts/Arial.ttf'),
+            'C:/Windows/Fonts/arial.ttf',
+            '/usr/share/fonts/truetype/msttcorefonts/Arial.ttf',
+            '/usr/share/fonts/truetype/msttcorefonts/arial.ttf',
+            public_path('fonts/KumbhSans-Medium.ttf'),
+        ];
+        $boldFontCandidates = [
+            public_path('fonts/arialbd.ttf'),
+            public_path('fonts/Arialbd.ttf'),
+            'C:/Windows/Fonts/arialbd.ttf',
+            '/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf',
+            '/usr/share/fonts/truetype/msttcorefonts/arialbd.ttf',
+            public_path('fonts/KumbhSans-Bold.ttf'),
+        ];
+        $regularFont = collect($regularFontCandidates)->first(fn ($path) => is_string($path) && file_exists($path)) ?: public_path('fonts/KumbhSans-Medium.ttf');
+        $boldFont = collect($boldFontCandidates)->first(fn ($path) => is_string($path) && file_exists($path)) ?: public_path('fonts/KumbhSans-Bold.ttf');
+
+        if ($showKecamatanRegister) {
+            // Registrasi Kecamatan dibuat kecil, hitam, dan serasi dengan isi TTE.
+            // Hanya desain tampilan, tidak mengubah alur/proses TTE.
+            $image->text('Registrasi Kecamatan', 160, 18, function (FontFactory $font) use ($boldFont) {
+                $font->filename($boldFont);
+                $font->size(12);
                 $font->color('black');
             });
-            $image->text('NIP. ' . $request->nip, 180, 175, function (FontFactory $font) {
-                $font->filename('./fonts/KumbhSans-Medium.ttf');
-                $font->size(24);
+
+            $image->text($registrationNumber, 160, 34, function (FontFactory $font) use ($boldFont) {
+                $font->filename($boldFont);
+                $font->size(12);
                 $font->color('black');
             });
         }
 
-        $imgName = 'tte_' . hash('sha256', now()) . '.png';
+        $ySigned = $showKecamatanRegister ? 57 : 32;
+        $yJabatan = $showKecamatanRegister ? 79 : 56;
+        $yKota = $showKecamatanRegister ? 100 : 80;
+        $yNama = $showKecamatanRegister ? 132 : 126;
+        $yPangkat = $showKecamatanRegister ? 156 : 149;
+        $yNip = $showKecamatanRegister ? 175 : 171;
+
+        $image->text('Ditandatangani secara elektronik oleh:', 160, $ySigned, function (FontFactory $font) use ($regularFont, $showKecamatanRegister) {
+            $font->filename($regularFont);
+            $font->size($showKecamatanRegister ? 15 : 17);
+            $font->color('black');
+        });
+
+        $image->text($jabatanBaris, 160, $yJabatan, function (FontFactory $font) use ($boldFont, $showKecamatanRegister) {
+            $font->filename($boldFont);
+            $font->size($showKecamatanRegister ? 17 : 19);
+            $font->color('black');
+        });
+
+        $image->text('Kota Kediri', 160, $yKota, function (FontFactory $font) use ($boldFont, $showKecamatanRegister) {
+            $font->filename($boldFont);
+            $font->size($showKecamatanRegister ? 17 : 19);
+            $font->color('black');
+        });
+
+        $image->text($namaPejabat, 160, $yNama, function (FontFactory $font) use ($boldFont, $showKecamatanRegister) {
+            $font->filename($boldFont);
+            $font->size($showKecamatanRegister ? 17 : 19);
+            $font->color('black');
+        });
+
+        if ($pangkatPejabat !== '') {
+            $image->text($pangkatPejabat, 160, $yPangkat, function (FontFactory $font) use ($regularFont, $showKecamatanRegister) {
+                $font->filename($regularFont);
+                $font->size($showKecamatanRegister ? 14 : 16);
+                $font->color('black');
+            });
+        }
+
+        $image->text('NIP. ' . $nipPejabat, 160, $yNip, function (FontFactory $font) use ($regularFont, $showKecamatanRegister) {
+            $font->filename($regularFont);
+            $font->size($showKecamatanRegister ? 14 : 16);
+            $font->color('black');
+        });
+
+        $imgName = 'tte_' . hash('sha256', implode('|', [
+            now()->format('YmdHisv'),
+            $request->id ?? '',
+            $request->nip ?? '',
+            uniqid('', true),
+        ])) . '.png';
         $outputTte = 'img/' . $imgName;
-        $image->toPng()->save($outputTte);
+        $fullOutputTte = public_path($outputTte);
+
+        if (!is_dir(dirname($fullOutputTte))) {
+            @mkdir(dirname($fullOutputTte), 0777, true);
+        }
+
+        $image->toPng()->save($fullOutputTte);
         $result = [
             'filename' => $imgName,
             'path' => $outputTte,
+            'full_path' => $fullOutputTte,
         ];
         return $result;
     }
