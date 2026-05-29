@@ -504,6 +504,99 @@ class SuratApiController extends Controller
         return $allInput;
     }
 
+
+    protected function normalizeBoroApiText($value): string
+    {
+        return strtoupper(trim((string) $value));
+    }
+
+    protected function normalizeBoroApiRelation($value): string
+    {
+        $value = $this->normalizeBoroApiText($value);
+
+        if ($value === 'ANAK KANDUNG') {
+            return 'ANAK';
+        }
+
+        if ($value === 'KELUARGA') {
+            return 'KELUARGA LAIN';
+        }
+
+        return $value;
+    }
+
+    protected function buildBoroApiDetailPengikut(Request $request): array
+    {
+        $names = $request->input('pengikut_nama', []);
+        $niks = $request->input('pengikut_nik', []);
+        $birthDates = $request->input('pengikut_tgl_lahir', []);
+        $statuses = $request->input('pengikut_status_kwn', []);
+        $relations = $request->input('pengikut_hubungan', []);
+
+        $names = is_array($names) ? array_values($names) : [];
+        $niks = is_array($niks) ? array_values($niks) : [];
+        $birthDates = is_array($birthDates) ? array_values($birthDates) : [];
+        $statuses = is_array($statuses) ? array_values($statuses) : [];
+        $relations = is_array($relations) ? array_values($relations) : [];
+
+        $jumlahPengikut = (int) $request->input('jumlah_pengikut', $request->input('pengikut', 0));
+        $rowCount = max($jumlahPengikut, count($names), count($niks), count($birthDates), count($statuses), count($relations));
+
+        $detail = [];
+
+        for ($i = 0; $i < $rowCount; $i++) {
+            $nama = $this->normalizeBoroApiText($names[$i] ?? '');
+            $nik = preg_replace('/\D/', '', (string) ($niks[$i] ?? ''));
+            $tglLahir = trim((string) ($birthDates[$i] ?? ''));
+            $statusKawin = $this->normalizeBoroApiText($statuses[$i] ?? '');
+            $hubungan = $this->normalizeBoroApiRelation($relations[$i] ?? '');
+
+            if ($nama === '' && $nik === '' && $tglLahir === '' && $statusKawin === '' && $hubungan === '') {
+                continue;
+            }
+
+            $usia = null;
+            if ($tglLahir !== '') {
+                try {
+                    $birth = Carbon::parse($tglLahir)->startOfDay();
+                    if (!$birth->isFuture()) {
+                        $tglLahir = $birth->format('Y-m-d');
+                        $usia = $birth->age;
+                    }
+                } catch (\Throwable $e) {
+                    $usia = null;
+                }
+            }
+
+            $detail[] = [
+                'nama' => $nama,
+                'nik' => $nik,
+                'tgl_lahir' => $tglLahir,
+                'umur' => $usia,
+                'usia' => $usia,
+                'status_kwn' => $statusKawin,
+                'status_kwn_nm' => $statusKawin,
+                'hubungan' => $hubungan,
+            ];
+        }
+
+        return $detail;
+    }
+
+    protected function applyBoroApiDetailPengikut(Request $request, array $variableData): array
+    {
+        $detailPengikut = $this->buildBoroApiDetailPengikut($request);
+        $jumlahPengikut = (int) $request->input('jumlah_pengikut', $request->input('pengikut', count($detailPengikut)));
+        $jumlahPengikut = max($jumlahPengikut, count($detailPengikut));
+
+        $variableData['jumlah_pengikut'] = $jumlahPengikut;
+        $variableData['pengikut'] = $jumlahPengikut;
+        $variableData['surat_jml_pengikut'] = (string) $jumlahPengikut;
+        $variableData['detail_pengikut'] = $detailPengikut;
+
+        return $variableData;
+    }
+
     protected function storePengantarFile(Request $request, string $resolvedJenis): ?string
     {
         if (!$request->hasFile('pengantar')) {
@@ -627,6 +720,10 @@ class SuratApiController extends Controller
                 $allInput = $this->buildAllInput($request, $resident, $resolvedJenis);
                 $variableData = $this->cleanInternalPayload($allInput);
 
+                if ($resolvedJenis === 'skboro') {
+                    $variableData = $this->applyBoroApiDetailPengikut($request, $variableData);
+                }
+
                 $tglSurat = $request->filled('tgl_surat') ? Carbon::parse($request->tgl_surat) : now();
 
                 $noUrutSurat = ((int) SuratPengajuan::where('jenis_surat', $resolvedJenis)
@@ -705,6 +802,7 @@ class SuratApiController extends Controller
 
         $request->validate([
             'jenis_surat' => ['required', 'string', Rule::in($allowedJenis)],
+
             'nik' => ['required', 'digits:16'],
             'peruntukan' => ['required', 'string', 'max:255'],
             'pengantar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
@@ -748,6 +846,10 @@ class SuratApiController extends Controller
                 $newVariableData = $this->cleanInternalPayload($allInput);
                 $oldVariableData = $this->getExistingVariableData($surat);
                 $variableData = array_merge($oldVariableData, $newVariableData);
+
+                if ($resolvedJenis === 'skboro') {
+                    $variableData = $this->applyBoroApiDetailPengikut($request, $variableData);
+                }
 
                 $kepadaValue = $request->input('kepada', $surat->kepada);
                 if ($resolvedJenis === 'sktm' && strtolower((string) $request->register_as) !== 'sekolah') {

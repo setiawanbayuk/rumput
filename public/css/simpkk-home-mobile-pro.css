@@ -1,0 +1,1056 @@
+/* =========================================================
+   SIM PKK Kota Kediri - Homepage Mobile App Responsive Patch
+   Scope: halaman awal / guest page only
+   Tidak mengubah alur backend, route, controller, database.
+   ========================================================= */
+
+:root {
+  --pkk-blue-900: #042f52;
+  --pkk-blue-800: #064a78;
+  --pkk-blue-700: #046ba8;
+  --pkk-blue-600: #0b84c6;
+  --pkk-cyan: #28c7e8;
+  --pkk-pink: #e83e8c;
+  --pkk-gold: #ffd166;
+  --pkk-white: #ffffff;
+  --pkk-soft: #f4f8fc;
+  --pkk-soft-2: #eef6ff;
+  --pkk-text: #132238;
+  --pkk-muted: #6b7a90;
+  --pkk-border: rgba(4, 107, 168, .14);
+  --pkk-shadow: 0 20px 60px rgba(8, 44, 74, .18);
+  --pkk-shadow-soft: 0 14px 35px rgba(8, 44, 74, .10);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body.pkk-guest-page {
+  background: #f6f9fd !important;
+  color: var(--pkk-text) !important;
+  overflow-x: hidden;
+}
+
+body.pkk-guest-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(40, 199, 232, .14), transparent 28%),
+    radial-gradient(circle at 88% 16%, rgba(232, 62, 140, .10), transparent 24%),
+    radial-gradient(circle at 50% 92%, rgba(255, 209, 102, .10), transparent 26%);
+  z-index: -2;
+}
+
+/* =========================
+   Guest Navbar
+   ========================= */
+.pkk-guest-nav {
+  background: rgba(255, 255, 255, .84) !important;
+  border: 1px solid rgba(255, 255, 255, .68);
+  border-left: 0;
+  border-right: 0;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 10px 34px rgba(8, 44, 74, .10);
+  z-index: 1060;
+  transition: all .25s ease;
+}
+
+.pkk-guest-nav.is-scrolled {
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: 0 14px 38px rgba(8, 44, 74, .14);
+}
+
+.pkk-guest-nav-inner {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.pkk-guest-brand,
+.pkk-guest-brand:hover {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--pkk-blue-900);
+  min-width: 0;
+}
+
+.pkk-guest-brand-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #ffffff, #edf7ff);
+  box-shadow: 0 12px 25px rgba(4, 107, 168, .18), inset 0 1px 0 rgba(255,255,255,.9);
+  flex: 0 0 auto;
+}
+
+.pkk-guest-brand-logo img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.pkk-guest-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.08;
+}
+
+.pkk-guest-brand-text strong {
+  font-size: 18px;
+  letter-spacing: -.02em;
+  font-weight: 800;
+}
+
+.pkk-guest-brand-text small {
+  margin-top: 4px;
+  color: var(--pkk-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.pkk-guest-menu {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pkk-guest-menu-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pkk-guest-link,
+.pkk-guest-link:hover {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--pkk-blue-900) !important;
+  background: rgba(4, 107, 168, .08);
+  border: 1px solid rgba(4, 107, 168, .10);
+  transition: all .2s ease;
+}
+
+.pkk-guest-link:hover {
+  transform: translateY(-1px);
+  background: rgba(4, 107, 168, .13);
+  box-shadow: 0 12px 22px rgba(4, 107, 168, .13);
+}
+
+.pkk-guest-link-primary,
+.pkk-guest-link-primary:hover {
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--pkk-blue-700), var(--pkk-cyan));
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 12px 25px rgba(4, 107, 168, .22);
+}
+
+.pkk-guest-link-danger,
+.pkk-guest-link-danger:hover {
+  color: #fff !important;
+  background: linear-gradient(135deg, #e63b5d, #ff7a90);
+}
+
+.pkk-guest-menu-toggle,
+.pkk-guest-menu-close {
+  display: none;
+}
+
+.pkk-guest-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 25, 45, .52);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1050;
+  transition: opacity .22s ease;
+}
+
+/* =========================
+   Hero
+   ========================= */
+.pkk-hero.hero {
+  min-height: 100vh;
+  position: relative;
+  padding: 118px 20px 78px !important;
+  overflow: hidden;
+  align-items: stretch !important;
+  text-align: left !important;
+  background:
+    radial-gradient(circle at 17% 25%, rgba(40, 199, 232, .25), transparent 28%),
+    radial-gradient(circle at 85% 20%, rgba(255, 209, 102, .18), transparent 26%),
+    linear-gradient(135deg, #05395f 0%, #046ba8 50%, #032b46 100%) !important;
+}
+
+.pkk-hero::before,
+.pkk-hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.pkk-hero::before {
+  width: 520px;
+  height: 520px;
+  right: -190px;
+  top: 78px;
+  background: rgba(255, 255, 255, .11);
+  filter: blur(2px);
+}
+
+.pkk-hero::after {
+  width: 360px;
+  height: 360px;
+  left: -140px;
+  bottom: -120px;
+  background: rgba(40, 199, 232, .13);
+}
+
+.pkk-hero-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1180px;
+}
+
+.pkk-hero-grid {
+  min-height: calc(100vh - 196px);
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 46px;
+  align-items: center;
+}
+
+.pkk-hero-copy {
+  color: #fff;
+}
+
+.pkk-hero-badge {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.20);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(255,255,255,.96);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 22px;
+}
+
+.pkk-hero-badge i {
+  color: var(--pkk-gold);
+}
+
+.pkk-hero h1 {
+  max-width: 680px;
+  margin: 0 0 18px !important;
+  color: #fff !important;
+  font-size: clamp(42px, 5vw, 68px) !important;
+  line-height: 1.02;
+  letter-spacing: -.055em;
+  font-weight: 900 !important;
+  text-shadow: 0 10px 30px rgba(0,0,0,.13);
+}
+
+.pkk-hero p {
+  max-width: 620px !important;
+  margin: 0 0 28px !important;
+  color: rgba(255, 255, 255, .84) !important;
+  font-size: 17px !important;
+  line-height: 1.75;
+  font-weight: 500;
+}
+
+.pkk-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.pkk-hero-login.btn-cta {
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px !important;
+  color: var(--pkk-blue-900) !important;
+  background: #fff !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  font-weight: 900;
+  box-shadow: 0 20px 38px rgba(2, 25, 45, .22);
+}
+
+.pkk-hero-login:hover {
+  transform: translateY(-2px) !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--pkk-pink), #ff8dbf) !important;
+}
+
+.pkk-hero-secondary,
+.pkk-hero-secondary:hover {
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 20px;
+  border-radius: 18px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 900;
+  background: rgba(255, 255, 255, .13);
+  border: 1px solid rgba(255, 255, 255, .20);
+  backdrop-filter: blur(10px);
+}
+
+.pkk-hero-mini-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 560px;
+}
+
+.pkk-hero-mini-stats > div {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .19);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+  backdrop-filter: blur(10px);
+}
+
+.pkk-hero-mini-stats strong,
+.pkk-hero-mini-stats small {
+  display: block;
+}
+
+.pkk-hero-mini-stats strong {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.pkk-hero-mini-stats small {
+  margin-top: 7px;
+  color: rgba(255, 255, 255, .72);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pkk-hero-visual {
+  position: relative;
+  min-height: 510px;
+  display: grid;
+  place-items: center;
+}
+
+.pkk-phone-card {
+  width: min(100%, 360px);
+  min-height: 520px;
+  padding: 20px;
+  border-radius: 42px;
+  color: var(--pkk-text);
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(238,247,255,.92));
+  border: 1px solid rgba(255,255,255,.70);
+  box-shadow: 0 34px 80px rgba(0, 0, 0, .25), inset 0 1px 0 #fff;
+  transform: rotate(3deg);
+}
+
+.pkk-phone-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 34px;
+}
+
+.pkk-phone-top span:first-child {
+  width: 58px;
+  height: 8px;
+  border-radius: 999px;
+  background: #d9e8f5;
+}
+
+.pkk-phone-top span:last-child {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #c6dcec;
+}
+
+.pkk-phone-logo {
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 22px;
+  border-radius: 38px;
+  background: linear-gradient(145deg, #ffffff, #e9f7ff);
+  box-shadow: 0 18px 35px rgba(4, 107, 168, .16);
+}
+
+.pkk-phone-logo img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.pkk-phone-title {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.pkk-phone-title strong {
+  display: block;
+  color: var(--pkk-blue-900);
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.pkk-phone-title small {
+  display: block;
+  margin-top: 5px;
+  color: var(--pkk-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pkk-phone-list {
+  display: grid;
+  gap: 12px;
+}
+
+.pkk-phone-list div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 15px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(4, 107, 168, .10);
+  box-shadow: 0 10px 24px rgba(8, 44, 74, .08);
+  color: var(--pkk-blue-900);
+  font-weight: 800;
+}
+
+.pkk-phone-list i {
+  color: #1bbf75;
+}
+
+.pkk-floating-pill {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 15px;
+  border-radius: 999px;
+  color: var(--pkk-blue-900);
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(255, 255, 255, .65);
+  box-shadow: 0 18px 38px rgba(2, 25, 45, .20);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.pkk-pill-one {
+  top: 68px;
+  left: 20px;
+}
+
+.pkk-pill-two {
+  right: 15px;
+  bottom: 88px;
+}
+
+.pkk-floating-pill i {
+  color: var(--pkk-pink);
+}
+
+/* =========================
+   Feature Section
+   ========================= */
+.pkk-feature-section.section {
+  position: relative;
+  padding: 86px 20px 96px !important;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(4, 107, 168, .06), transparent 26%),
+    #f6f9fd !important;
+}
+
+.pkk-section-heading {
+  max-width: 720px;
+  margin: 0 auto 38px;
+  text-align: center;
+}
+
+.pkk-section-heading > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(4, 107, 168, .09);
+  color: var(--pkk-blue-700);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pkk-section-heading h2 {
+  margin: 16px 0 12px;
+  color: var(--pkk-blue-900);
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  font-weight: 900;
+}
+
+.pkk-section-heading p {
+  margin: 0;
+  color: var(--pkk-muted);
+  font-size: 16px;
+  line-height: 1.7;
+  font-weight: 500;
+}
+
+.pkk-feature-card {
+  height: 100%;
+  padding: 27px;
+  border: 1px solid var(--pkk-border) !important;
+  border-radius: 28px !important;
+  background: rgba(255,255,255,.90) !important;
+  box-shadow: var(--pkk-shadow-soft) !important;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  overflow: hidden;
+}
+
+.pkk-feature-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(4, 107, 168, .24) !important;
+  box-shadow: var(--pkk-shadow) !important;
+}
+
+.pkk-feature-icon {
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--pkk-blue-700), var(--pkk-cyan));
+  box-shadow: 0 16px 30px rgba(4, 107, 168, .22);
+  margin-bottom: 20px;
+}
+
+.pkk-feature-icon i {
+  color: #fff !important;
+  font-size: 24px !important;
+  margin: 0 !important;
+}
+
+.pkk-feature-card h5 {
+  margin: 0 0 10px;
+  color: var(--pkk-blue-900);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.pkk-feature-card p {
+  margin: 0;
+  color: var(--pkk-muted);
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 500;
+}
+
+/* Footer in guest mode */
+body.pkk-guest-page .main-footer {
+  position: relative;
+  z-index: 1;
+  margin: 0 !important;
+  padding: 22px 30px !important;
+  border-top: 1px solid rgba(255,255,255,.12);
+  background: linear-gradient(135deg, var(--pkk-blue-900), #021d32) !important;
+  color: rgba(255,255,255,.82) !important;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+body.pkk-guest-page .main-footer a {
+  color: #fff !important;
+  font-weight: 800;
+}
+
+/* =========================
+   Responsive Tablet & Mobile
+   ========================= */
+@media (max-width: 991.98px) {
+  body.pkk-guest-menu-open {
+    overflow: hidden;
+  }
+
+  .pkk-guest-nav-inner {
+    min-height: 66px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .pkk-guest-brand-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+  }
+
+  .pkk-guest-brand-logo img {
+    width: 31px;
+    height: 31px;
+  }
+
+  .pkk-guest-brand-text strong {
+    font-size: 16px;
+  }
+
+  .pkk-guest-brand-text small {
+    font-size: 10px;
+  }
+
+  .pkk-guest-menu-toggle {
+    margin-left: auto;
+    width: 46px;
+    height: 46px;
+    border: 0;
+    border-radius: 17px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: linear-gradient(135deg, var(--pkk-blue-700), var(--pkk-cyan));
+    box-shadow: 0 12px 26px rgba(4, 107, 168, .25);
+  }
+
+  .pkk-guest-menu-toggle span {
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: #fff;
+    transition: transform .2s ease, opacity .2s ease;
+  }
+
+  .pkk-guest-menu-open .pkk-guest-menu-toggle span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .pkk-guest-menu-open .pkk-guest-menu-toggle span:nth-child(2) {
+    opacity: 0;
+  }
+  .pkk-guest-menu-open .pkk-guest-menu-toggle span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  .pkk-guest-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(86vw, 360px);
+    height: 100vh;
+    height: 100dvh;
+    display: block;
+    margin: 0;
+    padding: 18px;
+    background: rgba(255, 255, 255, .96);
+    border-left: 1px solid rgba(255,255,255,.70);
+    box-shadow: -24px 0 65px rgba(2, 25, 45, .22);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    transform: translateX(104%);
+    transition: transform .26s cubic-bezier(.2,.75,.2,1);
+    z-index: 1070;
+    overflow-y: auto;
+  }
+
+  .pkk-guest-menu-open .pkk-guest-menu {
+    transform: translateX(0);
+  }
+
+  .pkk-guest-menu-open .pkk-guest-menu-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .pkk-guest-menu-head {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 3px 18px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(4, 107, 168, .11);
+  }
+
+  .pkk-guest-menu-head strong,
+  .pkk-guest-menu-head small {
+    display: block;
+  }
+
+  .pkk-guest-menu-head strong {
+    color: var(--pkk-blue-900);
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .pkk-guest-menu-head small {
+    margin-top: 2px;
+    color: var(--pkk-muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .pkk-guest-menu-close {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    color: var(--pkk-blue-900);
+    background: rgba(4, 107, 168, .09);
+  }
+
+  .pkk-guest-menu-links {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pkk-guest-link,
+  .pkk-guest-link:hover {
+    width: 100%;
+    min-height: 52px;
+    justify-content: flex-start;
+    padding: 13px 15px;
+    border-radius: 18px;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .pkk-hero.hero {
+    min-height: auto;
+    padding: 98px 14px 56px !important;
+    text-align: center !important;
+  }
+
+  .pkk-hero-grid {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .pkk-hero-copy {
+    text-align: center;
+  }
+
+  .pkk-hero-badge {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .pkk-hero h1 {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    font-size: clamp(34px, 9vw, 52px) !important;
+  }
+
+  .pkk-hero p {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    font-size: 15px !important;
+    line-height: 1.68;
+  }
+
+  .pkk-hero-actions {
+    justify-content: center;
+  }
+
+  .pkk-hero-visual {
+    min-height: 390px;
+  }
+
+  .pkk-phone-card {
+    min-height: 390px;
+    width: min(100%, 300px);
+    border-radius: 34px;
+    padding: 17px;
+    transform: rotate(0deg);
+  }
+
+  .pkk-phone-top {
+    margin-bottom: 22px;
+  }
+
+  .pkk-phone-logo {
+    width: 108px;
+    height: 108px;
+    border-radius: 30px;
+    margin-bottom: 16px;
+  }
+
+  .pkk-phone-logo img {
+    width: 82px;
+    height: 82px;
+  }
+
+  .pkk-phone-title strong {
+    font-size: 20px;
+  }
+
+  .pkk-phone-list div {
+    padding: 12px 13px;
+    font-size: 13px;
+    border-radius: 16px;
+  }
+
+  .pkk-floating-pill {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .pkk-pill-one {
+    top: 34px;
+    left: 2px;
+  }
+
+  .pkk-pill-two {
+    right: 0;
+    bottom: 45px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .pkk-guest-nav-inner {
+    min-height: 64px;
+  }
+
+  .pkk-guest-brand {
+    gap: 9px;
+  }
+
+  .pkk-guest-brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 15px;
+  }
+
+  .pkk-guest-brand-logo img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pkk-guest-brand-text strong {
+    font-size: 15px;
+  }
+
+  .pkk-guest-brand-text small {
+    font-size: 9px;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pkk-guest-menu-toggle {
+    width: 43px;
+    height: 43px;
+    border-radius: 15px;
+  }
+
+  .pkk-hero.hero {
+    padding: 90px 12px 48px !important;
+  }
+
+  .pkk-hero-badge {
+    max-width: 100%;
+    font-size: 11px;
+    padding: 9px 12px;
+  }
+
+  .pkk-hero h1 {
+    font-size: clamp(30px, 11vw, 42px) !important;
+    letter-spacing: -.045em;
+  }
+
+  .pkk-hero p {
+    font-size: 14px !important;
+    line-height: 1.62;
+  }
+
+  .pkk-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 11px;
+    width: 100%;
+  }
+
+  .pkk-hero-login.btn-cta,
+  .pkk-hero-secondary {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 17px !important;
+  }
+
+  .pkk-hero-mini-stats {
+    grid-template-columns: 1fr;
+    gap: 9px;
+    width: 100%;
+  }
+
+  .pkk-hero-mini-stats > div {
+    padding: 13px 15px;
+    border-radius: 17px;
+  }
+
+  .pkk-hero-mini-stats strong {
+    font-size: 18px;
+  }
+
+  .pkk-hero-visual {
+    min-height: 340px;
+    margin-top: 5px;
+  }
+
+  .pkk-phone-card {
+    width: min(100%, 278px);
+    min-height: 342px;
+  }
+
+  .pkk-phone-logo {
+    width: 92px;
+    height: 92px;
+    border-radius: 26px;
+  }
+
+  .pkk-phone-logo img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .pkk-phone-list {
+    gap: 9px;
+  }
+
+  .pkk-phone-list div {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .pkk-floating-pill {
+    display: none;
+  }
+
+  .pkk-feature-section.section {
+    padding: 58px 12px 68px !important;
+  }
+
+  .pkk-section-heading {
+    margin-bottom: 24px;
+  }
+
+  .pkk-section-heading h2 {
+    font-size: 28px;
+    line-height: 1.12;
+  }
+
+  .pkk-section-heading p {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .pkk-feature-grid {
+    --bs-gutter-y: .85rem;
+  }
+
+  .pkk-feature-card {
+    padding: 20px;
+    border-radius: 22px !important;
+  }
+
+  .pkk-feature-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    margin-bottom: 16px;
+  }
+
+  .pkk-feature-card h5 {
+    font-size: 16px;
+  }
+
+  .pkk-feature-card p {
+    font-size: 13px;
+  }
+
+  body.pkk-guest-page .main-footer {
+    padding: 20px 16px !important;
+    text-align: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .pkk-guest-brand-text small {
+    display: none;
+  }
+
+  .pkk-hero h1 {
+    font-size: 29px !important;
+  }
+
+  .pkk-hero-badge span {
+    max-width: 230px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

@@ -229,9 +229,11 @@
                                                 <div class="row mb-3">
                                                     <label for="jumlah_pengikut" class="col-md-3 col-form-label text-md-start ms-2">Jumlah Pengikut</label>
                                                     <div class="col-md-8">
-                                                        <input type="number" min="0" class="form-control" name="jumlah_pengikut" id="jumlah_pengikut" value="{{ old('jumlah_pengikut', 0) }}">
+                                                        <input type="number" min="0" class="form-control" name="jumlah_pengikut" id="jumlah_pengikut" value="{{ old('jumlah_pengikut', 0) }}" required>
                                                     </div>
                                                 </div>
+
+                                                @include('admin.surat.partials.boro-pengikut', ['initialBoroPengikut' => []])
 
                                                 <input type="hidden" name="surat_tgl_berlaku" id="surat_tgl_berlaku" value="{{ old('surat_tgl_berlaku') }}">
                                                 <input type="hidden" name="surat_tujuan" id="surat_tujuan" value="{{ old('surat_tujuan') }}">

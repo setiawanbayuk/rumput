@@ -381,5 +381,6 @@ Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' =>
     Route::get('/preview/{id}', [SuratAdminController::class, 'preview'])->name('preview');
     Route::get('/cetak/{id}', [SuratAdminController::class, 'cetak'])->name('cetak');
 	Route::get('/preview-basah/{id}', [SuratAdminController::class, 'previewBasah'])->name('previewBasah');
+	Route::post('/upload-bukti-basah/{id}', [SuratAdminController::class, 'uploadBuktiBasah'])->name('uploadBuktiBasah');
 	Route::get('/cetak-basah/{id}', [SuratAdminController::class, 'cetakBasah'])->name('cetakBasah');
 });

@@ -55,6 +55,75 @@ $(document).on("click", ".js-surat-action", function (e) {
         return;
     }
 
+    if (action === "upload_bukti_basah") {
+        Swal.fire({
+            title: "Upload Bukti TTD Basah",
+            text: "Pilih file bukti TTD Basah yang sudah ditandatangani.",
+            icon: "info",
+            input: "file",
+            inputAttributes: {
+                accept: "image/*,.pdf",
+                "aria-label": "Upload bukti TTD Basah"
+            },
+            showCancelButton: true,
+            confirmButtonText: "Upload",
+            cancelButtonText: "Batal",
+            preConfirm: (file) => {
+                if (!file) {
+                    Swal.showValidationMessage("File bukti TTD Basah wajib dipilih");
+                    return false;
+                }
+                return file;
+            }
+        }).then((result) => {
+            if (!result.isConfirmed || !result.value) return;
+
+            const formData = new FormData();
+            formData.append("bukti_ttd_basah", result.value);
+
+            $.ajax({
+                url: url,
+                method: method,
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                },
+                success: function (response) {
+                    Toastify({
+                        text: response.message || successText,
+                        duration: 3000,
+                        close: true,
+                        gravity: "top",
+                        position: "center",
+                        style: {
+                            background: "rgba(25, 135, 84, 1)",
+                        },
+                    }).showToast();
+
+                    if ($.fn.DataTable && $("#tableSurat").length) {
+                        $("#tableSurat").DataTable().ajax.reload(null, false);
+                    }
+                },
+                error: function (xhr) {
+                    let msg = "Terjadi kesalahan saat upload bukti TTD Basah";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+
+                    Swal.fire({
+                        title: "Gagal",
+                        text: msg,
+                        icon: "error",
+                        confirmButtonText: "OK"
+                    });
+                }
+            });
+        });
+        return;
+    }
+
     const swalConfig = {
         title: "Konfirmasi",
         text: confirmText,

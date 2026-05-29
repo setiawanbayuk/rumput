@@ -9,7 +9,9 @@
     <title>{{ $title ?? config('app.name', 'E-SUKET') }}</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
-    @stack('styles')
+    
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive-pro.css') }}?v=20260529-esuket-mobile-v5">
+@stack('styles')
     <style>
         :root {
             --primary-color: #AB9C71;
@@ -132,6 +134,7 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     @stack('scripts')
+    <script src="{{ asset('js/esuket-mobile-pro.js') }}?v=20260529-esuket-mobile-v5"></script>
 </body>
 
 </html>

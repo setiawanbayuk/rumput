@@ -238,9 +238,14 @@
                                             <div class="row mb-3">
                                                 <label for="jumlah_pengikut" class="col-md-3 col-form-label text-md-start ms-2">Jumlah Pengikut</label>
                                                 <div class="col-md-8">
-                                                    <input type="number" min="0" class="form-control" name="jumlah_pengikut" id="jumlah_pengikut" value="{{ $jumlahPengikutBoro }}">
+                                                    <input type="number" min="0" class="form-control" name="jumlah_pengikut" id="jumlah_pengikut" value="{{ $jumlahPengikutBoro }}" required>
                                                 </div>
                                             </div>
+
+                                            @php
+                                                $initialBoroPengikut = is_array(data_get($variableData, 'detail_pengikut')) ? data_get($variableData, 'detail_pengikut') : [];
+                                            @endphp
+                                            @include('admin.surat.partials.boro-pengikut', ['initialBoroPengikut' => $initialBoroPengikut])
 
                                             <input type="hidden" name="surat_tgl_berlaku" id="surat_tgl_berlaku" value="{{ old('surat_tgl_berlaku', data_get($variableData, 'surat_tgl_berlaku', '')) }}">
                                             <input type="hidden" name="surat_tujuan" id="surat_tujuan" value="{{ old('surat_tujuan', data_get($variableData, 'surat_tujuan', '')) }}">
@@ -302,24 +307,6 @@
                                                     <a href="{{ asset($surat->pengantar) }}" target="_blank" class="btn btn-sm btn-outline-primary">Lihat Pengantar Lama</a>
                                                 </div>
                                             </div>
-                                        @endif
-                                        @php $showProofField = !empty(data_get($variableData, 'manual_signature')) || !empty(data_get($variableData, 'bukti_ttd_basah')) || data_get($variableData, 'signature_mode') === 'manual'; @endphp
-                                        @if ($showProofField)
-                                            <div class="row mb-3">
-                                                <label class="col-md-3 col-form-label text-md-start ms-2">Bukti TTD Basah</label>
-                                                <div class="col-md-8">
-                                                    <input type="file" name="bukti_ttd_basah" class="form-control @error('bukti_ttd_basah') is-invalid @enderror">
-                                                    @error('bukti_ttd_basah')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
-                                                </div>
-                                            </div>
-                                            @if (!empty(data_get($variableData, 'bukti_ttd_basah')))
-                                                <div class="row mb-3">
-                                                    <label class="col-md-3 col-form-label text-md-start ms-2">Bukti Lama</label>
-                                                    <div class="col-md-8 d-flex align-items-center">
-                                                        <a href="{{ asset(data_get($variableData, 'bukti_ttd_basah')) }}" target="_blank" class="btn btn-sm btn-outline-success">Lihat Bukti TTD Basah</a>
-                                                    </div>
-                                                </div>
-                                            @endif
                                         @endif
                                     </div>
                                 </div>

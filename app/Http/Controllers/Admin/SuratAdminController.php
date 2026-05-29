@@ -13,6 +13,7 @@ use App\Traits\GetNoSurat;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\DataTables;
 use App\Models\Pejabat;
 use App\Models\SuratTemplate;
@@ -619,6 +620,126 @@ class SuratAdminController extends Controller
                 }
             }
 
+            protected function calculateAgeFromBirthDate(?string $date): int
+            {
+                $date = trim((string) $date);
+                if ($date === '') {
+                    return 0;
+                }
+
+                try {
+                    return Carbon::parse($date)->age;
+                } catch (\Throwable $e) {
+                    return 0;
+                }
+            }
+
+            protected function normalizeBoroText(?string $value): string
+            {
+                return strtoupper(trim((string) $value));
+            }
+
+            protected function normalizeBoroRelation(?string $value): string
+            {
+                $value = $this->normalizeBoroText($value);
+
+                // Pilihan baru BORO: ANAK KANDUNG dihilangkan, KELUARGA diganti KELUARGA LAIN.
+                // Mapping ini menjaga data lama agar saat edit/generate ulang tampil sesuai pilihan baru.
+                if ($value === 'ANAK KANDUNG') {
+                    return 'ANAK';
+                }
+
+                if ($value === 'KELUARGA') {
+                    return 'KELUARGA LAIN';
+                }
+
+                return $value;
+            }
+
+            protected function buildBoroDetailPengikutFromRequest(Request $request): array
+            {
+                $jumlah = max(0, (int) $request->input('jumlah_pengikut', 0));
+                $names = $request->input('pengikut_nama', []);
+                $niks = $request->input('pengikut_nik', []);
+                $birthDates = $request->input('pengikut_tgl_lahir', []);
+                $statuses = $request->input('pengikut_status_kwn', []);
+                $relations = $request->input('pengikut_hubungan', []);
+
+                $names = is_array($names) ? array_values($names) : [];
+                $niks = is_array($niks) ? array_values($niks) : [];
+                $birthDates = is_array($birthDates) ? array_values($birthDates) : [];
+                $statuses = is_array($statuses) ? array_values($statuses) : [];
+                $relations = is_array($relations) ? array_values($relations) : [];
+
+                $filledRows = 0;
+                for ($i = 0; $i < max(count($names), count($niks), count($birthDates), count($statuses), count($relations)); $i++) {
+                    $rowHasValue = trim((string) ($names[$i] ?? '')) !== ''
+                        || trim((string) ($niks[$i] ?? '')) !== ''
+                        || trim((string) ($birthDates[$i] ?? '')) !== ''
+                        || trim((string) ($statuses[$i] ?? '')) !== ''
+                        || trim((string) ($relations[$i] ?? '')) !== '';
+
+                    if ($rowHasValue) {
+                        $filledRows++;
+                    }
+                }
+
+                if ($filledRows !== $jumlah) {
+                    throw ValidationException::withMessages([
+                        'jumlah_pengikut' => 'Jumlah data diri pengikut wajib sama dengan Jumlah Pengikut yang diisi.',
+                    ]);
+                }
+
+                $detail = [];
+                for ($i = 0; $i < $jumlah; $i++) {
+                    $nama = $this->normalizeBoroText($names[$i] ?? '');
+                    $nik = preg_replace('/\D/', '', (string) ($niks[$i] ?? ''));
+                    $tglLahir = trim((string) ($birthDates[$i] ?? ''));
+                    $statusKawin = $this->normalizeBoroText($statuses[$i] ?? '');
+                    $hubungan = $this->normalizeBoroRelation($relations[$i] ?? '');
+
+                    if ($nama === '' || $nik === '' || $tglLahir === '' || $statusKawin === '' || $hubungan === '') {
+                        throw ValidationException::withMessages([
+                            'jumlah_pengikut' => 'Semua kolom data pengikut wajib diisi sesuai jumlah pengikut.',
+                        ]);
+                    }
+
+                    if (!preg_match('/^[0-9]{16}$/', $nik)) {
+                        throw ValidationException::withMessages([
+                            'jumlah_pengikut' => 'NIK pengikut nomor ' . ($i + 1) . ' wajib 16 digit angka.',
+                        ]);
+                    }
+
+                    try {
+                        $birth = Carbon::parse($tglLahir)->startOfDay();
+                    } catch (\Throwable $e) {
+                        throw ValidationException::withMessages([
+                            'jumlah_pengikut' => 'Tanggal lahir pengikut nomor ' . ($i + 1) . ' tidak valid.',
+                        ]);
+                    }
+
+                    if ($birth->isFuture()) {
+                        throw ValidationException::withMessages([
+                            'jumlah_pengikut' => 'Tanggal lahir pengikut nomor ' . ($i + 1) . ' tidak boleh melebihi tanggal hari ini.',
+                        ]);
+                    }
+
+                    $usia = $birth->age;
+                    $detail[] = [
+                        'nama' => $nama,
+                        'nik' => $nik,
+                        'tgl_lahir' => $birth->format('Y-m-d'),
+                        'umur' => $usia,
+                        'usia' => $usia,
+                        'status_kwn' => $statusKawin,
+                        'status_kwn_nm' => $statusKawin,
+                        'hubungan' => $hubungan,
+                    ];
+                }
+
+                return $detail;
+            }
+
 
             // Simpan data dari Web Admin
             public function store(Request $request)
@@ -714,7 +835,17 @@ class SuratAdminController extends Controller
                     $rules['kecamatan_boro'] = 'required|string|max:255';
                     $rules['kelurahan_boro'] = 'required|string|max:255';
                     $rules['alamat_boro'] = 'required|string';
-                    $rules['jumlah_pengikut'] = 'nullable|integer|min:0';
+                    $rules['jumlah_pengikut'] = 'required|integer|min:0';
+                    $rules['pengikut_nama'] = 'nullable|array';
+                    $rules['pengikut_nama.*'] = 'nullable|string|max:255';
+                    $rules['pengikut_nik'] = 'nullable|array';
+                    $rules['pengikut_nik.*'] = ['nullable', 'regex:/^[0-9]{16}$/'];
+                    $rules['pengikut_tgl_lahir'] = 'nullable|array';
+                    $rules['pengikut_tgl_lahir.*'] = 'nullable|date|before_or_equal:today';
+                    $rules['pengikut_status_kwn'] = 'nullable|array';
+                    $rules['pengikut_status_kwn.*'] = 'nullable|string|max:100';
+                    $rules['pengikut_hubungan'] = 'nullable|array';
+                    $rules['pengikut_hubungan.*'] = 'nullable|string|max:100';
                     $rules['kepada'] = 'nullable|string|max:255';
                 }
 
@@ -818,6 +949,10 @@ class SuratAdminController extends Controller
                                 'data' => $mergedData,
                             ]);
                         }
+
+                        $boroDetailPengikut = $request->jenis_surat === 'skboro'
+                            ? $this->buildBoroDetailPengikutFromRequest($request)
+                            : [];
 
                         $allInput = $request->except(['_token']);
 						
@@ -939,10 +1074,13 @@ class SuratAdminController extends Controller
                                 $request->alamat_boro ? 'Alamat : ' . $request->alamat_boro : null,
                             ])->filter()->implode(' ');
 
+                            $jumlahPengikut = count($boroDetailPengikut);
+                            $variableData['jumlah_pengikut'] = $jumlahPengikut;
                             $variableData['surat_tgl_berlaku'] = trim(($request->tgl_awal ?? '') . ' s/d ' . ($request->tgl_akhir ?? ''));
                             $variableData['surat_tujuan'] = $tujuanBoro;
                             $variableData['surat_keperluan'] = $request->peruntukan;
-                            $variableData['surat_jml_pengikut'] = (string) ($request->jumlah_pengikut ?? '0');
+                            $variableData['surat_jml_pengikut'] = (string) $jumlahPengikut;
+                            $variableData['detail_pengikut'] = $boroDetailPengikut;
                         }
 						
 						if ($request->jenis_surat === 'sktm') {
@@ -1147,7 +1285,6 @@ class SuratAdminController extends Controller
                 'keperluan_lainnya' => 'nullable|string|max:255|required_if:peruntukan,lainnya',
                 'kepada'         => 'nullable|string',
                 'pengantar'      => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
-                'bukti_ttd_basah' => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
                 'tgl_surat'      => 'nullable|date',
             ];
 
@@ -1226,7 +1363,17 @@ class SuratAdminController extends Controller
                 $rules['kecamatan_boro'] = 'required|string|max:255';
                 $rules['kelurahan_boro'] = 'required|string|max:255';
                 $rules['alamat_boro'] = 'required|string';
-                $rules['jumlah_pengikut'] = 'nullable|integer|min:0';
+                $rules['jumlah_pengikut'] = 'required|integer|min:0';
+                $rules['pengikut_nama'] = 'nullable|array';
+                $rules['pengikut_nama.*'] = 'nullable|string|max:255';
+                $rules['pengikut_nik'] = 'nullable|array';
+                $rules['pengikut_nik.*'] = ['nullable', 'regex:/^[0-9]{16}$/'];
+                $rules['pengikut_tgl_lahir'] = 'nullable|array';
+                $rules['pengikut_tgl_lahir.*'] = 'nullable|date|before_or_equal:today';
+                $rules['pengikut_status_kwn'] = 'nullable|array';
+                $rules['pengikut_status_kwn.*'] = 'nullable|string|max:100';
+                $rules['pengikut_hubungan'] = 'nullable|array';
+                $rules['pengikut_hubungan.*'] = 'nullable|string|max:100';
                 $rules['kepada'] = 'nullable|string|max:255';
             }
 
@@ -1318,6 +1465,10 @@ class SuratAdminController extends Controller
                     }
 
                     $existingVariable = $this->decodeFlexibleValue($surat->variable);
+
+                    $boroDetailPengikut = $request->jenis_surat === 'skboro'
+                        ? $this->buildBoroDetailPengikutFromRequest($request)
+                        : [];
 
                     $allInput = $request->except(['_token', '_method']);
                     $allInput['name'] = strtoupper($request->name ?? '');
@@ -1439,10 +1590,13 @@ class SuratAdminController extends Controller
                             $request->alamat_boro ? 'Alamat : ' . $request->alamat_boro : null,
                         ])->filter()->implode(' ');
 
+                        $jumlahPengikut = count($boroDetailPengikut);
+                        $variableData['jumlah_pengikut'] = $jumlahPengikut;
                         $variableData['surat_tgl_berlaku'] = trim(($request->tgl_awal ?? '') . ' s/d ' . ($request->tgl_akhir ?? ''));
                         $variableData['surat_tujuan'] = $tujuanBoro;
                         $variableData['surat_keperluan'] = $request->peruntukan;
-                        $variableData['surat_jml_pengikut'] = (string) ($request->jumlah_pengikut ?? '0');
+                        $variableData['surat_jml_pengikut'] = (string) $jumlahPengikut;
+                        $variableData['detail_pengikut'] = $boroDetailPengikut;
                     }
 
                     $autoMeta = $this->buildAutoSuratMeta($request->peruntukan, $request->keperluan_lainnya);
@@ -1490,15 +1644,6 @@ class SuratAdminController extends Controller
                             'public/pengantar/' . date('Y') . '/' . $request->jenis_surat
                         );
                         $fileUrl = str_replace('public/', '/storage/', $path);
-                    }
-
-                    if ($request->hasFile('bukti_ttd_basah')) {
-                        $proofPath = $request->file('bukti_ttd_basah')->store(
-                            'public/bukti_ttd_basah/' . date('Y') . '/' . $request->jenis_surat
-                        );
-                        $variableData['bukti_ttd_basah'] = str_replace('public/', '/storage/', $proofPath);
-                        $variableData['manual_signature'] = true;
-                        $variableData['signature_mode'] = 'manual';
                     }
 
                     $surat->update([
@@ -1780,7 +1925,7 @@ class SuratAdminController extends Controller
                     case 'skboro':
                         $data['header'] = $variableData['header'] ?? '';
                         $data['block'] = $variableData['block'] ?? '';
-                        $data['detail_pengikut'] = $variableData['detail_pengikut'] ?? '';
+                        $data['detail_pengikut'] = is_array($variableData['detail_pengikut'] ?? null) ? $variableData['detail_pengikut'] : [];
                         $data['qr'] = $data['show_qr'] ? ($data['qr'] ?? '') : '';
                         $data['surat_tgl_berlaku'] = $variableData['surat_tgl_berlaku'] ?? trim(($variableData['tgl_awal'] ?? '') . ' s/d ' . ($variableData['tgl_akhir'] ?? ''));
                         $data['surat_tujuan'] = $variableData['surat_tujuan'] ?? collect([
@@ -1791,7 +1936,9 @@ class SuratAdminController extends Controller
                             !empty($variableData['alamat_boro']) ? 'Alamat : ' . $variableData['alamat_boro'] : null,
                         ])->filter()->implode(' ');
                         $data['surat_keperluan'] = $variableData['surat_keperluan'] ?? ($surat->peruntukan ?? '');
-                        $data['surat_jml_pengikut'] = $variableData['surat_jml_pengikut'] ?? (string) ($variableData['jumlah_pengikut'] ?? '0');
+                        $data['surat_jml_pengikut'] = !empty($data['detail_pengikut'])
+                            ? (string) count($data['detail_pengikut'])
+                            : ($variableData['surat_jml_pengikut'] ?? (string) ($variableData['jumlah_pengikut'] ?? '0'));
                         $data['surat_keterangan'] = $data['surat_keterangan'] ?: ($variableData['alamat_boro'] ?? '');
                         break;
                     case 'suket':
@@ -1818,9 +1965,12 @@ class SuratAdminController extends Controller
             $surat->update(['variable' => $variable]);
         }
 
-        $suffix = $manualSignature ? '_BASAH' : '';
+        $boroSuffix = $surat->jenis_surat === 'skboro' ? '_BORO_PENGIKUT_TABLE_V5_SPACING_RELATION' : '';
+        $suffix = ($manualSignature ? '_BASAH_ONLY_MENGETAHUI_V4_PEMOHON_FIX' : '') . $boroSuffix;
         $outputPdf = hash('sha256', strtoupper($surat->jenis_surat) . '_' . $surat->id . $suffix);
-        $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
+        $pdfPath = $surat->jenis_surat === 'skboro'
+            ? $this->generatePdfTable($data, $templateFile, $outputPdf)
+            : $this->generatePdf($data, $templateFile, $outputPdf);
 
         return [$pdfPath, $data];
     }
@@ -1831,7 +1981,14 @@ class SuratAdminController extends Controller
              */
             protected function getCachedAdminPdfFile(\App\Models\SuratPengajuan $surat, bool $manualSignature = false): array
             {
-                $suffix = $manualSignature ? '_BASAH' : '';
+                // Khusus TTD Basah, preview/cetak dibuat ulang agar perubahan desain tanda tangan
+                // langsung terlihat dan tidak tertahan file PDF cache lama. Alur TTE tetap memakai cache lama.
+                if ($manualSignature) {
+                    return $this->generateAdminPdfFile($surat, true);
+                }
+
+                $boroSuffix = $surat->jenis_surat === 'skboro' ? '_BORO_PENGIKUT_TABLE_V5_SPACING_RELATION' : '';
+                $suffix = $boroSuffix;
                 $outputPdf = hash('sha256', strtoupper($surat->jenis_surat) . '_' . $surat->id . $suffix);
 
                 $candidates = [
@@ -1910,7 +2067,8 @@ class SuratAdminController extends Controller
 			
 				return response()->file($pdfPath, [
 					'Content-Type' => 'application/pdf',
-					'Cache-Control' => 'public, max-age=3600',
+					'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+					'Pragma' => 'no-cache',
 				]);
 			}
 			
@@ -2187,6 +2345,61 @@ class SuratAdminController extends Controller
     }
 
 
+    public function uploadBuktiBasah(Request $request, $id)
+    {
+        if ((int) optional(auth()->user())->role_id !== 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Upload bukti TTD Basah hanya untuk Admin Kelurahan.',
+            ], 403);
+        }
+
+        $surat = $this->findSuratForCurrentUser($id);
+        if (!$surat) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data surat tidak ditemukan.',
+            ], 404);
+        }
+
+        $request->validate([
+            'bukti_ttd_basah' => 'required|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
+        ], [
+            'bukti_ttd_basah.required' => 'File bukti TTD Basah wajib diupload.',
+            'bukti_ttd_basah.mimes' => 'Format bukti harus jpg, jpeg, png, pdf, atau webp.',
+            'bukti_ttd_basah.max' => 'Ukuran bukti maksimal 5 MB.',
+        ]);
+
+        $variable = $this->decodeFlexibleValue($surat->variable);
+        $path = $request->file('bukti_ttd_basah')->store(
+            'public/bukti_ttd_basah/' . date('Y') . '/' . $surat->jenis_surat
+        );
+
+        $variable['bukti_ttd_basah'] = str_replace('public/', '/storage/', $path);
+        $variable['manual_signature'] = true;
+        $variable['signature_mode'] = 'manual';
+        $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+        $variable['bukti_ttd_basah_uploaded_at'] = now()->toDateTimeString();
+
+        $surat->update(['variable' => $variable]);
+
+        Log_surat::create([
+            'nik'          => $surat->nik,
+            'tabel_surat'  => 'surat_pengajuans',
+            'nama_surat'   => strtoupper($surat->jenis_surat),
+            'id_surat'     => $surat->id,
+            'status_surat' => $surat->status,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Bukti TTD Basah berhasil diupload.',
+            'url' => asset($variable['bukti_ttd_basah']),
+        ]);
+    }
+
+
+
     protected function resolveCamatByDistrictName(?string $districtName): ?\App\Models\Pejabat
     {
         $districtName = strtoupper(trim((string) $districtName));
@@ -2239,6 +2452,97 @@ class SuratAdminController extends Controller
         $quoted = preg_quote($literal, '/');
         $pattern = '/<w:r\b[^>]*>(?:(?!<\/w:r>).)*<w:t\b[^>]*>\s*' . $quoted . '\s*<\/w:t>(?:(?!<\/w:r>).)*<\/w:r>\s*(?:<w:r\b[^>]*>(?:(?!<\/w:r>).)*<w:t\b[^>]*>\s*,\s*<\/w:t>(?:(?!<\/w:r>).)*<\/w:r>)?/s';
         $updated = preg_replace($pattern, '', $xml, 1);
+
+        return is_string($updated) ? $updated : $xml;
+    }
+
+    protected function extractWordParagraphText(string $paragraphXml): string
+    {
+        if (!preg_match_all('/<w:t\b[^>]*>(.*?)<\/w:t>/s', $paragraphXml, $matches)) {
+            return '';
+        }
+
+        $text = implode('', $matches[1]);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        $text = preg_replace('/\s+/u', ' ', $text);
+
+        return trim((string) $text);
+    }
+
+    protected function stripManualSignatureParagraphs(string $xml): string
+    {
+        $afterMengetahui = false;
+
+        $updated = preg_replace_callback('/<w:p\b[^>]*>.*?<\/w:p>/s', function (array $match) use (&$afterMengetahui) {
+            $paragraph = $match[0];
+            $text = $this->extractWordParagraphText($paragraph);
+            $normalized = strtoupper(preg_replace('/\s+/u', ' ', $text));
+            $normalized = trim((string) $normalized);
+
+            if (str_contains($normalized, 'MENGETAHUI')) {
+                $afterMengetahui = true;
+                return $paragraph;
+            }
+
+            if (!$afterMengetahui || $normalized === '') {
+                return $paragraph;
+            }
+
+            $signatureMarkers = [
+                'LURAH ${SKPD_KEL}',
+                '${SKPD_KEPALA}',
+                '${SKPD_NIP_KEPALA}',
+                '${SKPD_JABATAN_CAMAT}',
+                '${SKPD_CAMAT}',
+                '${SKPD_NIP_CAMAT}',
+                '${QR}',
+                '${QR}~',
+                '${QR_CAMAT}',
+                '[[QR_CAMAT]]',
+                '~CAMAT~',
+                '${TTE_LURAH}',
+                '${TTE_CAMAT}',
+            ];
+
+            foreach ($signatureMarkers as $marker) {
+                if (str_contains($normalized, strtoupper($marker))) {
+                    return '';
+                }
+            }
+
+            if (preg_match('/^NIP\.?\s*[:.]?\s*$/u', $normalized)) {
+                return '';
+            }
+
+            return $paragraph;
+        }, $xml);
+
+        return is_string($updated) ? $updated : $xml;
+    }
+
+    protected function applyManualPemohonLabelAlignment(string $xml): string
+    {
+        // Khusus TTD Basah: posisi tulisan "Pemohon" dibuat manual dengan indent kiri,
+        // karena pada hasil konversi PDF align center di tabel tanda tangan sering terlihat
+        // lebih ke kanan dibanding nama pemohon. Ini tidak dipakai untuk alur TTE.
+        $pemohonLeftIndentTwips = '1650';
+
+        $updated = preg_replace_callback('/<w:p\b[^>]*>.*?<\/w:p>/s', function (array $match) use ($pemohonLeftIndentTwips) {
+            $paragraph = $match[0];
+            $text = strtoupper(trim((string) $this->extractWordParagraphText($paragraph)));
+
+            if ($text !== 'PEMOHON') {
+                return $paragraph;
+            }
+
+            $paragraphProperties = '<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="left"/><w:ind w:left="' . $pemohonLeftIndentTwips . '" w:right="0" w:firstLine="0"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:pPr>';
+
+            if (preg_match('/<w:pPr\b[^>]*>.*?<\/w:pPr>/s', $paragraph)) {
+                return preg_replace('/<w:pPr\b[^>]*>.*?<\/w:pPr>/s', $paragraphProperties, $paragraph, 1) ?: $paragraph;
+            }
+
+            return preg_replace('/(<w:p\b[^>]*>)/s', '$1' . $paragraphProperties, $paragraph, 1) ?: $paragraph;
+        }, $xml);
 
         return is_string($updated) ? $updated : $xml;
     }
@@ -2312,6 +2616,11 @@ class SuratAdminController extends Controller
                 // di area tanda tangan bawah. Khusus TTD Basah, label ini juga harus hilang.
                 // Fungsi ini hanya dipakai untuk mode TTD Basah, sehingga proses TTE digital tetap aman.
                 $documentXml = str_replace(['NIP. ', 'NIP.'], '', $documentXml);
+
+                // Mode TTD Basah: area bawah setelah teks Mengetahui hanya menyisakan "Mengetahui,".
+                // Identitas Lurah/Camat/NIP/QR dihapus dari template manual saja, sehingga alur TTE tetap aman.
+                $documentXml = $this->stripManualSignatureParagraphs($documentXml);
+                $documentXml = $this->applyManualPemohonLabelAlignment($documentXml);
 
                 $zip->addFromString('word/document.xml', $documentXml);
             }

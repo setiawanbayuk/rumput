@@ -37,6 +37,12 @@
                 <i class="ri-chat-check-line"></i>
             </button>
         @endif
+    @elseif ($isManual && !$hasProof)
+        <button class="js-surat-action btn btn-secondary btn-sm" data-url="{{ route(str_replace('.edit', '.previewBasah', $route), $id) }}" data-action="preview" data-method="GET" title="Preview TTD Basah"><i class="ri-file-paper-2-line"></i></button>
+        <x-btnedit><x-slot:route>{{ $route }}</x-slot:route><x-slot:id>{{ $id }}</x-slot:id></x-btnedit>
+        @if ($isAdminKelurahan && \Illuminate\Support\Facades\Route::has('admin.surat.uploadBuktiBasah'))
+            <button class="js-surat-action btn btn-success btn-sm" data-url="{{ route('admin.surat.uploadBuktiBasah', $id) }}" data-action="upload_bukti_basah" data-method="POST" data-success="Bukti TTD Basah berhasil diupload." title="Upload Bukti TTD Basah"><i class="ri-upload-cloud-2-line"></i></button>
+        @endif
     @elseif (in_array((int) $status, [0, 1], true))
         <x-btnnaik :id="$id" :route="$route" :status="$status" />
         @if ($isWarga)
@@ -45,10 +51,7 @@
         <button class="js-surat-action btn btn-danger btn-sm" data-url="{{ route(str_replace('.edit', '.hapus', $route), $id) }}" data-action="hapus" data-method="DELETE" data-confirm="Hapus surat ini?" data-success="Surat berhasil dihapus." title="Hapus"><i class="ri-delete-bin-6-line"></i></button>
         <x-btnedit><x-slot:route>{{ $route }}</x-slot:route><x-slot:id>{{ $id }}</x-slot:id></x-btnedit>
         <x-btnpreview :id="$id" :route="$route" />
-        <button class="js-surat-action btn btn-secondary btn-sm" data-url="{{ route(str_replace('.edit', '.previewBasah', $route), $id) }}" data-action="preview_basah" data-method="GET" data-confirm="Jika memilih TTD Basah, surat akan ditandai sebagai TTD Basah dan Anda wajib upload bukti TTD Basah di menu Edit. Lanjutkan?" title="Preview TTD Basah"><i class="ri-file-paper-2-line"></i></button>
-    @elseif ((int) $status === 7 && $isManual && !$hasProof)
-        <button class="js-surat-action btn btn-secondary btn-sm" data-url="{{ route(str_replace('.edit', '.previewBasah', $route), $id) }}" data-action="preview" data-method="GET" title="Preview TTD Basah"><i class="ri-file-paper-2-line"></i></button>
-        <x-btnedit><x-slot:route>{{ $route }}</x-slot:route><x-slot:id>{{ $id }}</x-slot:id></x-btnedit>
+        <button class="js-surat-action btn btn-secondary btn-sm" data-url="{{ route(str_replace('.edit', '.previewBasah', $route), $id) }}" data-action="preview_basah" data-method="GET" data-confirm="Jika memilih TTD Basah, surat akan ditandai sebagai TTD Basah dan Anda wajib upload bukti TTD Basah melalui tombol Upload Bukti di sebelah Edit. Lanjutkan?" title="Preview TTD Basah"><i class="ri-file-paper-2-line"></i></button>
     @elseif ($isFinalCetak)
         <x-btncetak><x-slot:id>{{ $id }}</x-slot:id></x-btncetak>
     @else

@@ -16,7 +16,9 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
-    @routes
+    
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive-pro.css') }}?v=20260529-esuket-mobile-v5">
+@routes
 </head>
 
 <body>
@@ -82,6 +84,7 @@
             @yield('content')
         </main>
     </div>
+    <script src="{{ asset('js/esuket-mobile-pro.js') }}?v=20260529-esuket-mobile-v5"></script>
 </body>
 
 </html>

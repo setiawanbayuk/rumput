@@ -19,7 +19,9 @@
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive-pro.css') }}?v=20260529-esuket-mobile-v5">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     @stack('styles')
@@ -461,6 +463,30 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function() {
+            const sidebar = document.querySelector("#sidebar");
+            if (!sidebar) return;
+
+            const mobileSidebarQuery = window.matchMedia("(max-width: 991.98px)");
+            const syncSidebarMode = function() {
+                if (mobileSidebarQuery.matches) {
+                    sidebar.classList.remove("expand");
+                } else {
+                    sidebar.classList.add("expand");
+                }
+            };
+
+            syncSidebarMode();
+            if (mobileSidebarQuery.addEventListener) {
+                mobileSidebarQuery.addEventListener("change", syncSidebarMode);
+            } else if (mobileSidebarQuery.addListener) {
+                mobileSidebarQuery.addListener(syncSidebarMode);
+            }
+        })();
+    </script>
+
     <script>
         const sidebar = document.querySelector("#sidebar");
         const hamBurger = document.querySelector(".toggle-btn");
@@ -501,6 +527,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     @stack('scripts')
     @stack('modals')
+    <script src="{{ asset('js/esuket-mobile-pro.js') }}?v=20260529-esuket-mobile-v5"></script>
 </body>
 
 </html>

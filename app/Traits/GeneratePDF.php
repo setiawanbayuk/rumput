@@ -107,6 +107,11 @@ trait GeneratePDF
         $reservedTteMarkers = [
             'qr',
             'qr_camat',
+            // Placeholder khusus tabel BORO. Jangan di-setValue kosong,
+            // karena akan diproses dengan setComplexBlock/cloneBlock di generatePdfTable().
+            'header',
+            'block',
+            'detail_pengikut',
         ];
 
         foreach ($data as $key => $value) {
@@ -408,55 +413,193 @@ trait GeneratePDF
         }
     }
 
+    protected function prepareBoroTemplateForTable(string $templateFile, array $data): array
+    {
+        $detailPengikut = $data['detail_pengikut'] ?? [];
+        if (!is_array($detailPengikut) || count($detailPengikut) < 1 || !file_exists($templateFile)) {
+            return [$templateFile, null];
+        }
+
+        $zipCheck = new ZipArchive();
+        if ($zipCheck->open($templateFile) !== true) {
+            return [$templateFile, null];
+        }
+
+        $existingXml = (string) $zipCheck->getFromName('word/document.xml');
+        $zipCheck->close();
+
+        // Kalau template sudah mempunyai marker tabel BORO, jangan ubah template.
+        if (str_contains($existingXml, 'detail_pengikut') && str_contains($existingXml, 'header') && str_contains($existingXml, 'block')) {
+            return [$templateFile, null];
+        }
+
+        $this->ensurePdfFolders();
+        $tempTemplate = storage_path('app/public/doc/template_boro_table_' . uniqid('', true) . '.docx');
+        if (!@copy($templateFile, $tempTemplate)) {
+            return [$templateFile, null];
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($tempTemplate) !== true) {
+            if (File::exists($tempTemplate)) {
+                File::delete($tempTemplate);
+            }
+            return [$templateFile, null];
+        }
+
+        $xml = (string) $zip->getFromName('word/document.xml');
+        if ($xml === '') {
+            $zip->close();
+            if (File::exists($tempTemplate)) {
+                File::delete($tempTemplate);
+            }
+            return [$templateFile, null];
+        }
+
+        $insert = $this->boroTablePlaceholderXml();
+        $position = strpos($xml, 'surat_jml_pengikut');
+
+        if ($position !== false) {
+            $beforePlaceholder = substr($xml, 0, $position);
+            $tableStartBefore = strrpos($beforePlaceholder, '<w:tbl');
+            $tableEndBefore = strrpos($beforePlaceholder, '</w:tbl>');
+            $placeholderInsideTable = $tableStartBefore !== false && ($tableEndBefore === false || $tableEndBefore < $tableStartBefore);
+
+            if ($placeholderInsideTable) {
+                $tableEnd = strpos($xml, '</w:tbl>', $position);
+                if ($tableEnd !== false) {
+                    $tableEnd += strlen('</w:tbl>');
+                    $xml = substr($xml, 0, $tableEnd) . $insert . substr($xml, $tableEnd);
+                } else {
+                    $xml = str_replace('</w:body>', $insert . '</w:body>', $xml);
+                }
+            } else {
+                $paragraphEnd = strpos($xml, '</w:p>', $position);
+                if ($paragraphEnd !== false) {
+                    $paragraphEnd += strlen('</w:p>');
+                    $xml = substr($xml, 0, $paragraphEnd) . $insert . substr($xml, $paragraphEnd);
+                } else {
+                    $xml = str_replace('</w:body>', $insert . '</w:body>', $xml);
+                }
+            }
+        } else {
+            $xml = str_replace('</w:body>', $insert . '</w:body>', $xml);
+        }
+
+        $zip->addFromString('word/document.xml', $xml);
+        $zip->close();
+
+        return [$tempTemplate, $tempTemplate];
+    }
+
+    protected function boroTablePlaceholderXml(): string
+    {
+        // Desain tabel pengikut BORO.
+        // Jarak tabel dari baris "m. Pengikut" diatur oleh spacerBeforeTable.
+        // Jika ingin tabel lebih turun lagi, naikkan w:after="360" menjadi 420/480.
+        $spacerBeforeTable = '<w:p><w:pPr><w:spacing w:before="0" w:after="360"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:pPr><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>';
+        $spacerAfterTable = '<w:p><w:pPr><w:spacing w:before="120" w:after="240"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:pPr><w:r><w:t xml:space="preserve"> </w:t></w:r></w:p>';
+        $paragraphProperties = '<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:pPr>';
+        $runProperties = '<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>';
+
+        return $spacerBeforeTable
+            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${header}</w:t></w:r></w:p>'
+            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${block}</w:t></w:r></w:p>'
+            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${detail_pengikut}</w:t></w:r></w:p>'
+            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${/block}</w:t></w:r></w:p>'
+            . $spacerAfterTable;
+    }
+
     public function generatePdfTable($data, $templateFile, $outputPdf)
     {
-        [$effectiveTemplateFile, $temporaryTemplateFile] = $this->prepareTemplateForTteImages($templateFile, $data);
+        [$boroTemplateFile, $temporaryBoroTemplateFile] = $this->prepareBoroTemplateForTable($templateFile, $data);
+        [$effectiveTemplateFile, $temporaryTemplateFile] = $this->prepareTemplateForTteImages($boroTemplateFile, $data);
         $templateProcessor = new TemplateProcessor($effectiveTemplateFile);
 
         $this->fillTemplateValuesSafely($templateProcessor, $data);
         $this->applyTteImagePlaceholders($templateProcessor, $data);
 
+        $tableWidth = 10600;
+        $cellWidths = [650, 3000, 2050, 850, 2150, 1900];
         $headerCellStyle = ['valign' => 'center'];
-        $headerTextStyle = ['name' => 'Arial', 'color' => '000000', 'size' => 12, 'bold' => true];
+        $bodyCellStyle = ['valign' => 'center'];
+        $headerTextStyle = ['name' => 'Arial', 'color' => '000000', 'size' => 9, 'bold' => true];
+        $bodyTextStyle = ['name' => 'Arial', 'color' => '000000', 'size' => 9];
         $centerAlignment = ['alignment' => 'center'];
 
         $header = new Table([
             'borderSize' => 8,
-            'width' => 10600,
+            'borderColor' => '000000',
+            'width' => $tableWidth,
             'unit' => TblWidth::TWIP,
         ]);
 
         $header->addRow(null);
-        $header->addCell(25, $headerCellStyle)->addText('No', $headerTextStyle, $centerAlignment);
-        $header->addCell(120, $headerCellStyle)->addText('NAMA', $headerTextStyle, $centerAlignment);
-        $header->addCell(100, $headerCellStyle)->addText('NIK', $headerTextStyle, $centerAlignment);
-        $header->addCell(50, $headerCellStyle)->addText('USIA', $headerTextStyle, $centerAlignment);
-        $header->addCell(100, $headerCellStyle)->addText('STATUS PERKAWINAN', $headerTextStyle, $centerAlignment);
-        $header->addCell(75, $headerCellStyle)->addText('HUBUNGAN KELUARGA', $headerTextStyle, $centerAlignment);
+        $header->addCell($cellWidths[0], $headerCellStyle)->addText('NO', $headerTextStyle, $centerAlignment);
+        $header->addCell($cellWidths[1], $headerCellStyle)->addText('NAMA', $headerTextStyle, $centerAlignment);
+        $header->addCell($cellWidths[2], $headerCellStyle)->addText('NIK', $headerTextStyle, $centerAlignment);
+        $header->addCell($cellWidths[3], $headerCellStyle)->addText('USIA', $headerTextStyle, $centerAlignment);
+        $header->addCell($cellWidths[4], $headerCellStyle)->addText('STATUS PERKAWINAN', $headerTextStyle, $centerAlignment);
+        $header->addCell($cellWidths[5], $headerCellStyle)->addText('HUBUNGAN KELUARGA', $headerTextStyle, $centerAlignment);
 
-        $templateProcessor->setComplexBlock('header', $header);
+        try {
+            $templateProcessor->setComplexBlock('header', $header);
+        } catch (\Throwable $e) {
+            // Template custom lama mungkin tidak mempunyai marker tabel; jangan gagalkan generate surat.
+        }
 
         $detailPengikut = $data['detail_pengikut'] ?? [];
+        $detailPengikut = is_array($detailPengikut) ? array_values($detailPengikut) : [];
+
         if (count($detailPengikut) > 0) {
-            $templateProcessor->cloneBlock('block', count($detailPengikut), true, true);
+            try {
+                $templateProcessor->cloneBlock('block', count($detailPengikut), true, true);
+            } catch (\Throwable $e) {
+                // Jika marker block tidak ada, proses PDF tetap lanjut.
+            }
 
             foreach ($detailPengikut as $index => $pengikut) {
                 $table = new Table([
                     'borderSize' => 8,
-                    'width' => 10600,
+                    'borderColor' => '000000',
+                    'width' => $tableWidth,
                     'unit' => TblWidth::TWIP,
                 ]);
 
                 $rowNum = $index + 1;
-                $table->addRow(null, ['valign' => 'center']);
-                $table->addCell(25, ['valign' => 'center'])->addText((string) $rowNum, null, $centerAlignment);
-                $table->addCell(120, ['valign' => 'center'])->addText((string) ($pengikut['nama'] ?? ''), null, $centerAlignment);
-                $table->addCell(100, ['valign' => 'center'])->addText((string) ($pengikut['nik'] ?? ''), null, $centerAlignment);
-                $table->addCell(50, ['valign' => 'center'])->addText((string) ($pengikut['umur'] ?? ''), null, $centerAlignment);
-                $table->addCell(100, ['valign' => 'center'])->addText((string) ($pengikut['status_kwn_nm'] ?? ''), null, $centerAlignment);
-                $table->addCell(75, ['valign' => 'center'])->addText((string) ($pengikut['hubungan'] ?? ''), null, $centerAlignment);
+                $usia = $pengikut['umur'] ?? ($pengikut['usia'] ?? '');
+                $status = $pengikut['status_kwn_nm'] ?? ($pengikut['status_kwn'] ?? '');
+                $hubungan = strtoupper(trim((string) ($pengikut['hubungan'] ?? '')));
+                if ($hubungan === 'ANAK KANDUNG') {
+                    $hubungan = 'ANAK';
+                } elseif ($hubungan === 'KELUARGA') {
+                    $hubungan = 'KELUARGA LAIN';
+                }
 
-                $templateProcessor->setComplexBlock('detail_pengikut#' . ($index + 1), $table);
+                $table->addRow(null, ['valign' => 'center']);
+                $table->addCell($cellWidths[0], $bodyCellStyle)->addText((string) $rowNum, $bodyTextStyle, $centerAlignment);
+                $table->addCell($cellWidths[1], $bodyCellStyle)->addText((string) ($pengikut['nama'] ?? ''), $bodyTextStyle, $centerAlignment);
+                $table->addCell($cellWidths[2], $bodyCellStyle)->addText((string) ($pengikut['nik'] ?? ''), $bodyTextStyle, $centerAlignment);
+                $table->addCell($cellWidths[3], $bodyCellStyle)->addText((string) $usia, $bodyTextStyle, $centerAlignment);
+                $table->addCell($cellWidths[4], $bodyCellStyle)->addText((string) $status, $bodyTextStyle, $centerAlignment);
+                $table->addCell($cellWidths[5], $bodyCellStyle)->addText($hubungan, $bodyTextStyle, $centerAlignment);
+
+                try {
+                    $templateProcessor->setComplexBlock('detail_pengikut#' . ($index + 1), $table);
+                } catch (\Throwable $e) {
+                    // Abaikan jika marker tidak tersedia pada template custom lama.
+                }
+            }
+        } else {
+            try {
+                $templateProcessor->setValue('header', '');
+                $templateProcessor->cloneBlock('block', 0, true, true);
+            } catch (\Throwable $e) {
+                try {
+                    $templateProcessor->setValue('detail_pengikut', '');
+                } catch (\Throwable $inner) {
+                    // Abaikan.
+                }
             }
         }
 
@@ -493,8 +636,10 @@ trait GeneratePDF
             if (!empty($qrPath) && File::exists($qrPath)) {
                 File::delete($qrPath);
             }
-            if (!empty($temporaryTemplateFile) && File::exists($temporaryTemplateFile)) {
-                File::delete($temporaryTemplateFile);
+            foreach (array_unique(array_filter([$temporaryTemplateFile, $temporaryBoroTemplateFile])) as $temporaryFile) {
+                if (File::exists($temporaryFile)) {
+                    File::delete($temporaryFile);
+                }
             }
             $this->cleanupGeneratedTteImages($data);
         }

@@ -13,7 +13,9 @@
 
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
-    <!-- Select2 -->
+    
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive-pro.css') }}?v=20260529-esuket-mobile-v5">
+<!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
@@ -115,6 +117,7 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     @stack('scripts')
 
+    <script src="{{ asset('js/esuket-mobile-pro.js') }}?v=20260529-esuket-mobile-v5"></script>
 </body>
 
 </html>
