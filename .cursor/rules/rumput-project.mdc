@@ -1,0 +1,45 @@
+---
+description: Konteks proyek E-SUKET (rumput) — Laravel 11, domain, stack, konvensi
+alwaysApply: true
+---
+
+# E-SUKET — Project Context
+
+**E-SUKET** adalah sistem pengelolaan surat keterangan Pemerintah Kota Kediri (Laravel 11, PHP 8.2+).
+
+## Stack
+
+- **Backend:** Laravel 11, Sanctum, DomPDF, PHPWord, Yajra DataTables, Activity Log
+- **Frontend:** Blade + **Bootstrap 5.3** (SCSS via Vite), bukan Tailwind aktif
+- **Build:** `npm run dev` / `npm run build` — entry: `resources/sass/app.scss`, `resources/js/app.js`
+- **JS:** jQuery, Select2 (bootstrap-5 theme), SweetAlert2, Toastify, Axios
+- **Icons:** Remix Icon (`ri-*`) — jangan pakai Font Awesome / Bootstrap Icons
+
+## Struktur View
+
+| Layout | Pemakaian |
+|--------|-----------|
+| `layouts/main` | Dashboard petugas/admin (sidebar + topbar) |
+| `layouts/warga` | Portal warga beranda |
+| `layouts/page` | Daftar surat warga |
+| `layouts/create` | Form buat/edit surat |
+| `layouts/landing` | Login |
+| `layouts/home` | Landing publik |
+
+- Komponen reusable: `resources/views/components/`
+- Action buttons per role: `resources/views/includes/button-*.blade.php`
+- Page assets: `@push('styles')` / `@push('scripts')` / `@stack`
+
+## Konvensi Kode
+
+- Controller di `app/Http/Controllers/`, model per jenis surat (`Skboro`, `Sktm`, dll.)
+- Jangan hardcode warna lama (`#AEA07A`, `#AB9C71`, `#7896B2`) — gunakan token CSS di `_theme.scss`
+- Mobile: selalu sertakan `mobile-responsive-pro.css` di layout (sudah ada di layout utama)
+- Form: Bootstrap grid (`row`/`col-md-*`) atau floating input `.fi` / `.fi--a` / `.fi--s`
+- Workflow surat: komponen `btnproses`, `btntolak`, `btncetak` + trait `HasUiStatus`
+
+## File Penting
+
+- Tema: `resources/sass/_theme.scss`, `_variables.scss`, `_sidebar.scss`
+- Layout: `resources/views/layouts/*.blade.php`
+- Mobile: `public/css/mobile-responsive-pro.css`

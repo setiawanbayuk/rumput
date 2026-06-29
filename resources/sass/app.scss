@@ -3,8 +3,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@100..900&display=swap");
 @import "remixicon/fonts/remixicon.css";
 @import "toastify-js/src/toastify.css";
-// Variables
+// Variables & theme
 @import "variables";
+@import "theme";
 @import "sidebar";
 @import "pagination";
 
@@ -48,105 +49,98 @@
 }
 
 .btn-login {
-    background: linear-gradient(to right, #F0C451, #AEA07A);
-    /* gradasi biru */
+    background: linear-gradient(to right, var(--rumput-teal-light), var(--rumput-teal));
     color: white;
     font-size: 14px;
     font-weight: 400;
     padding: 5px 60px;
     border: none;
-    border-radius: 6px;
-    transition: all 0.01s ease;
-    box-shadow: 0 3px 0 #AEA07A;
-    /* shadow hanya bawah */
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
 }
 
 .btn-login:hover {
-    transform: translateY(2px);
-    /* tombol turun */
-    box-shadow: 0 1px 0 #AEA07A;
-    /* shadow makin tipis */
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(20, 184, 166, 0.45);
+    color: #fff;
 }
 
 .btn-sso {
-    background: linear-gradient(to right, #8BA8C3, #376C9D);
-    /* gradasi biru */
+    background: linear-gradient(to right, var(--rumput-teal-light), var(--rumput-teal-dark));
     color: white;
     font-size: 14px;
     font-weight: 400;
     padding: 5px 70px;
     border: none;
-    border-radius: 6px;
-    transition: all 0.01s ease;
-    box-shadow: 0 3px 0 #5381AB;
-    /* shadow hanya bawah */
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
 }
 
 .btn-sso:hover {
-    transform: translateY(2px);
-    /* tombol turun */
-    box-shadow: 0 1px 0 #5381AB;
-    /* shadow makin tipis */
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+    color: #fff;
 }
 
 .btn-register {
-    background: #fff;
-    color: #000;
+    background: var(--rumput-glass-bg-strong);
+    color: var(--rumput-ink);
     font-size: 14px;
     font-weight: 500;
     padding: 5px 85px;
-    border: 1px solid #7896B2;
-    border-radius: 6px;
-    transition: all 0.01s ease;
-    box-shadow: 0 3px 0 #7896B2;
-    /* shadow bawah */
+    border: 1px solid var(--rumput-teal);
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    box-shadow: var(--rumput-glass-shadow);
+    backdrop-filter: blur(8px);
 }
 
 .btn-register:hover {
-    transform: translateY(2px); /* turun sedikit */
-    box-shadow: 0 1px 0 #7896B2; /* shadow tipis */
-    text-decoration: none; /* hilangkan underline default <a> */
+    transform: translateY(-1px);
+    box-shadow: var(--rumput-glass-shadow-hover);
+    text-decoration: none;
+    color: var(--rumput-teal-dark);
 }
 
 .btn-daftar {
-    background: linear-gradient(to right, #86A1BD, #3A6E9F); /* gradasi biru */
+    background: linear-gradient(to right, var(--rumput-teal-light), var(--rumput-teal-dark));
     color: white;
     font-size: 0.9rem;
     font-weight: 400;
     padding: 8px 60px;
     border: none;
     border-radius: 8px;
-    transition: all 0.01s ease;
-    box-shadow: 0 5px 0 #5381AB; /* shadow hanya bawah */
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
 }
 
 .btn-daftar:hover {
-    transform: translateY(2px); /* tombol turun */
-    box-shadow: 0 1px 0 #5381AB; /* shadow makin tipis */
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+    color: #fff;
 }
 
 .btn-navbar {
     display: inline-block;
     padding: 6px 28px;
-    color: #000;
+    color: var(--rumput-ink);
     font-size: 0.9rem;
     font-weight: 400;
     text-decoration: none;
-    background: #fff;
-    border: 1px solid #7896B2;
+    background: var(--rumput-glass-bg-strong);
+    border: 1px solid var(--rumput-teal);
     border-radius: 8px;
-    transition: all 0.01s ease;
-    box-shadow: 0 4px 0 #7896B2;
-    /* shadow bawah */
+    transition: all 0.15s ease;
+    box-shadow: var(--rumput-glass-shadow);
 }
 
 .btn-navbar:hover {
-    transform: translateY(2px);
-    /* turun sedikit */
-    box-shadow: 0 1px 0 #7896B2;
-    /* shadow tipis */
+    transform: translateY(-1px);
+    box-shadow: var(--rumput-glass-shadow-hover);
     text-decoration: none;
-    /* hilangkan underline default <a> */
+    color: var(--rumput-teal-dark);
 }
 
 .btn-ajukan {
@@ -155,54 +149,48 @@
     z-index: 10;
     display: inline-block;
     padding: 6px 100px;
-    background: #fff;
-    color: #AEA07A;
+    background: var(--rumput-glass-bg-strong);
+    color: var(--rumput-teal);
     font-size: 1rem;
     font-weight: 500;
     text-decoration: none;
     letter-spacing: 1px;
-    border: 1px solid #AEA07A;
+    border: 1px solid var(--rumput-teal);
     border-radius: 8px;
-    transition: all 0.01s ease;
-    box-shadow: 0 4px 0 #AEA07A;
-    /* shadow bawah */
+    transition: all 0.15s ease;
+    box-shadow: var(--rumput-glass-shadow);
 }
 
 .btn-ajukan:hover {
-    transform: translateY(2px);
-    /* turun sedikit */
-    box-shadow: 0 1px 0 #AEA07A;
-    /* shadow tipis */
+    transform: translateY(-1px);
+    box-shadow: var(--rumput-glass-shadow-hover);
     text-decoration: none;
-    /* hilangkan underline default <a> */
+    color: var(--rumput-teal-dark);
 }
 
-.btn-edit{
+.btn-edit {
     position: relative;
     bottom: 75px;
     z-index: 10;
     display: inline-block;
     padding: 6px 100px;
-    background: #fff;
-    color: #7896B2;
+    background: var(--rumput-glass-bg-strong);
+    color: var(--rumput-teal-dark);
     font-size: 1rem;
     font-weight: 500;
     text-decoration: none;
     letter-spacing: 1px;
-    border: 1px solid #7896B2;
+    border: 1px solid var(--rumput-teal-dark);
     border-radius: 8px;
-    transition: all 0.01s ease;
-    box-shadow: 0 4px 0 #7896B2;
-    /* shadow bawah */
+    transition: all 0.15s ease;
+    box-shadow: var(--rumput-glass-shadow);
 }
 
 .btn-edit:hover {
-    transform: translateY(2px);
-    /* turun sedikit */
-    box-shadow: 0 1px 0 #7896B2;
-    /* shadow tipis */
+    transform: translateY(-1px);
+    box-shadow: var(--rumput-glass-shadow-hover);
     text-decoration: none;
-    /* hilangkan underline default <a> */
+    color: var(--rumput-teal);
 }
 
 .profile-icon {
@@ -229,13 +217,12 @@
     font-family: "Poppins", sans-serif;
     font-size: 32px;
     text-align: center;
-    background: linear-gradient(45deg, #b89b6f, #6e5837);
+    background: linear-gradient(45deg, var(--rumput-teal-light), var(--rumput-teal-dark));
     background-clip: text;
     -webkit-text-fill-color: transparent;
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 2px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .card-container {
@@ -263,7 +250,7 @@
     width: 100px;
     /* sesuaikan ukuran */
     height: 130px;
-    border: 1px solid #AEA07A;
+    border: 1px solid var(--rumput-teal);
     border-radius: 10px;
     overflow: hidden;
     /* penting: potong gambar yang melebar */
@@ -299,17 +286,17 @@
 
 /* Border & radius khusus select Kelurahan */
 .select2-container--bootstrap-5 .select2-selection--single {
-    border: 1px solid #7896B2;
+    border: 1px solid var(--rumput-teal);
     border-radius: 8px;
     min-height: 36px;
     display: flex;
     align-items: center;
+    background: var(--rumput-glass-bg-strong);
 }
 
-/* Saat focus */
 .select2-container--bootstrap-5.select2-container--focus .select2-selection--single {
-    border-color: #7896B2;
-    box-shadow: none;
+    border-color: var(--rumput-teal-dark);
+    box-shadow: 0 0 0 3px var(--rumput-teal-muted);
 }
 
 /* Placeholder warna */
@@ -320,9 +307,8 @@
 
 /* ================== Floating Input (basis) ================== */
 :root {
-    /* default, bisa diubah oleh modifier atau inline */
     --fi-border-width: 1px;
-    --fi-border-color: #7896B2;
+    --fi-border-color: var(--rumput-teal);
     --fi-radius: 8px;
     --fi-px: 0.875rem;
     --fi-py: 0.6rem;
@@ -334,7 +320,7 @@
     --fi-label-lift: -0.45rem;
 
     --fi-transition: .2s;
-    --fi-focus-shadow: rgba(13, 110, 253, .25);
+    --fi-focus-shadow: var(--rumput-teal-muted);
 
     /* 0 = tanpa tombol; 1 = ada tombol di dalam input (untuk sfloat) */
     --fi-has-btn: 0;
@@ -432,35 +418,34 @@
 /* Varian A = "afloat" (biru) */
 .fi--a {
     --fi-border-width: 1px;
-    --fi-border-color: #7896B2;
+    --fi-border-color: var(--rumput-teal);
     --fi-radius: 8px;
     --fi-px: 0.875rem;
     --fi-py: 0.6rem;
     --fi-font: 0.8rem;
     --fi-label-idle: #94a3b8;
-    --fi-label-focus: #7896B2;
+    --fi-label-focus: var(--rumput-teal);
     --fi-label-font: 0.7rem;
     --fi-label-lift: -0.45rem;
-    --fi-focus-shadow: rgba(13, 110, 253, .25);
+    --fi-focus-shadow: var(--rumput-teal-muted);
     --fi-has-btn: 0;
 }
 
-/* Varian S = "sfloat" (gold + tombol) */
 .fi--s {
     --fi-border-width: 2px;
-    --fi-border-color: #AEA07A;
+    --fi-border-color: var(--rumput-teal);
     --fi-radius: 8px;
     --fi-line-height: 1.5rem;
     --fi-px: 0.875rem;
     --fi-py: 0.6rem;
     --fi-font: 0.9rem;
-    --fi-label-idle: #AEA07A;
-    --fi-label-focus: #AEA07A;
+    --fi-label-idle: var(--rumput-teal-dark);
+    --fi-label-focus: var(--rumput-teal);
     --fi-label-font: 0.7rem;
     --fi-label-lift: -0.35rem;
-    --fi-focus-shadow: rgba(174, 160, 122, .18);
+    --fi-focus-shadow: var(--rumput-teal-muted);
     --fi-has-btn: 1;
-    --fi-btn-bg: #AEA07A;
+    --fi-btn-bg: var(--rumput-teal);
 }
 
 .password-rules {
@@ -496,8 +481,8 @@
 
 /* ================== SEGMENTED CONTROL ================== */
 :root {
-    --seg: #6E8EAB;
-    --seg-text: #6E8EAB;
+    --seg: var(--rumput-teal);
+    --seg-text: var(--rumput-teal-dark);
     --radius: 8px;
 }
 
@@ -509,10 +494,11 @@
     position: relative;
     border: 2px solid var(--seg);
     border-radius: var(--radius);
-    background: #fff;
+    background: var(--rumput-glass-bg-strong);
     overflow: hidden;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, .08);
+    box-shadow: var(--rumput-glass-shadow);
     display: grid;
+    backdrop-filter: blur(8px);
 }
 
 .seg-btn {

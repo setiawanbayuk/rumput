@@ -1,0 +1,108 @@
+// ============================================================
+// E-SUKET Glassmorphism Theme — design tokens & utilities
+// ============================================================
+
+:root {
+    // Aksen tosca (teal)
+    --rumput-teal: #14b8a6;
+    --rumput-teal-dark: #0d9488;
+    --rumput-teal-light: #2dd4bf;
+    --rumput-teal-muted: rgba(20, 184, 166, 0.12);
+
+    // Glass surfaces
+    --rumput-glass-bg: rgba(255, 255, 255, 0.6);
+    --rumput-glass-bg-strong: rgba(255, 255, 255, 0.78);
+    --rumput-glass-bg-subtle: rgba(255, 255, 255, 0.45);
+    --rumput-glass-border: rgba(255, 255, 255, 0.35);
+    --rumput-glass-border-strong: rgba(255, 255, 255, 0.55);
+    --rumput-glass-blur: 16px;
+    --rumput-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    --rumput-glass-shadow-hover: 0 12px 40px rgba(15, 23, 42, 0.12);
+
+    // Typography (accessible contrast on glass)
+    --rumput-ink: #0f172a;
+    --rumput-ink-muted: #475569;
+    --rumput-ink-subtle: #64748b;
+
+    // Legacy aliases — migrasi bertahap dari gold/blue
+    --esuket-accent: var(--rumput-teal);
+    --esuket-gold: var(--rumput-teal);
+    --esuket-gold-2: var(--rumput-teal-light);
+    --esuket-gold-dark: var(--rumput-teal-dark);
+    --esuket-blue: var(--rumput-teal-dark);
+    --suket-accent: var(--rumput-teal);
+
+    // Radius
+    --rumput-radius: 12px;
+    --rumput-radius-lg: 16px;
+    --rumput-radius-pill: 50px;
+}
+
+// Body background — gradien lembut + bentuk abstrak tosca
+body.rumput-glass-body,
+.rumput-glass-body {
+    min-height: 100vh;
+    color: var(--rumput-ink);
+    background-color: #f0f4f8;
+    background-image:
+        radial-gradient(ellipse 80% 50% at 10% -10%, rgba(20, 184, 166, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 0%, rgba(148, 163, 184, 0.18), transparent 50%),
+        radial-gradient(ellipse 50% 35% at 50% 100%, rgba(20, 184, 166, 0.08), transparent 55%),
+        linear-gradient(160deg, #f8fafc 0%, #eef2f7 45%, #f1f5f9 100%);
+    background-attachment: fixed;
+}
+
+// Glass utility classes
+.glass,
+.glass-card,
+.glass-navbar {
+    background: var(--rumput-glass-bg);
+    backdrop-filter: blur(var(--rumput-glass-blur));
+    -webkit-backdrop-filter: blur(var(--rumput-glass-blur));
+    border: 1px solid var(--rumput-glass-border);
+    box-shadow: var(--rumput-glass-shadow);
+}
+
+.glass-card {
+    border-radius: var(--rumput-radius-lg);
+}
+
+.glass-navbar {
+    border-radius: var(--rumput-radius-pill);
+}
+
+.glass-strong {
+    background: var(--rumput-glass-bg-strong);
+    border-color: var(--rumput-glass-border-strong);
+}
+
+.glass-subtle {
+    background: var(--rumput-glass-bg-subtle);
+}
+
+// Bootstrap card override when used with glass
+.card.glass,
+.card.glass-card,
+.glass .card {
+    background: var(--rumput-glass-bg);
+    backdrop-filter: blur(var(--rumput-glass-blur));
+    -webkit-backdrop-filter: blur(var(--rumput-glass-blur));
+    border: 1px solid var(--rumput-glass-border);
+    box-shadow: var(--rumput-glass-shadow);
+}
+
+.card-header.glass-accent {
+    background: linear-gradient(135deg, var(--rumput-teal) 0%, var(--rumput-teal-dark) 100%) !important;
+    color: #fff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+// Dropdown & modal glass
+.dropdown-menu.glass,
+.modal-content.glass {
+    background: var(--rumput-glass-bg-strong);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--rumput-glass-border);
+    box-shadow: var(--rumput-glass-shadow-hover);
+}

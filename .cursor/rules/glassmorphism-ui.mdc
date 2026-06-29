@@ -1,0 +1,84 @@
+---
+description: Panduan desain Glassmorphism + Teal untuk Blade, SCSS, dan CSS
+globs: resources/views/**/*.blade.php,resources/sass/**/*.scss,public/css/**/*.css
+alwaysApply: false
+---
+
+# Glassmorphism UI — E-SUKET
+
+Semua UI baru dan refactor visual **wajib** mengikuti gaya ini.
+
+## Gaya Utama: Glassmorphism
+
+- `backdrop-filter: blur(16px)` + `-webkit-backdrop-filter`
+- Background putih semi-transparan: `rgba(255, 255, 255, 0.6)`
+- Border putih tipis: `rgba(255, 255, 255, 0.35)`
+- Shadow lembut: `0 8px 32px rgba(15, 23, 42, 0.08)`
+- Elemen terlihat mengambang di atas latar gradien
+
+## Token Warna (gunakan `var()`, jangan hex hardcode)
+
+| Token | Nilai | Pemakaian |
+|-------|-------|-----------|
+| `--rumput-teal` | `#14b8a6` | Tombol primary, link aktif, ikon interaktif |
+| `--rumput-teal-dark` | `#0d9488` | Hover, teks aksen |
+| `--rumput-teal-light` | `#2dd4bf` | Gradien, highlight |
+| `--rumput-teal-muted` | `rgba(20,184,166,.12)` | Hover background |
+| `--rumput-glass-bg` | `rgba(255,255,255,.6)` | Card, navbar, container |
+| `--rumput-ink` | `#0f172a` | Teks utama (kontras WCAG) |
+| `--rumput-ink-muted` | `#475569` | Teks sekunder |
+
+## Class Utilitas (sudah tersedia di `_theme.scss`)
+
+```html
+<body class="rumput-glass-body">
+<div class="card glass-card">...</div>
+<nav class="glass-navbar">...</nav>
+<div class="card-header glass-accent">...</div>
+```
+
+## Bootstrap
+
+- `$primary` = teal — pakai `btn-primary`, `text-primary`, `bg-primary`
+- Grid & utilities Bootstrap 5 tetap diprioritaskan
+- Card default: tambahkan `glass` atau `glass-card`
+- Responsif: mobile-first, test di `< 992px`
+
+## Pola Blade
+
+```blade
+{{-- ✅ BENAR --}}
+<div class="card glass-card border-0 rounded-4">
+  <div class="card-header glass-accent">Judul</div>
+  <div class="card-body text-dark">...</div>
+</div>
+<a class="btn btn-primary"><i class="ri-add-line"></i> Ajukan</a>
+
+{{-- ❌ SALAH --}}
+<div class="card" style="background:#AEA07A">
+<div style="background-color:#7896B2">
+```
+
+## Latar Belakang Body
+
+Layout utama pakai `class="rumput-glass-body"` — gradien putih/abu + sentuhan tosca. Jangan override dengan `background: #fff` solid pada `body` atau `.main`.
+
+## Aksesibilitas
+
+- Teks pada glass: minimal `--rumput-ink` (#0f172a), hindari abu terlalu muda di atas glass
+- Tombol/teal on white: kontras cukup; teks putih hanya di atas `glass-accent` atau `btn-primary`
+- Focus ring: `box-shadow: 0 0 0 3px var(--rumput-teal-muted)`
+- Touch target mobile: min 44px (sudah di `mobile-responsive-pro.css`)
+
+## Migrasi Warna Lama
+
+Ganti saat menyentuh file:
+- `#AEA07A`, `#AB9C71`, `#B6A16B` → `var(--rumput-teal)` atau `glass-accent`
+- `#7896B2`, `#376C9D` → `var(--rumput-teal-dark)`
+- Card putih solid → `glass-card`
+
+## SCSS
+
+- Token baru → `_theme.scss`; override Bootstrap → `_variables.scss`
+- Komponen layout admin → `_sidebar.scss`
+- Jangan duplikasi token; extend class `.glass*` yang ada

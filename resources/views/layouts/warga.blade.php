@@ -28,23 +28,26 @@
         }
 
         .navbar-card {
-            background: #ffffff;
-            border: 1px solid #eee;
-            border-radius: 6px;
-            box-shadow: 0 0px 8px rgba(0, 0, 0, .2);
+            background: var(--rumput-glass-bg);
+            backdrop-filter: blur(var(--rumput-glass-blur));
+            -webkit-backdrop-filter: blur(var(--rumput-glass-blur));
+            border: 1px solid var(--rumput-glass-border);
+            border-radius: var(--rumput-radius-lg);
+            box-shadow: var(--rumput-glass-shadow);
         }
 
         .navbar-card .nav-link {
-            border: 1px solid #eee;
+            border: 1px solid var(--rumput-glass-border);
             border-radius: 8px;
             padding: .4rem 2rem;
             font-weight: 500;
-            color: #333333;
+            color: var(--rumput-ink);
         }
 
         .navbar-card .nav-link.active,
         .navbar-card .nav-link:hover {
-            background: #AEA07A;
+            background: var(--rumput-teal);
+            border-color: var(--rumput-teal);
             color: #fff;
         }
 
@@ -90,7 +93,7 @@
     @routes
 </head>
 
-<body class="min-vh-100 d-flex flex-column">
+<body class="rumput-glass-body min-vh-100 d-flex flex-column">
     <!-- navbar -->
     <div class="container floating-navbar">
         <nav class="navbar navbar-expand-lg navbar-card mt2 mx-4 px-4 py-3">

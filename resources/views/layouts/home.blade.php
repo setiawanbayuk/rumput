@@ -14,7 +14,7 @@
 @stack('styles')
     <style>
         :root {
-            --primary-color: #AB9C71;
+            --primary-color: #14b8a6;
         }
 
         html,

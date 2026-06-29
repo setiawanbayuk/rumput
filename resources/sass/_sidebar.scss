@@ -59,50 +59,36 @@ body {
     width: 70px;
     min-width: 70px;
     z-index: 30 !important;
-    transition: all .25s ease-in-out;
-    color: #000;
+    transition: all .30s cubic-bezier(.22, .61, .36, 1);
+    color: var(--rumput-ink);
     display: flex;
     flex-direction: column;
     position: fixed;
     top: 60px;
     left: 0;
     bottom: 0;
+    border-radius: 0 24px 24px 0;
+    overflow: hidden;
 }
 
 #sidebar.expand {
     width: 270px;
     min-width: 270px;
+    box-shadow: 12px 0 48px rgba(15, 23, 42, 0.12);
 }
-
-/* HEADER SIDEBAR (logo + toggle) */
-// .sidebar-header {
-//     display: flex;
-//     background-color: #AEA07A;
-//     align-items: center;
-//     padding: 0.75rem 1.25rem;
-//     gap: 1rem;
-// }
 
 .sidebar-body {
     flex: 1 1 auto;
     overflow-y: auto;
-    background:#FFF;
-    box-shadow: 0 0 .25rem rgba(0,0,0,.075);
-}
-
-.toggle-btn {
-    background-color: transparent;
-    cursor: pointer;
-    border: 0;
-    padding: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-}
-
-.toggle-btn i {
-    font-size: 1.4rem;
-    color: #fff;
+    -webkit-overflow-scrolling: touch;
+    background:
+        radial-gradient(circle at top left, rgba(20, 184, 166, 0.12), transparent 13rem),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.88) 100%);
+    backdrop-filter: blur(var(--rumput-glass-blur));
+    -webkit-backdrop-filter: blur(var(--rumput-glass-blur));
+    border-right: 1px solid var(--rumput-glass-border);
+    box-shadow: var(--rumput-glass-shadow);
+    padding: 12px 8px;
 }
 
 a.sidebar-brand {
@@ -118,14 +104,14 @@ a.sidebar-brand {
     overflow-x: hidden;
 }
 
-/* judul section: MENU, MENU LAYANAN, PENGATURAN */
+/* judul section */
 .sidebar-title {
-    padding: 0.75rem 1.625rem 0.3rem;
-    font-size: .7rem;
-    letter-spacing: .08em;
+    padding: 14px 16px 6px;
+    font-size: 0.68rem;
+    letter-spacing: 0.10em;
     text-transform: uppercase;
-    color: #000;
-    font-weight: 600;
+    color: var(--rumput-teal-dark);
+    font-weight: 800;
     white-space: nowrap;
 }
 
@@ -140,38 +126,65 @@ a.sidebar-brand {
 }
 
 a.sidebar-link {
-    padding-top: .55rem;
-    padding-bottom: .55rem;
-    padding-right: 1.625rem;
-    padding-left: 1.5rem; 
-    color: #000;
+    margin: 4px 6px;
+    padding: 11px 12px;
+    min-height: 48px;
+    color: var(--rumput-ink);
     display: flex;
     align-items: center;
     font-size: 0.88rem;
-    font-weight: 500;
+    font-weight: 700;
     white-space: nowrap;
-    border-left: 4px solid transparent;
+    border-left: 0;
+    border-radius: 16px;
     column-gap: 0.75rem;
     text-decoration: none;
+    line-height: 1.25;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sidebar-link i {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
     font-size: 1.1rem;
-    flex: 0 0 20px;
+    flex: 0 0 34px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--rumput-teal-muted);
+    color: var(--rumput-teal-dark);
     text-align: center;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
-/* teks link */
-.sidebar-text {
-    flex: 1 1 auto;
+#sidebar:not(.expand) a.sidebar-link {
+    justify-content: center;
+    padding: 10px 6px;
+    margin: 4px 5px;
 }
 
-/* HOVER & ACTIVE – pakai warna emas lama (#AEA07A) */
+#sidebar:not(.expand) .sidebar-link i {
+    margin: 0;
+}
+
+/* HOVER & ACTIVE — teal gradient (selaras mobile) */
 a.sidebar-link:hover,
-.sidebar-item.active>a.sidebar-link {
-    background-color: rgba(174, 160, 122, .05);
-    color: #AEA07A;
-    border-left-color: #AEA07A;
+a.sidebar-link:focus,
+.sidebar-item.active > a.sidebar-link,
+a.sidebar-link[aria-expanded="true"] {
+    background: linear-gradient(135deg, var(--rumput-teal), var(--rumput-teal-dark));
+    color: #fff;
+    box-shadow: 0 12px 28px rgba(20, 184, 166, 0.28);
+}
+
+a.sidebar-link:hover i,
+a.sidebar-link:focus i,
+.sidebar-item.active > a.sidebar-link i,
+a.sidebar-link[aria-expanded="true"] i {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
 /* ICON GANTI SAAT HOVER */
@@ -222,10 +235,54 @@ a.sidebar-link:hover,
     transform: rotate(45deg);
 }
 
-/* DROPDOWN MENU */
-.sidebar-dropdown {
-    padding-left: 0;
-    
+/* teks link */
+.sidebar-text {
+    flex: 1 1 auto;
+}
+
+/* DROPDOWN MENU (expanded) */
+#sidebar.expand .sidebar-dropdown {
+    position: static;
+    padding: 4px 0 6px 14px;
+    margin: 0 0 6px 16px;
+    background: transparent;
+    border-left: 2px dashed rgba(20, 184, 166, 0.28);
+    box-shadow: none;
+}
+
+#sidebar.expand .sidebar-dropdown .sidebar-link {
+    min-height: 42px;
+    padding: 9px 12px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--rumput-ink);
+    margin: 4px 0;
+    box-shadow: none;
+}
+
+#sidebar.expand .sidebar-dropdown .sidebar-link:hover,
+#sidebar.expand .sidebar-dropdown .sidebar-link:focus,
+#sidebar.expand .sidebar-dropdown .sidebar-item.active > .sidebar-link {
+    background: linear-gradient(135deg, var(--rumput-teal), var(--rumput-teal-dark));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.22);
+}
+
+#sidebar.expand .sidebar-dropdown .sidebar-link:hover i,
+#sidebar.expand .sidebar-dropdown .sidebar-link:focus i,
+#sidebar.expand .sidebar-dropdown .sidebar-item.active > .sidebar-link i {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+#sidebar.expand .sidebar-dropdown .sidebar-link i {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    font-size: 0.95rem;
+    border-radius: 10px;
 }
 
 #sidebar:not(.expand) .sidebar-item {
@@ -237,12 +294,37 @@ a.sidebar-link:hover,
     z-index: 40 !important;
     top: calc(var(--item-top));
     left: 70px;          /* sesuai width sidebar collapsed */
-    background-color: #FFF;
-    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    background: var(--rumput-glass-bg-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--rumput-glass-border);
+    box-shadow: var(--rumput-glass-shadow);
     min-width: 240px;
     padding: .4rem 0;
     border-radius: 0 .5rem .5rem 0;
     display: none;
+}
+
+#sidebar:not(.expand) .sidebar-dropdown .sidebar-link {
+    margin: 4px 8px;
+    padding: 9px 12px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--rumput-ink);
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+#sidebar:not(.expand) .sidebar-dropdown .sidebar-link:hover,
+#sidebar:not(.expand) .sidebar-dropdown .sidebar-link:focus {
+    background: linear-gradient(135deg, var(--rumput-teal), var(--rumput-teal-dark));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.22);
+}
+
+#sidebar:not(.expand) .sidebar-dropdown .sidebar-link:hover i,
+#sidebar:not(.expand) .sidebar-dropdown .sidebar-link:focus i {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
 /* PENTING: top posisi mengikuti item */
@@ -268,38 +350,76 @@ a.sidebar-link:hover,
 
 /* FOOTER SIDEBAR */
 .sidebar-footer {
-    padding: 0.75rem 1.25rem;
-    box-shadow: 0 0 .25rem rgba(0,0,0,.075);
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.92);
+    border-top: 1px solid rgba(20, 184, 166, 0.16);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .sidebar-footer .sidebar-link {
-    margin-left: .5rem;
-    padding-left: 0;
+    margin: 0;
+    padding: 10px 12px;
     border-left: 0;
-    color: #000;
+    color: var(--rumput-ink);
 }
 
 .sidebar-footer .sidebar-link:hover {
-    background-color: transparent;
-    color: #AEA07A;
-    /* sedikit kuning saat hover nama user */
+    color: #fff;
 }
 
-/* TOPBAR ATAS */
+/* TOPBAR ATAS — teal glass (selaras mobile) */
 .topbar {
     position: fixed;
     z-index: 20 !important;
     top: 0;
-    left: 0; /* sama dengan lebar sidebar default */
+    left: 0;
     right: 0;
     height: 60px;
-    background: #AEA07A;
-    /* biru; bisa kamu tweak */
+    background: linear-gradient(
+        135deg,
+        rgba(20, 184, 166, 0.96) 0%,
+        rgba(13, 148, 136, 0.97) 50%,
+        rgba(15, 118, 110, 0.98) 100%
+    );
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 12px 40px rgba(13, 148, 136, 0.22);
+    border-radius: 0 0 24px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 1.75rem;
-    transition: left .25s ease-in-out;
+    padding: 0 1.25rem;
+    transition: left 0.25s ease-in-out;
+}
+
+.topbar::after {
+    content: "";
+    position: absolute;
+    inset: auto 16px 6px 16px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+}
+
+.toggle-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.17);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 8px 20px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    border: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-btn i {
+    font-size: 1.45rem;
+    color: #fff;
+    line-height: 1;
 }
 
 .topbar-left {
@@ -310,8 +430,8 @@ a.sidebar-link:hover,
 
 .topbar-title {
     font-size: 1.05rem;
-    font-weight: 600;
-    color: #000;
+    font-weight: 700;
+    color: #fff;
     margin: 0;
 }
 
@@ -343,40 +463,20 @@ a.sidebar-link:hover,
 //     color: #fff;
 // }
 
-/* boleh disembunyiin di layar kecil kalau mau */
-@media (max-width: 768px) {
-    .topbar-title {
-        font-size: .95rem;
-    }
-
-    .topbar-username {
-        display: none;
-    }
-
-    /* sidebar disembunyikan ke kiri, content full width */
+/* Desktop: sidebar tetap fixed di samping */
+@media (min-width: 992px) {
     #sidebar {
-        left: -260px;
+        transform: none !important;
     }
+}
 
-    #sidebar.expand {
-        left: 0;
-    }
-
+@media (max-width: 991.98px) {
     .content-wrapper {
-        margin-left: 0;
+        margin-left: 0 !important;
     }
 
     #sidebar.expand + .content-wrapper {
-        margin-left: 0;
-    }
-
-    /* topbar selalu dari kiri 0 di mobile */
-    .topbar {
-        left: 0;
-    }
-
-    #sidebar.expand + .content-wrapper .topbar {
-        left: 260px;
+        margin-left: 0 !important;
     }
 }
 
@@ -384,16 +484,12 @@ a.sidebar-link:hover,
 
 /* ====== Token kecil ====== */
 :root {
-    --suket-accent: #7896B2;
-    /* warna strip kiri */
-    --suket-card-bg: #fff;
-    /* warna dasar kartu */
-    --suket-shadow: 0 6px 20px rgba(16, 24, 40, .06);
-    --suket-radius: 8px;
+    --suket-accent: var(--rumput-teal);
+    --suket-card-bg: rgba(255, 255, 255, 0.72);
+    --suket-shadow: var(--rumput-glass-shadow);
+    --suket-radius: 12px;
     --suket-strip: 20px;
-    /* lebar strip kiri */
     --suket-gap: 12px;
-    /* jarak teks dari strip */
 }
 
 /* judul section */
@@ -421,7 +517,7 @@ a.sidebar-link:hover,
     background: linear-gradient(90deg,
             var(--suket-accent) 0 var(--suket-strip),
             var(--suket-card-bg) var(--suket-strip) 100%);
-    border: 2px solid #eee;
+    border: 1px solid var(--rumput-glass-border);
     border-radius: var(--suket-radius);
     box-shadow: var(--suket-shadow);
     text-decoration: none !important;

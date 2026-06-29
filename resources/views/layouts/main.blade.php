@@ -20,7 +20,7 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
     
-    <link rel="stylesheet" href="{{ asset('css/mobile-responsive-pro.css') }}?v=20260529-esuket-mobile-v5">
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive-pro.css') }}?v=20260624-esuket-glass-v1">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
@@ -28,7 +28,7 @@
 
     <style>
         .nav-link {
-            border: 1px solid #fff;
+            border: 0;
             border-radius: 8px;
             padding: .4rem .4rem;
             font-weight: 500;
@@ -37,31 +37,31 @@
 
         .nav-link.active,
         .nav-link:hover {
-            border: 1px solid #fff;
+            background: rgba(255, 255, 255, 0.15);
             color: #fff;
         }
 
         .topbar-avatar {
             width: 30px;
             height: 30px;
-            border-radius: 10px;
+            border-radius: 12px;
             object-fit: cover;
-            border: 2px solid rgba(255,255,255,.75);
-            box-shadow: 0 6px 16px rgba(0,0,0,.16);
-            background: rgba(255,255,255,.18);
+            border: 2px solid rgba(255, 255, 255, 0.72);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .topbar-avatar-placeholder {
             width: 30px;
             height: 30px;
-            border-radius: 10px;
+            border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid rgba(255,255,255,.75);
-            background: rgba(255,255,255,.18);
+            border: 2px solid rgba(255, 255, 255, 0.72);
+            background: rgba(255, 255, 255, 0.15);
             color: #fff;
-            box-shadow: 0 6px 16px rgba(0,0,0,.16);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
         }
 
         .dropdown-user-avatar {
@@ -89,7 +89,7 @@
     @routes
 </head>
 
-<body>
+<body class="rumput-glass-body">
     <div id="app">
         {{-- <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
@@ -457,7 +457,7 @@
                     </div>
                 </header>
 
-                <main class="main py-4" style="background-color: #f9f9f9">
+                <main class="main py-4">
                     @yield('content')
                 </main>
             </div>
@@ -527,7 +527,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     @stack('scripts')
     @stack('modals')
-    <script src="{{ asset('js/esuket-mobile-pro.js') }}?v=20260529-esuket-mobile-v5"></script>
+    <script src="{{ asset('js/esuket-mobile-pro.js') }}?v=20260624-esuket-glass-v1"></script>
 </body>
 
 </html>

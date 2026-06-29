@@ -20,8 +20,8 @@
 }
 
 .page-item.active .page-link {
-    background: #AEA07A; /* nuansa emas-beige brand kamu */
-    border-color: #AEA07A;
+    background: var(--rumput-teal);
+    border-color: var(--rumput-teal);
     color: #fff;
 }
 
@@ -37,7 +37,7 @@
 }
 
 .page-link:focus {
-    box-shadow: 0 0 0 .2rem rgba(199,184,146,.25);
+    box-shadow: 0 0 0 .2rem var(--rumput-teal-muted);
 }
 
 /* Kompak di mobile */

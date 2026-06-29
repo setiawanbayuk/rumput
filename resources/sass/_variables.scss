@@ -1,8 +1,21 @@
-// Body
-// $body-bg: #f8fafc;
+// Bootstrap overrides — teal glassmorphism palette
+$primary: #14b8a6;
+$secondary: #64748b;
+$success: #10b981;
+$info: #06b6d4;
+$warning: #f59e0b;
+$danger: #ef4444;
+
+$body-bg: #f0f4f8;
+$body-color: #0f172a;
+
+$border-radius: 0.75rem;
+$border-radius-lg: 1rem;
 
 // Typography
-// $font-family-sans-serif: 'Nunito', sans-serif;
-$font-family-base: "Kumbh Sans", serif;
+$font-family-base: "Kumbh Sans", sans-serif;
 $font-size-base: 0.9rem;
 $line-height-base: 1.6;
+
+$link-color: #0d9488;
+$link-hover-color: #14b8a6;

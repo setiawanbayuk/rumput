@@ -14,19 +14,19 @@
 
 @media (max-width: 991.98px) {
   :root {
-    --esuket-gold: #AB9C71;
-    --esuket-gold-2: #c7b889;
-    --esuket-gold-dark: #76663f;
-    --esuket-ink: #111827;
+    --esuket-gold: #14b8a6;
+    --esuket-gold-2: #2dd4bf;
+    --esuket-gold-dark: #0d9488;
+    --esuket-ink: #0f172a;
     --esuket-muted: #64748b;
-    --esuket-soft: #f5f3ec;
-    --esuket-bg: #f4f6fb;
-    --esuket-card: #ffffff;
+    --esuket-soft: rgba(20, 184, 166, 0.08);
+    --esuket-bg: #f0f4f8;
+    --esuket-card: rgba(255, 255, 255, 0.72);
     --esuket-danger: #dc3545;
-    --esuket-success: #15946c;
-    --esuket-blue: #2563eb;
-    --esuket-shadow: 0 18px 45px rgba(15, 23, 42, .10);
-    --esuket-shadow-strong: 0 26px 70px rgba(15, 23, 42, .20);
+    --esuket-success: #10b981;
+    --esuket-blue: #14b8a6;
+    --esuket-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    --esuket-shadow-strong: 0 12px 40px rgba(15, 23, 42, 0.14);
     --esuket-topbar-h: 72px;
     --esuket-tabbar-h: 78px;
     --esuket-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -44,7 +44,8 @@
 
   body {
     background:
-      radial-gradient(circle at top left, rgba(199, 184, 137, .22), transparent 32rem),
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(20, 184, 166, 0.14), transparent 32rem),
+      radial-gradient(ellipse 60% 40% at 90% 0%, rgba(148, 163, 184, 0.18), transparent 50%),
       linear-gradient(180deg, #f8fafc 0%, #eef2f7 48%, #f8fafc 100%) !important;
     color: var(--esuket-ink);
   }
@@ -88,8 +89,8 @@
     z-index: 1070 !important;
     border-radius: 0 0 28px 28px;
     background:
-      linear-gradient(135deg, rgba(171, 156, 113, .98) 0%, rgba(126, 111, 68, .98) 48%, rgba(51, 48, 35, .98) 100%) !important;
-    box-shadow: 0 18px 48px rgba(42, 39, 28, .25) !important;
+      linear-gradient(135deg, rgba(20, 184, 166, .98) 0%, rgba(13, 148, 136, .98) 48%, rgba(15, 118, 110, .98) 100%) !important;
+    box-shadow: 0 18px 48px rgba(13, 148, 136, .25) !important;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
   }
@@ -213,7 +214,7 @@
 
   .dropdown-item:hover,
   .dropdown-item:focus {
-    background: rgba(171, 156, 113, .13) !important;
+    background: rgba(20, 184, 166, .12) !important;
     color: var(--esuket-gold-dark) !important;
   }
 
@@ -232,7 +233,10 @@
     z-index: 1085 !important;
     border-radius: 0 30px 30px 0 !important;
     overflow: hidden !important;
-    background: #fff !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.45) !important;
     box-shadow: none !important;
   }
 
@@ -264,30 +268,16 @@
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
     background:
-      radial-gradient(circle at top left, rgba(171,156,113,.18), transparent 13rem),
-      linear-gradient(180deg, #ffffff 0%, #fbfaf5 100%) !important;
-  }
-
-  #sidebar .sidebar-body::before {
-    content: "Menu Operasional";
-    display: block;
-    margin: 2px 12px 14px;
-    padding: 14px 14px;
-    border-radius: 22px;
-    background:
-      linear-gradient(135deg, rgba(171,156,113,.17), rgba(255,255,255,.75));
-    color: #574c31;
-    font-weight: 900;
-    font-size: .95rem;
-    letter-spacing: .01em;
-    box-shadow: inset 0 0 0 1px rgba(171,156,113,.16);
+      radial-gradient(circle at top left, rgba(20, 184, 166, .14), transparent 13rem),
+      linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(248,250,252,.92) 100%) !important;
+    border-right: 0 !important;
   }
 
   #sidebar .sidebar-footer {
     height: 76px !important;
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-    background: rgba(255,255,255,.96) !important;
-    border-top: 1px solid rgba(171, 156, 113, .20) !important;
+    background: rgba(255,255,255,.94) !important;
+    border-top: 1px solid rgba(20, 184, 166, .18) !important;
     box-shadow: 0 -12px 30px rgba(15, 23, 42, .06) !important;
   }
 
@@ -295,7 +285,7 @@
   #sidebar .sidebar-title {
     display: block !important;
     padding: 14px 16px 6px !important;
-    color: #9b8d64 !important;
+    color: var(--esuket-gold-dark) !important;
     font-size: .68rem !important;
     font-weight: 900 !important;
     text-transform: uppercase;
@@ -333,8 +323,8 @@
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: rgba(171,156,113,.12) !important;
-    color: #806f44 !important;
+    background: rgba(20, 184, 166, .12) !important;
+    color: #0f766e !important;
     font-size: 1.15rem !important;
   }
 
@@ -342,9 +332,9 @@
   #sidebar .sidebar-link:focus,
   #sidebar .sidebar-item.active > .sidebar-link,
   #sidebar .sidebar-link[aria-expanded="true"] {
-    background: linear-gradient(135deg, #AB9C71, #8b7a4d) !important;
+    background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
     color: #fff !important;
-    box-shadow: 0 14px 30px rgba(171,156,113,.28) !important;
+    box-shadow: 0 14px 30px rgba(20, 184, 166, .28) !important;
   }
 
   #sidebar .sidebar-link:hover i,
@@ -362,7 +352,7 @@
     padding: 4px 0 6px 14px !important;
     margin: 0 0 6px 10px !important;
     background: transparent !important;
-    border-left: 2px dashed rgba(171,156,113,.30);
+    border-left: 2px dashed rgba(20, 184, 166, .28);
     box-shadow: none !important;
   }
 
@@ -372,6 +362,23 @@
     font-size: .88rem !important;
     border-radius: 15px !important;
     background: rgba(255,255,255,.64) !important;
+    color: #1f2937 !important;
+    box-shadow: none !important;
+  }
+
+  #sidebar .sidebar-dropdown .sidebar-link:hover,
+  #sidebar .sidebar-dropdown .sidebar-link:focus,
+  #sidebar .sidebar-dropdown .sidebar-item.active > .sidebar-link {
+    background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 24px rgba(20, 184, 166, .24) !important;
+  }
+
+  #sidebar .sidebar-dropdown .sidebar-link:hover i,
+  #sidebar .sidebar-dropdown .sidebar-link:focus i,
+  #sidebar .sidebar-dropdown .sidebar-item.active > .sidebar-link i {
+    background: rgba(255,255,255,.20) !important;
+    color: #fff !important;
   }
 
   /* ===================== AREA KONTEN MOBILE ===================== */
@@ -417,8 +424,8 @@
     width: 10px;
     height: 28px;
     border-radius: 999px;
-    background: linear-gradient(180deg, #AB9C71, #806f44);
-    box-shadow: 0 8px 18px rgba(171,156,113,.28);
+    background: linear-gradient(180deg, #14b8a6, #0f766e);
+    box-shadow: 0 8px 18px rgba(20, 184, 166, .28);
   }
 
   .text-muted { color: var(--esuket-muted) !important; }
@@ -436,7 +443,7 @@
     content: "";
     display: block;
     height: 3px;
-    background: linear-gradient(90deg, transparent, rgba(171,156,113,.90), transparent);
+    background: linear-gradient(90deg, transparent, rgba(20, 184, 166, .75), transparent);
     opacity: .75;
   }
 
@@ -504,7 +511,7 @@
   .btn-navbar,
   .btn-login-petugas,
   .btn-ajukan {
-    background: linear-gradient(135deg, #AB9C71, #806f44) !important;
+    background: linear-gradient(135deg, #14b8a6, #0f766e) !important;
     border-color: transparent !important;
     color: #fff !important;
   }
@@ -612,7 +619,7 @@
     margin: 0 0 10px;
     padding: 7px 11px;
     border-radius: 999px;
-    background: rgba(171,156,113,.12);
+    background: rgba(20, 184, 166, .12);
     color: var(--esuket-gold-dark);
     font-size: .70rem;
     font-weight: 900;
@@ -651,7 +658,7 @@
   }
 
   .table tbody tr:hover > * {
-    background: rgba(171,156,113,.05) !important;
+    background: rgba(20, 184, 166, .06) !important;
   }
 
   .dataTables_wrapper .dataTables_filter,
@@ -765,7 +772,7 @@
     width: 44px !important;
     height: 44px !important;
     border-radius: 16px !important;
-    border: 1px solid rgba(171,156,113,.24) !important;
+    border: 1px solid rgba(20, 184, 166, .20) !important;
     box-shadow: none !important;
   }
 
@@ -839,7 +846,7 @@
 
   .suket-item,
   .list-group-item {
-    border: 1px solid rgba(171, 156, 113, .16) !important;
+    border: 1px solid rgba(20, 184, 166, .16) !important;
     border-radius: 20px !important;
     padding: 12px !important;
     background: #fff !important;
@@ -911,7 +918,7 @@
   .esuket-mobile-tabbar .active,
   .esuket-mobile-tabbar a:focus,
   .esuket-mobile-tabbar button:focus {
-    background: linear-gradient(135deg, #AB9C71, #806f44) !important;
+    background: linear-gradient(135deg, #14b8a6, #0f766e) !important;
     color: #fff !important;
     outline: none;
   }
