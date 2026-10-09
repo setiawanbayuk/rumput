@@ -27,6 +27,10 @@
                                             <x-slot:tgl_surat></x-slot:tgl_surat>
                                         </x-nosrt>
 
+                                        @if ((int) auth()->user()->role_id === 1)
+                                            @include('admin.surat.partials.scan-ktp')
+                                        @endif
+
                                         <x-pribadi></x-pribadi>
                                     </div>
                                 </div>
@@ -318,6 +322,10 @@
 
 @push('scripts')
 <script type="text/javascript" src="{{ asset('assets/js/personal.js') }}"></script>
+@if ((int) auth()->user()->role_id === 1)
+<script defer src="{{ asset('assets/js/ktp-parser.js') }}?v=3"></script>
+<script defer src="{{ asset('assets/js/ktp-scanner.js') }}?v=3"></script>
+@endif
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const peruntukan = document.getElementById('peruntukan');

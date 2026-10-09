@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tes Kamera HP — ESUKET</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#253445;background:#f6f8fa}
+*{box-sizing:border-box}body{margin:0;padding:20px 12px;max-width:670px;margin-inline:auto}
+h1{font-size:1.4rem;margin:0 0 5px}p{line-height:1.55}small{color:#64748b}
+section{background:white;border:1px solid #dce4e7;border-radius:12px;padding:16px;margin:13px 0;box-shadow:0 5px 15px #00000009}
+button{border:0;border-radius:9px;padding:12px 15px;font-size:1rem;font-weight:600;background:#0e9485;color:#fff;margin:5px 4px 5px 0}button:disabled{opacity:.45}
+#stop{background:#64748b}#status{white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:.83rem;background:#eef5f5;padding:12px;border-radius:8px;overflow-wrap:anywhere}
+.stage{position:relative;aspect-ratio:85.6/54;background:#12212c;border-radius:12px;overflow:hidden;margin:10px 0}
+video{width:100%;height:100%;object-fit:cover;display:block}.guide{position:absolute;inset:8%;border:3px dashed white;box-shadow:0 0 0 800px #0007;border-radius:8px;pointer-events:none}
+#checks{font-size:.88rem;line-height:1.7;overflow-wrap:anywhere} .good{color:#117b60}.bad{color:#b42318}
+</style>
+</head>
+<body>
+<h1>Tes Kamera HP — ESUKET</h1>
+<p><small>Untuk pengujian sementara. Kamera hanya dipratinjau di HP, tidak diambil fotonya, tidak diunggah dan tidak disimpan.</small></p>
+<section><h2 style="font-size:1rem">Status halaman dan OCR</h2><div id="checks">Memeriksa…</div><button id="refresh" type="button">Periksa ulang</button></section>
+<section><h2 style="font-size:1rem">Tes kamera langsung</h2>
+<div class="stage"><video id="video" muted autoplay playsinline webkit-playsinline></video><div class="guide"></div></div>
+<button id="start" type="button">Buka Kamera</button><button id="stop" type="button">Tutup Kamera</button>
+<div id="status" aria-live="polite">Tekan Buka Kamera, lalu izinkan kamera saat diminta.</div></section>
+<p><small>Gunakan tab Chrome/Safari langsung melalui alamat <strong>https://...</strong>. Jika tes ini berhasil tetapi Scan Kamera ESUKET gagal, masalah kemungkinan berada pada integrasi atau pemuatan script OCR. Hapus file tes setelah selesai.</small></p>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);let stream=null;
+const line=(label,good,value)=>`<div class="${good?'good':'bad'}">${good?'✓':'✗'} ${label}: ${String(value).replace(/[<&]/g, '')}</div>`;
+async function check(){
+ let html='';
+ html+=line('URL HTTPS',location.protocol==='https:',location.protocol);
+ html+=line('Secure context',window.isSecureContext===true,window.isSecureContext);
+ html+=line('getUserMedia',typeof navigator.mediaDevices?.getUserMedia==='function',typeof navigator.mediaDevices?.getUserMedia);
+ const policy=document.permissionsPolicy||document.featurePolicy;
+ if(policy?.allowsFeature){
+  try{const allowed=policy.allowsFeature('camera');html+=line('Permissions-Policy camera',allowed,allowed);}catch(_){}
+ }
+ for(const [path,expected] of [['/assets/js/ktp-parser.js','EsuketKtpParser'],['/assets/js/ktp-scanner.js','esuket-ktp-scanner']]){
+  try{
+   const response=await fetch(path+'?diagnostic='+Date.now(),{cache:'no-store'});
+   const content=await response.text();
+   const good=response.ok&&content.includes(expected);
+   html+=line('File '+path,good,'HTTP '+response.status+(good?' OK':' — tidak ditemukan / bukan JavaScript yang diharapkan'));
+  }catch(err){html+=line('File '+path,false,err.name+': '+err.message);}
+ }
+ $('checks').innerHTML=html;
+}
+function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;} $('video').srcObject=null;}
+$('refresh').addEventListener('click',check);
+$('stop').addEventListener('click',()=>{stop();$('status').textContent='Kamera dihentikan.'});
+$('start').addEventListener('click',async()=>{
+ stop();$('status').textContent='Meminta izin kamera dari browser…';
+ if(!navigator.mediaDevices?.getUserMedia){$('status').textContent='getUserMedia tidak tersedia. Periksa HTTPS, browser, dan izin kamera.';return;}
+ try{
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});}
+  catch(e){if(!['NotFoundError','OverconstrainedError'].includes(e.name))throw e;stream=await navigator.mediaDevices.getUserMedia({audio:false,video:true});}
+  const video=$('video');video.srcObject=stream;await video.play();
+  const t=stream.getVideoTracks()[0];
+  $('status').textContent='BERHASIL: kamera aktif di halaman dengan bingkai putih. Kamera: '+(t?.label||'terdeteksi');
+ }catch(err){stop();$('status').textContent='GAGAL: '+(err?.name||'Error')+' — '+(err?.message||'Tidak diketahui')+'\nJika NotAllowedError: periksa izin kamera situs dan buka langsung di Chrome/Safari.';}
+});
+window.addEventListener('pagehide',stop);
+check();
+})();
+</script>
+</body>
+</html>
