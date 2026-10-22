@@ -55,6 +55,13 @@ Route::get('/super-admin/login', [\App\Http\Controllers\SuperAdmin\SuperAdminCon
 //     // return view('welcome');
 // });
 Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->name('home');
+Route::middleware('auth')->prefix('dokumentasi-api/surat')->name('docs.surat.')->group(function () {
+    Route::get('/', fn () => view('docs.surat'))->name('index');
+    Route::get('/openapi.json', fn () => response()->file(
+        base_path('docs/openapi/surat-api.json'),
+        ['Content-Type' => 'application/json; charset=UTF-8']
+    ))->name('spec');
+});
 Route::get('/chart/surat', [HomeController::class, 'chartDrilldown']);
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
 Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');

@@ -325,13 +325,19 @@
 
                         {{-- SECTION: PENGATURAN / TOOLS --}}
                         <li class="sidebar-item">
-                            <a href="#" class="sidebar-link collapsed has-dropdown" data-bs-toggle="collapse"
-                                data-bs-target="#tools" aria-expanded="false" aria-controls="tools">
+                            <a href="#" class="sidebar-link has-dropdown {{ request()->routeIs('docs.surat.*') ? '' : 'collapsed' }}" data-bs-toggle="collapse"
+                                data-bs-target="#tools" aria-expanded="{{ request()->routeIs('docs.surat.*') ? 'true' : 'false' }}" aria-controls="tools">
                                 <i class="ri-tools-fill"></i>
                                 <span class="sidebar-text">Tools</span>
                             </a>
-                            <ul id="tools" class="sidebar-dropdown list-unstyled collapse"
+                            <ul id="tools" class="sidebar-dropdown list-unstyled collapse {{ request()->routeIs('docs.surat.*') ? 'show' : '' }}"
                                 data-bs-parent="#sidebar">
+                                <li class="sidebar-item">
+                                    <a href="{{ route('docs.surat.index') }}" class="sidebar-link {{ request()->routeIs('docs.surat.*') ? 'active' : '' }}">
+                                        <i class="ri-book-open-line"></i>
+                                        <span class="sidebar-text">Dokumentasi API Surat</span>
+                                    </a>
+                                </li>
                                 <li class="sidebar-item">
                                     <a href="{{ url('/profile') }}" class="sidebar-link">
                                         <i class="ri-profile-fill"></i>

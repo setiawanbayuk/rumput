@@ -1,0 +1,1530 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "E-SUKET Surat API",
+    "version": "1.0.0",
+    "description": "Kontrak endpoint SuratApiController. Semua endpoint memakai token Laravel Sanctum. Data surat difilter sesuai logika controller; endpoint detail, tracking, rating, dan PDF menerima ID surat, sementara rating/tracking juga menerima NIK 16 digit untuk surat terbaru."
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ],
+  "security": [
+    {
+      "sanctum": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Surat"
+    }
+  ],
+  "paths": {
+    "/jenis-surat": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "jenisSurat",
+        "summary": "Daftar jenis surat aktif",
+        "responses": {
+          "200": {
+            "description": "Daftar jenis surat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/JenisSurat"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          }
+        }
+      }
+    },
+    "/surat/form-config": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "formConfig",
+        "summary": "Konfigurasi formulir menurut jenis surat",
+        "description": "Konfigurasi tersedia untuk suket, skbn, sktm, skdom, skhsl, skusaha, dan skboro. Ini adalah petunjuk tampilan form; validasi server untuk pengajuan hanya mewajibkan jenis_surat, nik, peruntukan, dan pengantar.",
+        "parameters": [
+          {
+            "name": "jenis_surat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "suket",
+                "skbn",
+                "sktm",
+                "skdom",
+                "skhsl",
+                "skusaha",
+                "skboro"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Konfigurasi form",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/FormConfig"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/surat/history": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "historySurat",
+        "summary": "Riwayat surat menurut NIK",
+        "description": "Hasil diurutkan menurut ID menurun dan tidak dipaginasi. jenis_surat atau jenis_surat_id dapat dipakai sebagai filter.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NikRequired"
+          },
+          {
+            "name": "jenis_surat",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Kode atau nama jenis surat."
+          },
+          {
+            "name": "jenis_surat_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Riwayat surat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SuratDetail"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/surat/detail/{id}": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "detailSurat",
+        "summary": "Detail pengajuan surat",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SuratId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail dan tracking surat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/SuratDetail"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/surat/{id}/rating": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "getRatingSurat",
+        "summary": "Lihat rating surat",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdOrNik"
+          },
+          {
+            "$ref": "#/components/parameters/NikOptional"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RatingSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/BusinessError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Surat"
+        ],
+        "summary": "Simpan rating surat",
+        "description": "rating atau bintang wajib diisi dengan angka 1 sampai 5. Nilai dibulatkan ke satu desimal. Menyimpan rating tidak mengubah status surat.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdOrNik"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingInput"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RatingSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Surat"
+        ],
+        "summary": "Simpan rating surat",
+        "description": "rating atau bintang wajib diisi dengan angka 1 sampai 5. Nilai dibulatkan ke satu desimal. Menyimpan rating tidak mengubah status surat.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdOrNik"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingInput"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RatingSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/surat/{id}/tracking": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "trackingSurat",
+        "summary": "Tracking surat",
+        "description": "NIK 16 digit mengambil surat terbaru berdasarkan updated_at lalu ID. Status Ditolak menyebabkan progress_percent 100.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdOrNik"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timeline surat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Tracking"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/surat/{id}/pdf-url": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "pdfUrlSurat",
+        "summary": "Dapatkan URL PDF surat",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SuratId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "URL PDF tersedia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/PdfInfo"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/surat/{id}/download-pdf": {
+      "get": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "downloadPdfSurat",
+        "summary": "Buka PDF surat",
+        "description": "Mengirim berkas PDF secara inline dengan Content-Disposition inline.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SuratId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Konten PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/surat/store": {
+      "post": {
+        "tags": [
+          "Surat"
+        ],
+        "operationId": "storeSurat",
+        "summary": "Ajukan surat baru",
+        "description": "Jenis surat harus ada dan aktif di master jenis surat. Mengirim salah satu dari pengajuan_id, id_pengajuan, surat_pengajuan_id, id_surat, atau surat_id akan mengalihkan operasi ini ke revisi surat ditolak; dalam mode tersebut pengantar opsional dan respons 200.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SuratSubmission"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SuratStoreRevision"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SuratSuccess"
+          },
+          "201": {
+            "$ref": "#/components/responses/SuratSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/surat/{id}/revisi": {
+      "post": {
+        "tags": [
+          "Surat"
+        ],
+        "summary": "Perbaiki surat yang ditolak",
+        "description": "Alias revisi/perbaiki menjalankan handler yang sama. Surat harus memiliki penanda penolakan. NIK dan jenis surat, bila diberikan, harus sesuai surat lama. Pengantar baru opsional.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SuratId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SuratRevision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SuratSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Surat"
+        ],
+        "summary": "Perbaiki surat yang ditolak",
+        "description": "Alias revisi/perbaiki menjalankan handler yang sama. Surat harus memiliki penanda penolakan. NIK dan jenis surat, bila diberikan, harus sesuai surat lama. Pengantar baru opsional.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SuratId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SuratRevision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SuratSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/surat/{id}/perbaiki": {
+      "post": {
+        "tags": [
+          "Surat"
+        ],
+        "summary": "Perbaiki surat yang ditolak",
+        "description": "Alias revisi/perbaiki menjalankan handler yang sama. Surat harus memiliki penanda penolakan. NIK dan jenis surat, bila diberikan, harus sesuai surat lama. Pengantar baru opsional.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SuratId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SuratRevision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SuratSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Surat"
+        ],
+        "summary": "Perbaiki surat yang ditolak",
+        "description": "Alias revisi/perbaiki menjalankan handler yang sama. Surat harus memiliki penanda penolakan. NIK dan jenis surat, bila diberikan, harus sesuai surat lama. Pengantar baru opsional.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SuratId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SuratRevision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SuratSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sanctum": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum token"
+      }
+    },
+    "parameters": {
+      "SuratId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "description": "ID pengajuan surat."
+      },
+      "IdOrNik": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID pengajuan atau NIK 16 digit untuk surat terbaru."
+      },
+      "NikRequired": {
+        "name": "nik",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{16}$"
+        }
+      },
+      "NikOptional": {
+        "name": "nik",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{16}$"
+        },
+        "description": "Jika diisi, harus sama dengan NIK pada surat."
+      }
+    },
+    "responses": {
+      "Unauthenticated": {
+        "description": "Token Sanctum tidak ada atau tidak valid."
+      },
+      "NotFound": {
+        "description": "Data atau jenis surat tidak ditemukan.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "status": "error",
+              "message": "Pengajuan surat tidak ditemukan."
+            }
+          }
+        }
+      },
+      "BusinessError": {
+        "description": "NIK atau kondisi surat tidak sesuai.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validasi Laravel atau aturan bisnis gagal.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/LaravelValidationError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "example": {
+              "message": "The nik field must be 16 digits.",
+              "errors": {
+                "nik": [
+                  "The nik field must be 16 digits."
+                ]
+              }
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Penyimpanan atau pemrosesan gagal.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "SuratSuccess": {
+        "description": "Pengajuan atau revisi berhasil.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Surat"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "RatingSuccess": {
+        "description": "Data penilaian surat.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Success"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Rating"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Success": {
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "error"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "LaravelValidationError": {
+        "type": "object",
+        "required": [
+          "message",
+          "errors"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "JenisSurat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nama": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "jenis": {
+            "type": "string"
+          },
+          "kode": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "assets": {
+            "type": "string",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "persyaratan": {
+            "nullable": true
+          },
+          "is_active": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          }
+        }
+      },
+      "FormConfig": {
+        "type": "object",
+        "properties": {
+          "jenis_surat": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormField"
+            }
+          }
+        }
+      },
+      "FormField": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "textarea",
+              "radio",
+              "select",
+              "date",
+              "number",
+              "file"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "nama": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "show_if": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SuratSubmission": {
+        "type": "object",
+        "required": [
+          "nik",
+          "peruntukan",
+          "pengantar"
+        ],
+        "description": "Untuk pengajuan baru, kirim jenis_surat atau jenis_surat_id dan pengantar. Field tambahan menurut form-config akan disimpan dalam variable; hanya field utama yang divalidasi server.",
+        "properties": {
+          "jenis_surat": {
+            "type": "string",
+            "description": "Kode atau nama jenis surat aktif; alternatif dari jenis_surat_id.",
+            "example": "suket"
+          },
+          "jenis_surat_id": {
+            "type": "integer",
+            "description": "ID jenis surat aktif; alternatif dari jenis_surat."
+          },
+          "nik": {
+            "type": "string",
+            "pattern": "^[0-9]{16}$",
+            "example": "3571010101900001"
+          },
+          "peruntukan": {
+            "type": "string",
+            "maxLength": 255,
+            "example": "Keperluan administrasi"
+          },
+          "kepada": {
+            "type": "string"
+          },
+          "pengantar": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG/JPEG/PNG, maksimum 2 MiB. Wajib untuk pengajuan baru, opsional saat revisi."
+          },
+          "tgl_surat": {
+            "type": "string",
+            "format": "date",
+            "description": "Opsional saat membuat surat; default waktu saat ini."
+          },
+          "register_as": {
+            "type": "string",
+            "description": "Contoh: perorangan/sekolah untuk SKTM atau perorangan/perusahaan untuk SKDOM."
+          },
+          "kategori": {
+            "type": "string"
+          },
+          "keterangan": {
+            "type": "string"
+          },
+          "alamat_domisili": {
+            "type": "string"
+          },
+          "nama_perusahaan": {
+            "type": "string"
+          },
+          "pengajuan_id": {
+            "type": "integer",
+            "description": "Jika diisi pada /surat/store, operasi berubah menjadi revisi. Alias: id_pengajuan, surat_pengajuan_id, id_surat, surat_id."
+          }
+        },
+        "additionalProperties": true,
+        "anyOf": [
+          {
+            "required": [
+              "jenis_surat"
+            ]
+          },
+          {
+            "required": [
+              "jenis_surat_id"
+            ]
+          }
+        ]
+      },
+      "Surat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "pengajuan_id": {
+            "type": "integer"
+          },
+          "jenis_surat": {
+            "type": "string"
+          },
+          "jenis_surat_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "jenis_surat_label": {
+            "type": "string"
+          },
+          "jenis_surat_kode": {
+            "type": "string"
+          },
+          "no_urut_surat": {
+            "type": "integer",
+            "nullable": true
+          },
+          "nik": {
+            "type": "string"
+          },
+          "peruntukan": {
+            "type": "string"
+          },
+          "kepada": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer"
+          },
+          "status_label": {
+            "type": "string",
+            "nullable": true
+          },
+          "pdf_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "download_pdf_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "pengantar": {
+            "type": "string",
+            "nullable": true
+          },
+          "variable": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true
+          },
+          "bintang": {
+            "type": "number",
+            "nullable": true
+          },
+          "komentar": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "sudah_rating": {
+            "type": "boolean"
+          },
+          "tgl_surat": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "Y-m-d H:i:s, Asia/Jakarta."
+          },
+          "updated_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "Y-m-d H:i:s, Asia/Jakarta."
+          }
+        },
+        "additionalProperties": true
+      },
+      "SuratDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Surat"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tracking": {
+                "$ref": "#/components/schemas/Tracking"
+              }
+            }
+          }
+        ]
+      },
+      "Tracking": {
+        "type": "object",
+        "properties": {
+          "pengajuan_id": {
+            "type": "integer"
+          },
+          "nik": {
+            "type": "string"
+          },
+          "jenis_surat": {
+            "type": "string"
+          },
+          "is_sktm": {
+            "type": "boolean"
+          },
+          "status_tracking": {
+            "type": "string",
+            "enum": [
+              "Pengajuan",
+              "Diproses",
+              "Lurah",
+              "Sekcam",
+              "Selesai",
+              "Ditolak"
+            ]
+          },
+          "progress_percent": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "alur": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineRow"
+            }
+          }
+        }
+      },
+      "TimelineRow": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "mulai": {
+            "type": "string",
+            "nullable": true,
+            "description": "d-m-Y H:i, Asia/Jakarta."
+          },
+          "selesai": {
+            "type": "string",
+            "nullable": true,
+            "description": "d-m-Y H:i, Asia/Jakarta."
+          },
+          "durasi": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RatingInput": {
+        "type": "object",
+        "properties": {
+          "nik": {
+            "type": "string",
+            "pattern": "^[0-9]{16}$"
+          },
+          "rating": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "bintang": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Alternatif rating."
+          },
+          "komentar": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Alias komentar."
+          },
+          "coment": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Alias komentar."
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "rating"
+            ]
+          },
+          {
+            "required": [
+              "bintang"
+            ]
+          }
+        ]
+      },
+      "Rating": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "pengajuan_id": {
+            "type": "integer"
+          },
+          "nik": {
+            "type": "string"
+          },
+          "jenis_surat": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true
+          },
+          "bintang": {
+            "type": "number",
+            "nullable": true
+          },
+          "komentar": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating_at": {
+            "type": "string",
+            "nullable": true,
+            "description": "Y-m-d H:i:s, Asia/Jakarta."
+          },
+          "sudah_rating": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PdfInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "jenis_surat": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "pdf_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "download_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SuratRevision": {
+        "type": "object",
+        "required": [
+          "peruntukan"
+        ],
+        "description": "Revisi surat ditolak. NIK dan jenis surat boleh dihilangkan karena diambil dari pengajuan lama. Pengantar baru opsional.",
+        "properties": {
+          "jenis_surat": {
+            "type": "string",
+            "description": "Kode atau nama jenis surat aktif; alternatif dari jenis_surat_id.",
+            "example": "suket"
+          },
+          "jenis_surat_id": {
+            "type": "integer",
+            "description": "ID jenis surat aktif; alternatif dari jenis_surat."
+          },
+          "nik": {
+            "type": "string",
+            "pattern": "^[0-9]{16}$",
+            "example": "3571010101900001"
+          },
+          "peruntukan": {
+            "type": "string",
+            "maxLength": 255,
+            "example": "Keperluan administrasi"
+          },
+          "kepada": {
+            "type": "string"
+          },
+          "pengantar": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG/JPEG/PNG, maksimum 2 MiB. Wajib untuk pengajuan baru, opsional saat revisi."
+          },
+          "tgl_surat": {
+            "type": "string",
+            "format": "date",
+            "description": "Opsional saat membuat surat; default waktu saat ini."
+          },
+          "register_as": {
+            "type": "string",
+            "description": "Contoh: perorangan/sekolah untuk SKTM atau perorangan/perusahaan untuk SKDOM."
+          },
+          "kategori": {
+            "type": "string"
+          },
+          "keterangan": {
+            "type": "string"
+          },
+          "alamat_domisili": {
+            "type": "string"
+          },
+          "nama_perusahaan": {
+            "type": "string"
+          },
+          "pengajuan_id": {
+            "type": "integer",
+            "description": "Jika diisi pada /surat/store, operasi berubah menjadi revisi. Alias: id_pengajuan, surat_pengajuan_id, id_surat, surat_id."
+          }
+        },
+        "additionalProperties": true
+      },
+      "SuratStoreRevision": {
+        "type": "object",
+        "required": [
+          "peruntukan"
+        ],
+        "description": "Mode revisi melalui /surat/store. pengajuan_id dapat diganti dengan id_pengajuan, surat_pengajuan_id, id_surat, atau surat_id.",
+        "properties": {
+          "jenis_surat": {
+            "type": "string",
+            "description": "Kode atau nama jenis surat aktif; alternatif dari jenis_surat_id.",
+            "example": "suket"
+          },
+          "jenis_surat_id": {
+            "type": "integer",
+            "description": "ID jenis surat aktif; alternatif dari jenis_surat."
+          },
+          "nik": {
+            "type": "string",
+            "pattern": "^[0-9]{16}$",
+            "example": "3571010101900001"
+          },
+          "peruntukan": {
+            "type": "string",
+            "maxLength": 255,
+            "example": "Keperluan administrasi"
+          },
+          "kepada": {
+            "type": "string"
+          },
+          "pengantar": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPG/JPEG/PNG, maksimum 2 MiB. Wajib untuk pengajuan baru, opsional saat revisi."
+          },
+          "tgl_surat": {
+            "type": "string",
+            "format": "date",
+            "description": "Opsional saat membuat surat; default waktu saat ini."
+          },
+          "register_as": {
+            "type": "string",
+            "description": "Contoh: perorangan/sekolah untuk SKTM atau perorangan/perusahaan untuk SKDOM."
+          },
+          "kategori": {
+            "type": "string"
+          },
+          "keterangan": {
+            "type": "string"
+          },
+          "alamat_domisili": {
+            "type": "string"
+          },
+          "nama_perusahaan": {
+            "type": "string"
+          },
+          "pengajuan_id": {
+            "type": "integer",
+            "description": "Jika diisi pada /surat/store, operasi berubah menjadi revisi. Alias: id_pengajuan, surat_pengajuan_id, id_surat, surat_id."
+          },
+          "id_pengajuan": {
+            "type": "integer",
+            "description": "Alias ID pengajuan untuk mode revisi."
+          },
+          "surat_pengajuan_id": {
+            "type": "integer",
+            "description": "Alias ID pengajuan untuk mode revisi."
+          },
+          "id_surat": {
+            "type": "integer",
+            "description": "Alias ID pengajuan untuk mode revisi."
+          },
+          "surat_id": {
+            "type": "integer",
+            "description": "Alias ID pengajuan untuk mode revisi."
+          }
+        },
+        "additionalProperties": true,
+        "anyOf": [
+          {
+            "required": [
+              "pengajuan_id"
+            ]
+          },
+          {
+            "required": [
+              "id_pengajuan"
+            ]
+          },
+          {
+            "required": [
+              "surat_pengajuan_id"
+            ]
+          },
+          {
+            "required": [
+              "id_surat"
+            ]
+          },
+          {
+            "required": [
+              "surat_id"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
