@@ -475,20 +475,18 @@
         ],
         "operationId": "storeSurat",
         "summary": "Ajukan surat baru",
-        "description": "Jenis surat harus ada dan aktif di master jenis surat. Mengirim salah satu dari pengajuan_id, id_pengajuan, surat_pengajuan_id, id_surat, atau surat_id akan mengalihkan operasi ini ke revisi surat ditolak; dalam mode tersebut pengantar opsional dan respons 200.",
+        "description": "Pengajuan baru wajib memakai multipart/form-data dengan jenis_surat atau jenis_surat_id yang aktif, NIK 16 digit, peruntukan, dan gambar pengantar JPG/JPEG/PNG maksimal 2 MiB. Kirim field tambahan dari GET /surat/form-config?jenis_surat={kode} sebagai field multipart biasa, bukan sebagai object variable; controller menyimpannya dalam JSON variable. Endpoint ini juga menerima ID pengajuan untuk mode revisi lama (respons 200 dan pengantar opsional), tetapi untuk revisi gunakan /surat/{id}/revisi atau /perbaiki agar formulirnya jelas.",
         "requestBody": {
           "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/SuratSubmission"
-                  },
-                  {
-                    "$ref": "#/components/schemas/SuratStoreRevision"
-                  }
-                ]
+                "$ref": "#/components/schemas/SuratSubmission"
+              },
+              "encoding": {
+                "pengantar": {
+                  "contentType": "image/jpeg, image/png"
+                }
               }
             }
           }
@@ -1005,7 +1003,7 @@
           "peruntukan",
           "pengantar"
         ],
-        "description": "Untuk pengajuan baru, kirim jenis_surat atau jenis_surat_id dan pengantar. Field tambahan menurut form-config akan disimpan dalam variable; hanya field utama yang divalidasi server.",
+        "description": "Pengajuan baru: jenis_surat atau jenis_surat_id, nik, peruntukan, dan berkas pengantar wajib. Field tambahan mengikuti form-config menurut jenis surat dan dikirim langsung sebagai field multipart. Controller menyimpan jenis_surat, nik, peruntukan, kepada, tgl_surat, dan path pengantar sebagai kolom utama; field lain yang dikirim disimpan di variable. Kolom kd_jenis_surat, no_urut_surat, id_kel, id_rw, id_rt, tahun, dan status dibuat server. Tanda required pada form-config adalah kebutuhan tampilan/form per jenis; validasi server di store hanya memeriksa empat input utama tersebut.",
         "properties": {
           "jenis_surat": {
             "type": "string",
@@ -1027,12 +1025,13 @@
             "example": "Keperluan administrasi"
           },
           "kepada": {
-            "type": "string"
+            "type": "string",
+            "description": "Penerima surat dari form-config; disimpan di kolom utama kepada. Pada SKTM perorangan, diisi dari nama penduduk oleh server."
           },
           "pengantar": {
             "type": "string",
             "format": "binary",
-            "description": "JPG/JPEG/PNG, maksimum 2 MiB. Wajib untuk pengajuan baru, opsional saat revisi."
+            "description": "Wajib pada pengajuan baru. Berkas gambar JPG/JPEG/PNG, maksimum 2 MiB. Path hasil unggah disimpan di kolom pengantar, bukan variable."
           },
           "tgl_surat": {
             "type": "string",
@@ -1041,23 +1040,110 @@
           },
           "register_as": {
             "type": "string",
-            "description": "Contoh: perorangan/sekolah untuk SKTM atau perorangan/perusahaan untuk SKDOM."
+            "description": "Pilihan jenis dari form-config SKTM (perorangan/sekolah), SKDOM (perorangan/perusahaan), atau SKUSAHA (luar/kelurahan); disimpan di variable."
           },
           "kategori": {
-            "type": "string"
+            "type": "string",
+            "description": "Kategori SKTM: DTKS atau Non DTKS; disimpan di variable."
           },
           "keterangan": {
-            "type": "string"
+            "type": "string",
+            "description": "Keterangan SUKET/SKTM dari form-config; disimpan di variable."
           },
           "alamat_domisili": {
-            "type": "string"
+            "type": "string",
+            "description": "Alamat domisili SKDOM; disimpan di variable."
           },
           "nama_perusahaan": {
-            "type": "string"
+            "type": "string",
+            "description": "SKDOM perusahaan; disimpan di variable."
           },
-          "pengajuan_id": {
+          "penghasilan": {
+            "type": "number",
+            "description": "Field SKHSL dari form-config; disimpan di variable."
+          },
+          "keperluan_lainnya": {
+            "type": "string",
+            "description": "Keperluan tambahan SKTM; disimpan di variable."
+          },
+          "kepada_tempat_lhr": {
+            "type": "string",
+            "description": "Tempat lahir penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_tgl_lhr": {
+            "type": "string",
+            "format": "date",
+            "description": "Tanggal lahir penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_gender": {
+            "type": "string",
+            "description": "Jenis kelamin penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_hubungan": {
+            "type": "string",
+            "description": "Hubungan penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_sekolah": {
+            "type": "string",
+            "description": "Sekolah penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_kelas": {
+            "type": "string",
+            "description": "Kelas penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_alamat_sekolah": {
+            "type": "string",
+            "description": "Alamat sekolah penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "status_bangunan": {
+            "type": "string",
+            "description": "SKDOM perusahaan; disimpan di variable."
+          },
+          "jumlah_karyawan": {
             "type": "integer",
-            "description": "Jika diisi pada /surat/store, operasi berubah menjadi revisi. Alias: id_pengajuan, surat_pengajuan_id, id_surat, surat_id."
+            "description": "SKDOM perusahaan; disimpan di variable."
+          },
+          "terbilang": {
+            "type": "string",
+            "description": "Penghasilan terbilang untuk SKHSL; disimpan di variable."
+          },
+          "nama_usaha": {
+            "type": "string",
+            "description": "Nama usaha SKUSAHA; disimpan di variable."
+          },
+          "alamat_usaha": {
+            "type": "string",
+            "description": "Alamat usaha SKUSAHA; disimpan di variable."
+          },
+          "provinsi_boro": {
+            "type": "string",
+            "description": "Provinsi tujuan SKBORO; disimpan di variable."
+          },
+          "kabko_boro": {
+            "type": "string",
+            "description": "Kabupaten/kota tujuan SKBORO; disimpan di variable."
+          },
+          "kecamatan_boro": {
+            "type": "string",
+            "description": "Kecamatan tujuan SKBORO; disimpan di variable."
+          },
+          "kelurahan_boro": {
+            "type": "string",
+            "description": "Kelurahan tujuan SKBORO; disimpan di variable."
+          },
+          "alamat_boro": {
+            "type": "string",
+            "description": "Alamat tujuan SKBORO; disimpan di variable."
+          },
+          "tgl_awal": {
+            "type": "string",
+            "format": "date",
+            "description": "Tanggal mulai SKBORO; disimpan di variable."
+          },
+          "tgl_akhir": {
+            "type": "string",
+            "format": "date",
+            "description": "Tanggal akhir SKBORO; disimpan di variable."
           }
         },
         "additionalProperties": true,
@@ -1131,7 +1217,8 @@
           },
           "variable": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": true,
+            "description": "Field tambahan dari form-config yang diterima saat pengajuan, di luar kolom utama surat. SKTM menyesuaikan data siswa berdasarkan register_as; SKBORO menambahkan detail_pengikut."
           },
           "rating": {
             "type": "number",
@@ -1363,7 +1450,7 @@
         "required": [
           "peruntukan"
         ],
-        "description": "Revisi surat ditolak. NIK dan jenis surat boleh dihilangkan karena diambil dari pengajuan lama. Pengantar baru opsional.",
+        "description": "Revisi surat ditolak. peruntukan wajib; nik dan jenis surat dapat dihilangkan karena diambil dari surat lama. Field tambahan dari form-config diperbarui di variable.",
         "properties": {
           "jenis_surat": {
             "type": "string",
@@ -1385,12 +1472,13 @@
             "example": "Keperluan administrasi"
           },
           "kepada": {
-            "type": "string"
+            "type": "string",
+            "description": "Penerima surat dari form-config; disimpan di kolom utama kepada. Pada SKTM perorangan, diisi dari nama penduduk oleh server."
           },
           "pengantar": {
             "type": "string",
             "format": "binary",
-            "description": "JPG/JPEG/PNG, maksimum 2 MiB. Wajib untuk pengajuan baru, opsional saat revisi."
+            "description": "Opsional pada revisi; jika dikirim harus gambar JPG/JPEG/PNG maksimum 2 MiB. Jika tidak dikirim, pengantar lama tetap dipakai."
           },
           "tgl_surat": {
             "type": "string",
@@ -1399,131 +1487,113 @@
           },
           "register_as": {
             "type": "string",
-            "description": "Contoh: perorangan/sekolah untuk SKTM atau perorangan/perusahaan untuk SKDOM."
+            "description": "Pilihan jenis dari form-config SKTM (perorangan/sekolah), SKDOM (perorangan/perusahaan), atau SKUSAHA (luar/kelurahan); disimpan di variable."
           },
           "kategori": {
-            "type": "string"
+            "type": "string",
+            "description": "Kategori SKTM: DTKS atau Non DTKS; disimpan di variable."
           },
           "keterangan": {
-            "type": "string"
+            "type": "string",
+            "description": "Keterangan SUKET/SKTM dari form-config; disimpan di variable."
           },
           "alamat_domisili": {
-            "type": "string"
+            "type": "string",
+            "description": "Alamat domisili SKDOM; disimpan di variable."
           },
           "nama_perusahaan": {
-            "type": "string"
+            "type": "string",
+            "description": "SKDOM perusahaan; disimpan di variable."
           },
-          "pengajuan_id": {
+          "penghasilan": {
+            "type": "number",
+            "description": "Field SKHSL dari form-config; disimpan di variable."
+          },
+          "keperluan_lainnya": {
+            "type": "string",
+            "description": "Keperluan tambahan SKTM; disimpan di variable."
+          },
+          "kepada_tempat_lhr": {
+            "type": "string",
+            "description": "Tempat lahir penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_tgl_lhr": {
+            "type": "string",
+            "format": "date",
+            "description": "Tanggal lahir penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_gender": {
+            "type": "string",
+            "description": "Jenis kelamin penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_hubungan": {
+            "type": "string",
+            "description": "Hubungan penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_sekolah": {
+            "type": "string",
+            "description": "Sekolah penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_kelas": {
+            "type": "string",
+            "description": "Kelas penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "kepada_alamat_sekolah": {
+            "type": "string",
+            "description": "Alamat sekolah penerima SKTM sekolah/SKHSL; disimpan di variable."
+          },
+          "status_bangunan": {
+            "type": "string",
+            "description": "SKDOM perusahaan; disimpan di variable."
+          },
+          "jumlah_karyawan": {
             "type": "integer",
-            "description": "Jika diisi pada /surat/store, operasi berubah menjadi revisi. Alias: id_pengajuan, surat_pengajuan_id, id_surat, surat_id."
+            "description": "SKDOM perusahaan; disimpan di variable."
+          },
+          "terbilang": {
+            "type": "string",
+            "description": "Penghasilan terbilang untuk SKHSL; disimpan di variable."
+          },
+          "nama_usaha": {
+            "type": "string",
+            "description": "Nama usaha SKUSAHA; disimpan di variable."
+          },
+          "alamat_usaha": {
+            "type": "string",
+            "description": "Alamat usaha SKUSAHA; disimpan di variable."
+          },
+          "provinsi_boro": {
+            "type": "string",
+            "description": "Provinsi tujuan SKBORO; disimpan di variable."
+          },
+          "kabko_boro": {
+            "type": "string",
+            "description": "Kabupaten/kota tujuan SKBORO; disimpan di variable."
+          },
+          "kecamatan_boro": {
+            "type": "string",
+            "description": "Kecamatan tujuan SKBORO; disimpan di variable."
+          },
+          "kelurahan_boro": {
+            "type": "string",
+            "description": "Kelurahan tujuan SKBORO; disimpan di variable."
+          },
+          "alamat_boro": {
+            "type": "string",
+            "description": "Alamat tujuan SKBORO; disimpan di variable."
+          },
+          "tgl_awal": {
+            "type": "string",
+            "format": "date",
+            "description": "Tanggal mulai SKBORO; disimpan di variable."
+          },
+          "tgl_akhir": {
+            "type": "string",
+            "format": "date",
+            "description": "Tanggal akhir SKBORO; disimpan di variable."
           }
         },
         "additionalProperties": true
-      },
-      "SuratStoreRevision": {
-        "type": "object",
-        "required": [
-          "peruntukan"
-        ],
-        "description": "Mode revisi melalui /surat/store. pengajuan_id dapat diganti dengan id_pengajuan, surat_pengajuan_id, id_surat, atau surat_id.",
-        "properties": {
-          "jenis_surat": {
-            "type": "string",
-            "description": "Kode atau nama jenis surat aktif; alternatif dari jenis_surat_id.",
-            "example": "suket"
-          },
-          "jenis_surat_id": {
-            "type": "integer",
-            "description": "ID jenis surat aktif; alternatif dari jenis_surat."
-          },
-          "nik": {
-            "type": "string",
-            "pattern": "^[0-9]{16}$",
-            "example": "3571010101900001"
-          },
-          "peruntukan": {
-            "type": "string",
-            "maxLength": 255,
-            "example": "Keperluan administrasi"
-          },
-          "kepada": {
-            "type": "string"
-          },
-          "pengantar": {
-            "type": "string",
-            "format": "binary",
-            "description": "JPG/JPEG/PNG, maksimum 2 MiB. Wajib untuk pengajuan baru, opsional saat revisi."
-          },
-          "tgl_surat": {
-            "type": "string",
-            "format": "date",
-            "description": "Opsional saat membuat surat; default waktu saat ini."
-          },
-          "register_as": {
-            "type": "string",
-            "description": "Contoh: perorangan/sekolah untuk SKTM atau perorangan/perusahaan untuk SKDOM."
-          },
-          "kategori": {
-            "type": "string"
-          },
-          "keterangan": {
-            "type": "string"
-          },
-          "alamat_domisili": {
-            "type": "string"
-          },
-          "nama_perusahaan": {
-            "type": "string"
-          },
-          "pengajuan_id": {
-            "type": "integer",
-            "description": "Jika diisi pada /surat/store, operasi berubah menjadi revisi. Alias: id_pengajuan, surat_pengajuan_id, id_surat, surat_id."
-          },
-          "id_pengajuan": {
-            "type": "integer",
-            "description": "Alias ID pengajuan untuk mode revisi."
-          },
-          "surat_pengajuan_id": {
-            "type": "integer",
-            "description": "Alias ID pengajuan untuk mode revisi."
-          },
-          "id_surat": {
-            "type": "integer",
-            "description": "Alias ID pengajuan untuk mode revisi."
-          },
-          "surat_id": {
-            "type": "integer",
-            "description": "Alias ID pengajuan untuk mode revisi."
-          }
-        },
-        "additionalProperties": true,
-        "anyOf": [
-          {
-            "required": [
-              "pengajuan_id"
-            ]
-          },
-          {
-            "required": [
-              "id_pengajuan"
-            ]
-          },
-          {
-            "required": [
-              "surat_pengajuan_id"
-            ]
-          },
-          {
-            "required": [
-              "id_surat"
-            ]
-          },
-          {
-            "required": [
-              "surat_id"
-            ]
-          }
-        ]
       }
     }
   }

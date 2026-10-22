@@ -206,11 +206,31 @@
 .surat-docs .swagger-ui .opblock {
     margin-bottom: 9px;
     border: 1px solid var(--rumput-glass-border-strong);
-    border-left: 4px solid var(--rumput-teal);
+    border-left: 4px solid var(--method-color);
     border-radius: 11px;
     background: var(--rumput-glass-bg-strong);
     box-shadow: none;
     overflow: hidden;
+}
+
+.surat-docs .swagger-ui .opblock.opblock-get {
+    --method-color: #3b82f6;
+}
+
+.surat-docs .swagger-ui .opblock.opblock-post {
+    --method-color: #16a34a;
+}
+
+.surat-docs .swagger-ui .opblock.opblock-put {
+    --method-color: #d97706;
+}
+
+.surat-docs .swagger-ui .opblock.opblock-patch {
+    --method-color: #7c3aed;
+}
+
+.surat-docs .swagger-ui .opblock.opblock-delete {
+    --method-color: #dc2626;
 }
 
 .surat-docs .swagger-ui .opblock .opblock-summary {
@@ -223,7 +243,7 @@
     min-width: 62px;
     padding: 7px 9px;
     border-radius: 7px;
-    background: var(--rumput-teal-dark);
+    background: var(--method-color);
     box-shadow: none;
     font-size: 12px;
 }
