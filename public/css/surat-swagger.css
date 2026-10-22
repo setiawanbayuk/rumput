@@ -1,9 +1,173 @@
-.surat-docs {
-    color: var(--rumput-ink);
+.docs-shell {
+    max-width: 1460px;
+    padding-inline: clamp(16px, 3vw, 36px);
 }
 
-.surat-docs-panel {
-    overflow-x: auto;
+.docs-navbar {
+    padding-block: 14px;
+    margin-bottom: 28px;
+    border-radius: 0 0 var(--rumput-radius-lg) var(--rumput-radius-lg);
+}
+
+.docs-brand-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    color: var(--rumput-teal-dark);
+    background: var(--rumput-teal-muted);
+    font-size: 21px;
+}
+
+.docs-home-link {
+    color: var(--rumput-ink-muted);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.docs-home-link:hover,
+.docs-home-link:focus-visible {
+    color: var(--rumput-teal-dark);
+}
+
+.surat-docs {
+    color: var(--rumput-ink);
+    padding-bottom: 56px;
+}
+
+.docs-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    position: relative;
+    overflow: hidden;
+    padding: clamp(24px, 3vw, 40px);
+    margin-bottom: 20px;
+    background-image: radial-gradient(circle at 92% 0%, var(--rumput-teal-muted), transparent 42%);
+}
+
+.docs-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: var(--rumput-teal);
+}
+
+.docs-hero-content,
+.docs-hero-actions {
+    position: relative;
+    z-index: 1;
+}
+
+.docs-eyebrow,
+.docs-section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--rumput-teal-dark);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .09em;
+}
+
+.docs-hero h1 {
+    margin: 10px 0 8px;
+    font-size: clamp(28px, 3vw, 42px);
+    font-weight: 800;
+    letter-spacing: -.035em;
+}
+
+.docs-hero p,
+.docs-reference-heading p {
+    margin: 0;
+    color: var(--rumput-ink-muted);
+}
+
+.docs-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.docs-badges span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--rumput-glass-border-strong);
+    border-radius: var(--rumput-radius-pill);
+    background: var(--rumput-glass-bg-strong);
+    color: var(--rumput-ink-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.docs-badges i {
+    color: var(--rumput-teal-dark);
+}
+
+.docs-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.docs-hero-actions .btn {
+    white-space: nowrap;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.docs-reference {
+    padding: clamp(18px, 2.5vw, 32px);
+    scroll-margin-top: 16px;
+}
+
+.docs-reference-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 20px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--rumput-glass-border-strong);
+}
+
+.docs-reference-heading h2 {
+    margin: 5px 0;
+    font-size: clamp(21px, 2vw, 27px);
+    font-weight: 750;
+}
+
+.docs-auth-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: 430px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--rumput-teal-muted);
+    color: var(--rumput-ink-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.docs-auth-note i {
+    flex: none;
+    color: var(--rumput-teal-dark);
+    font-size: 17px;
+}
+
+/* The app's global .main rule targets Swagger's hgroup.main too. */
+.surat-docs .swagger-ui .info hgroup.main {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    transition: none;
 }
 
 .surat-docs .swagger-ui {
@@ -11,21 +175,62 @@
     font-family: inherit;
 }
 
+.surat-docs .swagger-ui .information-container,
 .surat-docs .swagger-ui .topbar {
     display: none;
 }
 
-.surat-docs .swagger-ui .scheme-container,
-.surat-docs .swagger-ui .opblock,
-.surat-docs .swagger-ui .model-box {
-    background: var(--rumput-glass-bg-strong);
-    border: 1px solid var(--rumput-glass-border-strong);
-    border-radius: var(--rumput-radius);
-    box-shadow: var(--rumput-glass-shadow);
+.surat-docs .swagger-ui .wrapper {
+    max-width: none;
+    padding: 0;
 }
 
 .surat-docs .swagger-ui .scheme-container {
-    padding: 1rem;
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    background: var(--rumput-glass-bg-strong);
+    border: 1px solid var(--rumput-glass-border-strong);
+    border-radius: var(--rumput-radius);
+    box-shadow: none;
+}
+
+.surat-docs .swagger-ui .opblock-tag {
+    padding: 8px 0 12px;
+    margin-bottom: 12px;
+    border-bottom-color: var(--rumput-glass-border-strong);
+    color: var(--rumput-ink);
+    font-size: 20px;
+    font-weight: 750;
+}
+
+.surat-docs .swagger-ui .opblock {
+    margin-bottom: 9px;
+    border: 1px solid var(--rumput-glass-border-strong);
+    border-left: 4px solid var(--rumput-teal);
+    border-radius: 11px;
+    background: var(--rumput-glass-bg-strong);
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.surat-docs .swagger-ui .opblock .opblock-summary {
+    min-height: 50px;
+    padding: 7px 12px;
+    border-color: var(--rumput-glass-border-strong);
+}
+
+.surat-docs .swagger-ui .opblock .opblock-summary-method {
+    min-width: 62px;
+    padding: 7px 9px;
+    border-radius: 7px;
+    background: var(--rumput-teal-dark);
+    box-shadow: none;
+    font-size: 12px;
+}
+
+.surat-docs .swagger-ui .opblock .opblock-summary-path,
+.surat-docs .swagger-ui .opblock .opblock-summary-description {
+    color: var(--rumput-ink);
 }
 
 .surat-docs .swagger-ui .btn.authorize,
@@ -40,14 +245,43 @@
     color: white;
 }
 
-.surat-docs .swagger-ui .info .title,
-.surat-docs .swagger-ui .opblock-tag,
-.surat-docs .swagger-ui .opblock-summary-description {
-    color: var(--rumput-ink);
+.surat-docs .swagger-ui .model-box {
+    border-radius: var(--rumput-radius);
+    background: var(--rumput-glass-bg-strong);
 }
 
-.surat-docs .swagger-ui .opblock.opblock-get,
-.surat-docs .swagger-ui .opblock.opblock-post,
-.surat-docs .swagger-ui .opblock.opblock-put {
-    border-color: var(--rumput-teal);
+@media (max-width: 900px) {
+    .docs-hero,
+    .docs-reference-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .docs-auth-note {
+        max-width: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .docs-navbar {
+        margin-bottom: 16px;
+    }
+
+    .docs-home-link {
+        font-size: 13px;
+    }
+
+    .docs-hero-actions,
+    .docs-hero-actions .btn {
+        width: 100%;
+    }
+
+    .surat-docs .swagger-ui .scheme-container {
+        padding: 12px;
+    }
+
+    .surat-docs .swagger-ui .opblock .opblock-summary {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
 }
