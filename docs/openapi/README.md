@@ -6,6 +6,6 @@ Untuk memakai berkas di luar aplikasi, buka `public/openapi/surat-api.json` di [
 
 Semua operasi memakai base path `/api` dan token Sanctum. Isi **Authorize** dengan bearer token dari endpoint login aplikasi. Untuk `POST /surat/store` dan endpoint revisi, gunakan `multipart/form-data`; `pengantar` adalah gambar JPG/PNG maksimal 2 MiB.
 
-Pada `POST /surat/store` untuk pengajuan baru, `pengantar` wajib. Kirim juga `jenis_surat` atau `jenis_surat_id`, NIK, dan `peruntukan`. Field lain mengikuti respons `/surat/form-config?jenis_surat={kode}` dan dikirim sebagai field multipart biasa, bukan sebagai object `variable`. Nilai di luar kolom utama surat disimpan di JSON `variable` oleh controller. Endpoint revisi menerima `pengantar` baru secara opsional.
+Pada `POST /surat/store` untuk pengajuan baru, kirim `jenis_surat`, `nik`, `peruntukan`, dan berkas gambar `pengantar` sebagai multipart. Field lain mengikuti respons `/surat/form-config?jenis_surat={kode}` dan dapat dikirim dalam satu field teks `variable` berisi object JSON, misalnya `{"keterangan":"Untuk administrasi","kepada":"Kelurahan"}`. Controller mengambil `kepada` untuk kolom utama dan menyimpan field tambahan lain ke JSON `variable`. Format lama yang mengirim field tambahan satu per satu tetap didukung. Endpoint revisi menerima `pengantar` baru secara opsional.
 
 Sumber kebenaran spesifikasi ini adalah `routes/api.php` dan `app/Http/Controllers/Api/SuratApiController.php`. Bila perilaku controller berubah, perbarui berkas OpenAPI ini bersama perubahan tersebut.

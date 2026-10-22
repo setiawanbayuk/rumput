@@ -40,7 +40,7 @@
                 <a href="#endpoint-list" class="btn btn-primary">
                     <i class="ri-arrow-down-line me-1" aria-hidden="true"></i> Lihat endpoint
                 </a>
-                <a href="{{ asset('openapi/surat-api.json') }}?v=20261022-2" class="btn btn-outline-primary" download="surat-api.json">
+                <a href="{{ asset('openapi/surat-api.json') }}?v=20261022-3" class="btn btn-outline-primary" download="surat-api.json">
                     <i class="ri-download-line me-1" aria-hidden="true"></i> Unduh spesifikasi
                 </a>
             </div>
@@ -58,7 +58,7 @@
                     <span>Akses dokumentasi tanpa login. Untuk mencoba API, masukkan token di <strong>Authorize</strong>.</span>
                 </div>
             </div>
-            <div id="swagger-ui" data-spec-url="{{ asset('openapi/surat-api.json') }}?v=20261022-2"></div>
+            <div id="swagger-ui" data-spec-url="{{ asset('openapi/surat-api.json') }}?v=20261022-3"></div>
         </section>
     </main>
     <script src="{{ asset('vendor/swagger-ui/swagger-ui-bundle.js') }}" defer></script>

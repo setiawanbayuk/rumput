@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use App\Models\SuratPengajuan;
 use App\Models\Resident;
 use App\Models\Log_surat;
 use App\Models\JenisSurat;
 use Carbon\Carbon;
+use JsonException;
 
 class SuratApiController extends Controller
 {
@@ -479,6 +481,55 @@ class SuratApiController extends Controller
         return array_diff_key($input, array_flip($mainColumns));
     }
 
+    /** Expand the optional JSON part while keeping the existing flat multipart format. */
+    protected function mergeVariableInput(Request $request): void
+    {
+        $raw = $request->input('variable');
+
+        if ($raw === null || (is_string($raw) && trim($raw) === '')) {
+            $request->request->remove('variable');
+            $request->json()->remove('variable');
+            return;
+        }
+
+        if (is_string($raw)) {
+            try {
+                $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException $e) {
+                throw ValidationException::withMessages(['variable' => 'variable harus berupa object JSON yang valid.']);
+            }
+
+            if (!str_starts_with(ltrim($raw), '{')) {
+                throw ValidationException::withMessages(['variable' => 'variable harus berupa object JSON.']);
+            }
+        } else {
+            $data = $raw;
+        }
+
+        if (!is_array($data) || ($data !== [] && array_is_list($data))) {
+            throw ValidationException::withMessages(['variable' => 'variable harus berupa object JSON.']);
+        }
+
+        $reserved = [
+            'jenis_surat', 'jenis_surat_id', 'nik', 'peruntukan', 'pengantar',
+            'pengajuan_id', 'id_pengajuan', 'surat_pengajuan_id', 'id_surat', 'surat_id',
+            'id_kel', 'id_rw', 'id_rt', 'tahun', 'status', 'kd_jenis_surat',
+            'no_urut_surat', 'variable', 'token', '_method', 'submitter_type',
+        ];
+
+        if (array_intersect(array_keys($data), $reserved)) {
+            throw ValidationException::withMessages([
+                'variable' => 'variable hanya boleh berisi field tambahan; field utama dan field sistem dikirim terpisah.',
+            ]);
+        }
+
+        $existingInput = $request->all();
+        $request->request->remove('variable');
+        $request->json()->remove('variable');
+
+        $request->merge(array_diff_key($data, $existingInput));
+    }
+
     protected function buildAllInput(Request $request, Resident $resident, string $resolvedJenis): array
     {
         $allInput = $request->all();
@@ -690,6 +741,8 @@ class SuratApiController extends Controller
 
         }
 
+        $this->mergeVariableInput($request);
+
         $allowedJenis = $this->masterJenisCollection()->pluck('jenis')->filter()->values()->all();
         $resolvedJenis = $this->resolveJenisInput($request);
 
@@ -781,6 +834,8 @@ class SuratApiController extends Controller
 
     public function revisiDitolak(Request $request, int $id)
     {
+        $this->mergeVariableInput($request);
+
         $allowedJenis = $this->masterJenisCollection()->pluck('jenis')->filter()->values()->all();
         $resolvedJenis = $this->resolveJenisInput($request);
 
