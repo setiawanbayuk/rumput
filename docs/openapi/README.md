@@ -1,6 +1,6 @@
 # Swagger Surat API
 
-Buka `/dokumentasi-api/surat` tanpa login untuk melihat dokumentasi interaktif di aplikasi. Tautan juga tersedia di menu **Tools → Dokumentasi API Surat** bagi pengguna yang sudah login. Halaman ini memuat spesifikasi publik dari `/openapi/surat-api.json` dan menggunakan aset Swagger UI yang dibundel secara lokal oleh Vite.
+Buka `/dokumentasi-api/surat` tanpa login untuk melihat dokumentasi interaktif di aplikasi. Tautan juga tersedia di menu **Tools → Dokumentasi API Surat** bagi pengguna yang sudah login. Halaman ini memuat spesifikasi publik dari `/openapi/surat-api.json`. Aset Swagger UI ada di `public/vendor/swagger-ui`, sehingga halaman tidak memerlukan entry Vite tambahan.
 
 Untuk memakai berkas di luar aplikasi, buka `public/openapi/surat-api.json` di [Swagger Editor](https://editor.swagger.io/) dengan **File → Import file**.
 

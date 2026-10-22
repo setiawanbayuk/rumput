@@ -6,8 +6,10 @@
     <meta name="description" content="Dokumentasi API Surat E-SUKET">
     <title>Dokumentasi API Surat — E-SUKET</title>
     <link rel="shortcut icon" href="{{ asset('assets/favicon.ico') }}" type="image/x-icon">
-    @vite(['resources/sass/app.scss', 'resources/js/surat-swagger.js'])
+    @vite('resources/sass/app.scss')
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive-pro.css') }}?v=20260624-esuket-glass-v1">
+    <link rel="stylesheet" href="{{ asset('vendor/swagger-ui/swagger-ui.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/surat-swagger.css') }}">
 </head>
 <body class="rumput-glass-body">
     <nav class="glass-navbar py-3 mb-4" aria-label="Navigasi dokumentasi">
@@ -49,5 +51,7 @@
             <div id="swagger-ui" data-spec-url="{{ asset('openapi/surat-api.json') }}"></div>
         </div>
     </main>
+    <script src="{{ asset('vendor/swagger-ui/swagger-ui-bundle.js') }}" defer></script>
+    <script src="{{ asset('js/surat-swagger.js') }}" defer></script>
 </body>
 </html>
