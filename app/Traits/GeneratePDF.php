@@ -3,7 +3,6 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\Element\Table;
 use PhpOffice\PhpWord\SimpleType\TblWidth;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -14,15 +13,15 @@ trait GeneratePDF
 {
     protected function buildQrImage(string $link): ?string
     {
-        $code = time() . '_' . uniqid();
-        $qrImageName = $code . '.png';
+        $code = time().'_'.uniqid();
+        $qrImageName = $code.'.png';
         $qrDir = storage_path('app/public/qr/');
 
-        if (!File::exists($qrDir)) {
+        if (! File::exists($qrDir)) {
             File::makeDirectory($qrDir, 0777, true);
         }
 
-        $qrPath = $qrDir . $qrImageName;
+        $qrPath = $qrDir.$qrImageName;
 
         try {
             $qrBinary = QrCode::format('png')->size(300)->generate($link ?: url('/'));
@@ -60,7 +59,12 @@ trait GeneratePDF
 
     protected function getSofficePath(): string
     {
-        $candidates = [
+        $candidates = [// Ubuntu / Debian
+        '/usr/bin/soffice',
+        '/usr/bin/libreoffice',
+        '/usr/local/bin/soffice',
+
+        // Windows
             'C:\\Program Files\\LibreOffice\\program\\soffice.com',
             'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
             'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.com',
@@ -86,7 +90,7 @@ trait GeneratePDF
         ];
 
         foreach ($dirs as $dir) {
-            if (!File::exists($dir)) {
+            if (! File::exists($dir)) {
                 File::makeDirectory($dir, 0777, true);
             }
         }
@@ -127,8 +131,6 @@ trait GeneratePDF
         }
     }
 
-
-
     /**
      * Gambar TTE yang dibuat sendiri ditempel di template Word,
      * sedangkan QR/barcode resmi tetap ditempel oleh BSrE pada marker ${qr}~ / ~camat~.
@@ -160,6 +162,7 @@ trait GeneratePDF
                         'height' => $height,
                         'ratio' => $ratio,
                     ]);
+
                     continue;
                 } catch (\Throwable $e) {
                     // Jika placeholder tidak ada di template tertentu, jangan gagalkan proses surat.
@@ -177,7 +180,7 @@ trait GeneratePDF
     protected function cleanupGeneratedTteImages(array $data): void
     {
         $cleanupImages = $data['__cleanup_images'] ?? [];
-        if (!is_array($cleanupImages)) {
+        if (! is_array($cleanupImages)) {
             return;
         }
 
@@ -200,26 +203,27 @@ trait GeneratePDF
         $needsLurah = $this->hasValidTteImageSpec($data['tte_lurah'] ?? null);
         $needsCamat = $this->hasValidTteImageSpec($data['tte_camat'] ?? null);
 
-        if (!$needsLurah && !$needsCamat) {
+        if (! $needsLurah && ! $needsCamat) {
             return [$templateFile, null];
         }
 
-        if (!file_exists($templateFile)) {
+        if (! file_exists($templateFile)) {
             return [$templateFile, null];
         }
 
         $this->ensurePdfFolders();
 
-        $tempTemplate = storage_path('app/public/doc/template_tte_' . uniqid('', true) . '.docx');
-        if (!@copy($templateFile, $tempTemplate)) {
+        $tempTemplate = storage_path('app/public/doc/template_tte_'.uniqid('', true).'.docx');
+        if (! @copy($templateFile, $tempTemplate)) {
             return [$templateFile, null];
         }
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($tempTemplate) !== true) {
             if (File::exists($tempTemplate)) {
                 File::delete($tempTemplate);
             }
+
             return [$templateFile, null];
         }
 
@@ -233,18 +237,18 @@ trait GeneratePDF
 
         foreach ($xmlNames as $xmlName) {
             $xml = $zip->getFromName($xmlName);
-            if (!is_string($xml) || $xml === '') {
+            if (! is_string($xml) || $xml === '') {
                 continue;
             }
 
             $originalXml = $xml;
 
-            if ($needsLurah && !str_contains($xml, '${tte_lurah}')) {
+            if ($needsLurah && ! str_contains($xml, '${tte_lurah}')) {
                 $xml = $this->injectTtePlaceholderAfterMarker($xml, '${qr}~', 'tte_lurah');
                 $xml = $this->injectTtePlaceholderAfterMarker($xml, '${qr}', 'tte_lurah');
             }
 
-            if ($needsCamat && !str_contains($xml, '${tte_camat}')) {
+            if ($needsCamat && ! str_contains($xml, '${tte_camat}')) {
                 $xml = $this->injectTtePlaceholderAfterMarker($xml, '~camat~', 'tte_camat');
                 $xml = $this->injectTtePlaceholderAfterMarker($xml, '[[qr_camat]]', 'tte_camat');
                 $xml = $this->injectTtePlaceholderAfterMarker($xml, '${qr_camat}', 'tte_camat');
@@ -279,21 +283,21 @@ trait GeneratePDF
 
     protected function injectTtePlaceholderAfterMarker(string $xml, string $marker, string $placeholder): string
     {
-        if (str_contains($xml, '${' . $placeholder . '}')) {
+        if (str_contains($xml, '${'.$placeholder.'}')) {
             return $xml;
         }
 
-        $needle = '<w:t>' . htmlspecialchars($marker, ENT_XML1) . '</w:t>';
-        $plainNeedle = '<w:t>' . $marker . '</w:t>';
-        $insert = '<w:t>' . htmlspecialchars($marker, ENT_XML1) . '     ${' . $placeholder . '}</w:t>';
-        $plainInsert = '<w:t>' . $marker . '     ${' . $placeholder . '}</w:t>';
+        $needle = '<w:t>'.htmlspecialchars($marker, ENT_XML1).'</w:t>';
+        $plainNeedle = '<w:t>'.$marker.'</w:t>';
+        $insert = '<w:t>'.htmlspecialchars($marker, ENT_XML1).'     ${'.$placeholder.'}</w:t>';
+        $plainInsert = '<w:t>'.$marker.'     ${'.$placeholder.'}</w:t>';
 
         if (str_contains($xml, $needle)) {
-            return preg_replace('/' . preg_quote($needle, '/') . '/', $insert, $xml, 1) ?? $xml;
+            return preg_replace('/'.preg_quote($needle, '/').'/', $insert, $xml, 1) ?? $xml;
         }
 
         if (str_contains($xml, $plainNeedle)) {
-            return preg_replace('/' . preg_quote($plainNeedle, '/') . '/', $plainInsert, $xml, 1) ?? $xml;
+            return preg_replace('/'.preg_quote($plainNeedle, '/').'/', $plainInsert, $xml, 1) ?? $xml;
         }
 
         // Fallback untuk marker yang terpecah menjadi beberapa run oleh Word/WPS.
@@ -303,8 +307,8 @@ trait GeneratePDF
 
     protected function convertDocxToPdf(string $tempDocxPath, string $outputPdfPath, string $outputPdf): string
     {
-        $sourcePdfPath = rtrim($outputPdfPath, '\\/') . DIRECTORY_SEPARATOR . pathinfo($tempDocxPath, PATHINFO_FILENAME) . '.pdf';
-        $finalPdfPath  = rtrim($outputPdfPath, '\\/') . DIRECTORY_SEPARATOR . $outputPdf . '.pdf';
+        $sourcePdfPath = rtrim($outputPdfPath, '\\/').DIRECTORY_SEPARATOR.pathinfo($tempDocxPath, PATHINFO_FILENAME).'.pdf';
+        $finalPdfPath = rtrim($outputPdfPath, '\\/').DIRECTORY_SEPARATOR.$outputPdf.'.pdf';
 
         if (File::exists($sourcePdfPath)) {
             File::delete($sourcePdfPath);
@@ -317,20 +321,20 @@ trait GeneratePDF
         $sofficePath = $this->getSofficePath();
         $profileDir = storage_path('app/libreoffice-profile');
 
-        if (!File::exists($profileDir)) {
+        if (! File::exists($profileDir)) {
             File::makeDirectory($profileDir, 0777, true);
         }
 
-        $quotedSoffice = '"' . $sofficePath . '"';
-        $quotedOutDir  = '"' . rtrim($outputPdfPath, '\\/') . '"';
-        $quotedDocx    = '"' . $tempDocxPath . '"';
-        $userInstall   = 'file:///' . str_replace('\\', '/', $profileDir);
+        $quotedSoffice = '"'.$sofficePath.'"';
+        $quotedOutDir = '"'.rtrim($outputPdfPath, '\\/').'"';
+        $quotedDocx = '"'.$tempDocxPath.'"';
+        $userInstall = 'file:///'.str_replace('\\', '/', $profileDir);
 
         $command =
-            $quotedSoffice .
-            ' --headless --norestore --nofirststartwizard --nolockcheck' .
-            ' -env:UserInstallation="' . $userInstall . '"' .
-            ' --convert-to pdf:writer_pdf_Export --outdir ' . $quotedOutDir . ' ' . $quotedDocx . ' 2>&1';
+            $quotedSoffice.
+            ' --headless --norestore --nofirststartwizard --nolockcheck'.
+            ' -env:UserInstallation="'.$userInstall.'"'.
+            ' --convert-to pdf:writer_pdf_Export --outdir '.$quotedOutDir.' '.$quotedDocx.' 2>&1';
 
         $output = [];
         $resultCode = 0;
@@ -348,9 +352,9 @@ trait GeneratePDF
 
         clearstatcache(true, $sourcePdfPath);
 
-        if (!File::exists($sourcePdfPath) || filesize($sourcePdfPath) <= 0) {
+        if (! File::exists($sourcePdfPath) || filesize($sourcePdfPath) <= 0) {
             throw new \Exception(
-                "Konversi PDF gagal. Result code: {$resultCode}\nCommand: {$command}\nOutput: " . implode("\n", $output)
+                "Konversi PDF gagal. Result code: {$resultCode}\nCommand: {$command}\nOutput: ".implode("\n", $output)
             );
         }
 
@@ -358,7 +362,7 @@ trait GeneratePDF
 
         clearstatcache(true, $finalPdfPath);
 
-        if (!File::exists($finalPdfPath) || filesize($finalPdfPath) <= 0) {
+        if (! File::exists($finalPdfPath) || filesize($finalPdfPath) <= 0) {
             throw new \Exception("PDF berhasil dibuat oleh LibreOffice, tetapi gagal dipindahkan ke nama akhir: {$finalPdfPath}");
         }
 
@@ -376,7 +380,7 @@ trait GeneratePDF
         $this->ensurePdfFolders();
 
         $qrPath = null;
-        if (!empty($data['show_qr'])) {
+        if (! empty($data['show_qr'])) {
             $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
             if (
                 $qrPath &&
@@ -393,7 +397,7 @@ trait GeneratePDF
             }
         }
 
-        $tempDocxPath = storage_path('app/public/doc/' . uniqid('', true) . '.docx');
+        $tempDocxPath = storage_path('app/public/doc/'.uniqid('', true).'.docx');
         $outputPdfPath = storage_path('app/public/pdf/');
         $templateProcessor->saveAs($tempDocxPath);
 
@@ -403,10 +407,10 @@ trait GeneratePDF
             if (File::exists($tempDocxPath)) {
                 File::delete($tempDocxPath);
             }
-            if (!empty($qrPath) && File::exists($qrPath)) {
+            if (! empty($qrPath) && File::exists($qrPath)) {
                 File::delete($qrPath);
             }
-            if (!empty($temporaryTemplateFile) && File::exists($temporaryTemplateFile)) {
+            if (! empty($temporaryTemplateFile) && File::exists($temporaryTemplateFile)) {
                 File::delete($temporaryTemplateFile);
             }
             $this->cleanupGeneratedTteImages($data);
@@ -416,11 +420,11 @@ trait GeneratePDF
     protected function prepareBoroTemplateForTable(string $templateFile, array $data): array
     {
         $detailPengikut = $data['detail_pengikut'] ?? [];
-        if (!is_array($detailPengikut) || count($detailPengikut) < 1 || !file_exists($templateFile)) {
+        if (! is_array($detailPengikut) || count($detailPengikut) < 1 || ! file_exists($templateFile)) {
             return [$templateFile, null];
         }
 
-        $zipCheck = new ZipArchive();
+        $zipCheck = new ZipArchive;
         if ($zipCheck->open($templateFile) !== true) {
             return [$templateFile, null];
         }
@@ -434,16 +438,17 @@ trait GeneratePDF
         }
 
         $this->ensurePdfFolders();
-        $tempTemplate = storage_path('app/public/doc/template_boro_table_' . uniqid('', true) . '.docx');
-        if (!@copy($templateFile, $tempTemplate)) {
+        $tempTemplate = storage_path('app/public/doc/template_boro_table_'.uniqid('', true).'.docx');
+        if (! @copy($templateFile, $tempTemplate)) {
             return [$templateFile, null];
         }
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($tempTemplate) !== true) {
             if (File::exists($tempTemplate)) {
                 File::delete($tempTemplate);
             }
+
             return [$templateFile, null];
         }
 
@@ -453,6 +458,7 @@ trait GeneratePDF
             if (File::exists($tempTemplate)) {
                 File::delete($tempTemplate);
             }
+
             return [$templateFile, null];
         }
 
@@ -469,21 +475,21 @@ trait GeneratePDF
                 $tableEnd = strpos($xml, '</w:tbl>', $position);
                 if ($tableEnd !== false) {
                     $tableEnd += strlen('</w:tbl>');
-                    $xml = substr($xml, 0, $tableEnd) . $insert . substr($xml, $tableEnd);
+                    $xml = substr($xml, 0, $tableEnd).$insert.substr($xml, $tableEnd);
                 } else {
-                    $xml = str_replace('</w:body>', $insert . '</w:body>', $xml);
+                    $xml = str_replace('</w:body>', $insert.'</w:body>', $xml);
                 }
             } else {
                 $paragraphEnd = strpos($xml, '</w:p>', $position);
                 if ($paragraphEnd !== false) {
                     $paragraphEnd += strlen('</w:p>');
-                    $xml = substr($xml, 0, $paragraphEnd) . $insert . substr($xml, $paragraphEnd);
+                    $xml = substr($xml, 0, $paragraphEnd).$insert.substr($xml, $paragraphEnd);
                 } else {
-                    $xml = str_replace('</w:body>', $insert . '</w:body>', $xml);
+                    $xml = str_replace('</w:body>', $insert.'</w:body>', $xml);
                 }
             }
         } else {
-            $xml = str_replace('</w:body>', $insert . '</w:body>', $xml);
+            $xml = str_replace('</w:body>', $insert.'</w:body>', $xml);
         }
 
         $zip->addFromString('word/document.xml', $xml);
@@ -503,11 +509,11 @@ trait GeneratePDF
         $runProperties = '<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>';
 
         return $spacerBeforeTable
-            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${header}</w:t></w:r></w:p>'
-            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${block}</w:t></w:r></w:p>'
-            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${detail_pengikut}</w:t></w:r></w:p>'
-            . '<w:p>' . $paragraphProperties . '<w:r>' . $runProperties . '<w:t>${/block}</w:t></w:r></w:p>'
-            . $spacerAfterTable;
+            .'<w:p>'.$paragraphProperties.'<w:r>'.$runProperties.'<w:t>${header}</w:t></w:r></w:p>'
+            .'<w:p>'.$paragraphProperties.'<w:r>'.$runProperties.'<w:t>${block}</w:t></w:r></w:p>'
+            .'<w:p>'.$paragraphProperties.'<w:r>'.$runProperties.'<w:t>${detail_pengikut}</w:t></w:r></w:p>'
+            .'<w:p>'.$paragraphProperties.'<w:r>'.$runProperties.'<w:t>${/block}</w:t></w:r></w:p>'
+            .$spacerAfterTable;
     }
 
     public function generatePdfTable($data, $templateFile, $outputPdf)
@@ -585,7 +591,7 @@ trait GeneratePDF
                 $table->addCell($cellWidths[5], $bodyCellStyle)->addText($hubungan, $bodyTextStyle, $centerAlignment);
 
                 try {
-                    $templateProcessor->setComplexBlock('detail_pengikut#' . ($index + 1), $table);
+                    $templateProcessor->setComplexBlock('detail_pengikut#'.($index + 1), $table);
                 } catch (\Throwable $e) {
                     // Abaikan jika marker tidak tersedia pada template custom lama.
                 }
@@ -606,7 +612,7 @@ trait GeneratePDF
         $this->ensurePdfFolders();
 
         $qrPath = null;
-        if (!empty($data['show_qr'])) {
+        if (! empty($data['show_qr'])) {
             $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
             if (
                 $qrPath &&
@@ -623,7 +629,7 @@ trait GeneratePDF
             }
         }
 
-        $tempDocxPath = storage_path('app/public/doc/' . uniqid('', true) . '.docx');
+        $tempDocxPath = storage_path('app/public/doc/'.uniqid('', true).'.docx');
         $outputPdfPath = storage_path('app/public/pdf/');
         $templateProcessor->saveAs($tempDocxPath);
 
@@ -633,7 +639,7 @@ trait GeneratePDF
             if (File::exists($tempDocxPath)) {
                 File::delete($tempDocxPath);
             }
-            if (!empty($qrPath) && File::exists($qrPath)) {
+            if (! empty($qrPath) && File::exists($qrPath)) {
                 File::delete($qrPath);
             }
             foreach (array_unique(array_filter([$temporaryTemplateFile, $temporaryBoroTemplateFile])) as $temporaryFile) {
