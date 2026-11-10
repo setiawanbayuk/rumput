@@ -20,7 +20,7 @@ class SuratApiController extends Controller
 {
     protected function masterJenisCollection()
     {
-        $columns = ['id', 'name', 'jenis'];
+        $columns = ['id', 'nama'];
         foreach (['assets', 'detail', 'persyaratan', 'is_active'] as $optionalColumn) {
             if (Schema::hasColumn('jenis_surats', $optionalColumn)) {
                 $columns[] = $optionalColumn;
@@ -34,9 +34,8 @@ class SuratApiController extends Controller
         }
 
         return $query->get($columns)->map(function ($item) {
-            $nama = trim((string) $item->name);
-            $jenis = trim((string) $item->jenis);
-            $jenis = $jenis !== '' ? strtolower($jenis) : $this->deriveJenisFromNama($nama, (int) $item->id);
+            $nama = trim((string) ($item->nama ?? ''));
+            $jenis = $this->deriveJenisFromNama($nama, (int) $item->id);
 
             return [
                 'id' => (int) $item->id,
@@ -48,7 +47,7 @@ class SuratApiController extends Controller
                 'assets' => $item->assets ?? null,
                 'detail' => $item->detail ?? null,
                 'persyaratan' => $item->persyaratan ?? null,
-                'is_active' => (int) ($item->is_active ?? 1),
+                'is_active' => property_exists($item, 'is_active') ? (int) ($item->is_active ?? 1) : 1,
             ];
         })->values();
     }
@@ -1297,8 +1296,8 @@ class SuratApiController extends Controller
      * yang sudah dibuat setiap kali status surat berubah di backend ESUKET.
      *
      * Ringkasan alur:
-     * - Semua surat selain SKTM: Pengajuan -> Diproses -> Selesai
-     * - SKTM: Pengajuan -> Diproses -> Lurah -> Sekcam -> Selesai
+     * - Selain SKTM: Pengajuan -> Operator/Admin Kelurahan -> Sekkel -> Lurah -> Selesai
+     * - SKTM: Pengajuan -> Operator/Admin Kelurahan -> Sekkel -> Lurah -> Sekcam -> Camat -> Selesai
      */
     public function tracking(Request $request, $id)
     {
@@ -1336,25 +1335,30 @@ class SuratApiController extends Controller
         $isSktm = strtolower(trim((string) $surat->jenis_surat)) === 'sktm';
         $logs = $this->trackingLogs($surat);
         $currentStatus = (int) ($surat->status ?? 0);
-        $currentTracking = $this->resolveCurrentTrackingLabel($currentStatus, $isSktm);
+        $variable = $surat->variable;
+        if (!is_array($variable)) {
+            $variable = is_string($variable) ? (json_decode($variable, true) ?: []) : [];
+        }
+        $isManual = !empty($variable['manual_signature'])
+            || (($variable['signature_mode'] ?? null) === 'manual');
 
-        $alur = $isSktm
-            ? ['Pengajuan', 'Diproses', 'Lurah', 'Sekcam', 'Selesai']
-            : ['Pengajuan', 'Diproses', 'Selesai'];
+        // Tahapan tetap lengkap. Tidak menggabungkan Admin, Sekkel, Lurah,
+        // ataupun Sekcam/Camat untuk SKTM.
+        $steps = $isSktm
+            ? ['Pengajuan', 'Operator/Admin Kelurahan', 'Sekkel', 'Lurah', 'Sekcam', 'Camat', 'Selesai']
+            : ['Pengajuan', 'Operator/Admin Kelurahan', 'Sekkel', 'Lurah', 'Selesai'];
 
-        $timeline = $isSktm
-            ? $this->buildSktmTimeline($surat, $logs)
-            : $this->buildNonSktmTimeline($surat, $logs);
-
-        $currentIndex = array_search($currentTracking, $alur, true);
-        $progressPercent = $currentTracking === 'Ditolak'
+        $currentTracking = $this->detailedTrackingStageForStatus($currentStatus, $isSktm, $isManual)
+            ?? 'Pengajuan';
+        $timeline = $this->buildDetailedTrackingTimeline($surat, $logs, $steps, $isSktm, $isManual);
+        $currentIndex = array_search($currentTracking, $steps, true);
+        $progressPercent = in_array($currentTracking, ['Ditolak', 'Dihapus'], true)
             ? 100
-            : ($currentIndex === false || count($alur) <= 1
+            : ($currentIndex === false || count($steps) <= 1
                 ? 0
-                : (int) round(($currentIndex / (count($alur) - 1)) * 100));
+                : (int) round(($currentIndex / (count($steps) - 1)) * 100));
 
-        // Response dibuat ringkas untuk Postman/Super APP.
-        // Detail teknis seperti raw_logs, transisi_waktu, keterangan, dan duplikasi timeline tidak dikirim.
+        // Kontrak response lama dipertahankan; hanya isi tracking dibuat detail.
         return [
             'pengajuan_id' => (int) $surat->id,
             'nik' => (string) $surat->nik,
@@ -1364,6 +1368,140 @@ class SuratApiController extends Controller
             'progress_percent' => $progressPercent,
             'alur' => $timeline,
         ];
+    }
+
+    /**
+     * Pemetaan status pengajuan dari workflow ESUKET yang sudah ada.
+     * 4 berarti TTE Lurah (belum selesai bagi SKTM); 9 = final Camat.
+     * Status 5 adalah penilaian warga, bukan tahapan tambahan.
+     */
+    protected function detailedTrackingStageForStatus(int $status, bool $isSktm, bool $isManual = false): ?string
+    {
+        return match ($status) {
+            // Begitu warga mengajukan, surat sudah masuk antrean Operator/Admin.
+            // Status 1 masih tahap Admin sampai diteruskan ke Sekkel (status 2).
+            0, 1 => 'Operator/Admin Kelurahan',
+            2 => 'Sekkel',
+            3 => 'Lurah',
+            4 => $isSktm ? 'Lurah' : 'Selesai',
+            5, 9 => 'Selesai',
+            6 => 'Ditolak',
+            7 => $isManual ? 'Lurah' : 'Dihapus',
+            8 => $isSktm ? 'Camat' : ($isManual ? 'Selesai' : null),
+            11 => $isSktm ? 'Sekcam' : null,
+            default => null,
+        };
+    }
+
+    /**
+     * Timeline berdasarkan log_surats. Tahap Operator/Admin langsung dimulai
+     * pada waktu pengajuan masuk (status 0), tanpa mengklaim Admin sudah memproses.
+     * Tahapan berikutnya hanya muncul jika ada log perubahan status nyata.
+     * Bila status diturunkan, jejak tahapan berikutnya pada siklus lama dibuang.
+     * Revisi setelah penolakan memakai siklus terbaru (currentTrackingCycleLogs).
+     */
+    protected function buildDetailedTrackingTimeline(
+        SuratPengajuan $surat,
+        $logs,
+        array $steps,
+        bool $isSktm,
+        bool $isManual
+    ): array {
+        $cycleLogs = $this->currentTrackingCycleLogs($surat, $logs);
+        $firstStart = $this->timeFromLog($this->firstLogWithStatus($cycleLogs, [0]))
+            ?: $this->cyclePengajuanStart($surat, $cycleLogs);
+        // Pengajuan adalah kejadian sekali saat dibuat (durasi 0 menit).
+        // Sesudah itu surat langsung berada pada antrean Operator/Admin Kelurahan
+        // meskipun belum ada log status 1. Waktu Admin = waktu pengajuan masuk,
+        // bukan waktu Admin meneruskan surat ke Sekkel.
+        $started = [
+            'Pengajuan' => $firstStart,
+            'Operator/Admin Kelurahan' => $firstStart,
+        ];
+        $currentIndex = 1;
+        $lastTerminal = null;
+        $lastTerminalTime = null;
+
+        // Proses log yang telah tersimpan, diurutkan oleh trackingLogs().
+        foreach ($cycleLogs as $log) {
+            $step = $this->detailedTrackingStageForStatus((int) ($log->status_surat ?? 0), $isSktm, $isManual);
+            $when = $this->timeFromLog($log);
+            if (!$step || !$when) {
+                continue;
+            }
+            if (in_array($step, ['Ditolak', 'Dihapus'], true)) {
+                $lastTerminal = $step;
+                $lastTerminalTime = $when;
+                continue;
+            }
+            $index = array_search($step, $steps, true);
+            if ($index === false) {
+                continue;
+            }
+            if ($index < $currentIndex) {
+                // Surat kembali ke Admin/Sekkel/Lurah. Tahapan setelahnya tidak
+                // boleh masih dianggap telah selesai pada siklus berjalan.
+                foreach ($steps as $offset => $stage) {
+                    if ($offset >= $index) {
+                        unset($started[$stage]);
+                    }
+                }
+                $started[$step] = $when;
+                $currentIndex = $index;
+                $lastTerminal = null;
+                $lastTerminalTime = null;
+            } elseif ($index > $currentIndex) {
+                $started[$step] = $when;
+                $currentIndex = $index;
+                $lastTerminal = null;
+                $lastTerminalTime = null;
+            }
+            // Log berulang di tahap sama tidak mengganti waktu masuk awal.
+        }
+
+        // Status tabel utama menjadi rujukan bila log terakhir belum sinkron.
+        $actualStage = $this->detailedTrackingStageForStatus((int) ($surat->status ?? 0), $isSktm, $isManual);
+        $actualTime = $this->toJakartaDateTime($surat->updated_at)
+            ?: $this->timeFromLog($cycleLogs->last())
+            ?: $firstStart;
+        $actualIndex = array_search($actualStage, $steps, true);
+        if ($actualIndex !== false) {
+            if ($actualIndex < $currentIndex) {
+                foreach ($steps as $offset => $stage) {
+                    if ($offset >= $actualIndex) {
+                        unset($started[$stage]);
+                    }
+                }
+                $started[$actualStage] = $actualTime;
+            } elseif (!array_key_exists($actualStage, $started)) {
+                // Menambah hanya tahapan aktual, tidak mengarang semua tahap tengah.
+                $started[$actualStage] = $actualTime;
+            }
+        }
+
+        $terminal = in_array($actualStage, ['Ditolak', 'Dihapus'], true) ? $actualStage : null;
+        $terminalTime = $terminal ? ($lastTerminalTime ?: $actualTime) : null;
+
+        $entries = [];
+        foreach ($steps as $stage) {
+            if (isset($started[$stage])) {
+                $entries[] = ['status' => $stage, 'time' => $started[$stage]];
+            }
+        }
+        if ($terminal && $terminalTime) {
+            $entries[] = ['status' => $terminal, 'time' => $terminalTime];
+        }
+
+        $timeline = [];
+        foreach ($entries as $index => $entry) {
+            $isFinal = in_array($entry['status'], ['Selesai', 'Ditolak', 'Dihapus'], true);
+            $end = isset($entries[$index + 1])
+                ? $entries[$index + 1]['time']
+                : ($isFinal ? $entry['time'] : null);
+            $timeline[] = $this->timelineRow($entry['status'], $entry['time'], $end);
+        }
+
+        return $timeline;
     }
 
     protected function trackingLogs(SuratPengajuan $surat)
