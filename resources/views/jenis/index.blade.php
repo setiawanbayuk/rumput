@@ -34,7 +34,7 @@
             @endif
         </div>
 
-        <div class="card jenis-card">
+        <div class="card glass-card jenis-card">
             <div class="card-body p-4">
                 <div class="table-responsive">
                     <table id="tableJenis" class="table table-hover align-middle" style="width: 100%">
@@ -43,6 +43,7 @@
                                 <th>Nama</th>
                                 <th>Deskripsi</th>
                                 <th>Persyaratan</th>
+                                <th>Route notifikasi</th>
                                 <th style="width:110px">Action</th>
                             </tr>
                         </thead>
@@ -68,6 +69,7 @@
                         { data: 'nama_label', name: 'nama_label' },
                         { data: 'detail_label', render: function(data) { return $("<div></div>").html(data || '-').text(); } },
                         { data: 'persyaratan_label', render: function(data) { return $("<div></div>").html(data || '-').text(); } },
+                        { data: 'push_route_label', name: 'push_route_label' },
                         { data: 'action', name: 'action', orderable: false, searchable: false },
                     ],
                     order: [[0, "asc"]],

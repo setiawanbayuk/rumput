@@ -31,6 +31,9 @@ class JenisController extends Controller
                 ->addColumn('persyaratan_label', function ($row) use ($columns) {
                     return in_array('persyaratan', $columns, true) ? ($row->persyaratan ?: '-') : 'Kolom persyaratan belum ada di database';
                 })
+                ->addColumn('push_route_label', function ($row) use ($columns) {
+                    return in_array('push_route', $columns, true) ? ($row->push_route ?: '-') : '-';
+                })
                 ->addColumn('action', function ($row) {
                     $id = $row->id;
                     $route = 'jenis.edit';
@@ -53,8 +56,9 @@ class JenisController extends Controller
         $surat = JenisSurat::findOrFail($id);
         $hasDetail = Schema::hasColumn('jenis_surats', 'detail');
         $hasPersyaratan = Schema::hasColumn('jenis_surats', 'persyaratan');
+        $hasPushRoute = Schema::hasColumn('jenis_surats', 'push_route');
 
-        return view('jenis.edit', compact('title', 'surat', 'hasDetail', 'hasPersyaratan'));
+        return view('jenis.edit', compact('title', 'surat', 'hasDetail', 'hasPersyaratan', 'hasPushRoute'));
     }
 
     public function update(Request $request, $id)
@@ -72,9 +76,16 @@ class JenisController extends Controller
             $payload['persyaratan'] = $request->persyaratan;
         }
 
+        if (Schema::hasColumn('jenis_surats', 'push_route')) {
+            $validated = $request->validate([
+                'push_route' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_-]+$/'],
+            ]);
+            $payload['push_route'] = $validated['push_route'] ?? null;
+        }
+
         if (! $payload) {
             return redirect()->route('jenis.index')
-                ->with('error', 'Tabel jenis_surats di database saat ini hanya menyimpan nama jenis surat. Tambahkan kolom detail/persyaratan jika ingin mengubah deskripsi dari menu ini.');
+                ->with('error', 'Belum ada kolom jenis surat yang dapat diperbarui. Jalankan migration terbaru terlebih dahulu.');
         }
 
         $surat->update($payload);

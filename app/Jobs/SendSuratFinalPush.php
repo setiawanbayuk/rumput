@@ -13,6 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class SendSuratFinalPush implements ShouldQueue
 {
@@ -52,12 +53,15 @@ class SendSuratFinalPush implements ShouldQueue
 
         $devices = EsuketPushDevice::where('user_id', $user->id)->get();
         $kind = strtoupper((string) $surat->jenis_surat);
-        $message = "Pengajuan surat {$kind} Anda telah selesai. Silakan buka E-SUKET untuk melihat hasilnya.";
+        $signer = $this->eventName === 'tte_camat' ? 'Camat' : 'Lurah';
+        $message = $this->eventName === 'manual'
+            ? "Pengajuan surat {$kind} Anda telah selesai. Silakan buka E-SUKET untuk melihat hasilnya."
+            : "Surat {$kind} Anda telah ditandatangani {$signer}. Silakan buka E-SUKET untuk melihat progresnya.";
         $data = [
-            'route' => (string) config('esuket_push.mobile_route', ''),
+            'route' => $this->mobileRoute((string) $surat->jenis_surat),
             'id' => (string) $surat->id,
             'state' => 'success',
-            'event' => 'surat_selesai',
+            'event' => $this->eventName === 'manual' ? 'surat_selesai' : $this->eventName,
             'jenis_surat' => strtolower($kind),
         ];
 
@@ -133,14 +137,30 @@ class SendSuratFinalPush implements ShouldQueue
         if ($this->eventName === 'manual') {
             return $isManual && !empty($variable['bukti_ttd_basah']);
         }
-        if ($this->eventName !== 'tte' || $isManual || empty($surat->file)) {
+        if (!in_array($this->eventName, ['tte', 'tte_lurah', 'tte_camat'], true) || $isManual || empty($surat->file)) {
             return false;
         }
 
         $status = (int) $surat->status;
         $isSktm = strtolower((string) $surat->jenis_surat) === 'sktm';
+        if ($this->eventName === 'tte_lurah') {
+            return $isSktm
+                ? in_array($status, [4, 11, 8, 9, 5], true)
+                : in_array($status, [4, 5], true);
+        }
+        if ($this->eventName === 'tte_camat') {
+            return $isSktm && in_array($status, [9, 5], true);
+        }
+
         return $isSktm
             ? in_array($status, [9, 5], true)
             : in_array($status, [4, 5], true);
+    }
+
+    private function mobileRoute(string $jenis): string
+    {
+        return (string) (DB::table('jenis_surats')
+            ->where('jenis', strtolower(trim($jenis)))
+            ->value('push_route') ?? '');
     }
 }

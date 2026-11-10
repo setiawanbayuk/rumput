@@ -12,6 +12,7 @@ class JenisSurat extends Model
     protected $fillable = [
         'name',
         'jenis',
+        'push_route',
         'assets',
         'detail',
         'persyaratan',

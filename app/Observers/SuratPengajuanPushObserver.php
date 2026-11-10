@@ -18,13 +18,17 @@ class SuratPengajuanPushObserver
         $isManual = !empty($variable['manual_signature'])
             || (($variable['signature_mode'] ?? null) === 'manual');
 
-        // TTE Lurah = final hanya NON-SKTM; TTE Camat = final SKTM.
-        // Tanda tangan harus benar-benar menghasilkan file.
+        // Status 4 menandakan TTE Lurah; status 9 menandakan TTE Camat.
+        // SKTM menerima notifikasi untuk kedua tanda tangan tersebut.
         if ($surat->wasChanged('status') && !$isManual && !empty($surat->file)) {
             $status = (int) $surat->status;
-            $final = ($jenis === 'sktm') ? $status === 9 : $status === 4;
-            if ($final) {
-                SendSuratFinalPush::dispatch((int) $surat->id, 'tte')
+            $event = match (true) {
+                $status === 4 => 'tte_lurah',
+                $jenis === 'sktm' && $status === 9 => 'tte_camat',
+                default => null,
+            };
+            if ($event !== null) {
+                SendSuratFinalPush::dispatch((int) $surat->id, $event)
                     ->onQueue('esuket-push')
                     ->afterCommit();
             }

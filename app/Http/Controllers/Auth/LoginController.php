@@ -90,7 +90,7 @@ class LoginController extends Controller
     {
         $state = $request->session()->pull('state');
 
-        $response = Http::withoutVerifying()->asForm()->post(env('APP_URL_SPLP') . '/oauth/token', [
+        $response = Http::withoutVerifying()->asForm()->post(env('APP_URL_SSO') . '/oauth/token', [
             'grant_type' => 'authorization_code',
             'client_id' => env('OAUTH_CLIENT_ID'),
             'client_secret' => env('OAUTH_CLIENT_SECRET'),
@@ -108,7 +108,7 @@ class LoginController extends Controller
         $access_token = $request->session()->get('access_token');
         $response = Http::withoutVerifying()->withHeaders([
             'auth' => 'Bearer ' . $access_token
-        ])->get(env('APP_URL_SPLP') . '/api/user');
+        ])->get(env('APP_URL_SSO') . '/api/user');
 
         $userArray = $response->json();
 
@@ -142,7 +142,7 @@ class LoginController extends Controller
         $access_token = session()->get('access_token');
         $response = Http::withoutVerifying()->withHeaders([
             'auth' => 'Bearer ' . $access_token
-        ])->get(env('APP_URL_SPLP') . '/api/logmeout');
+        ])->get(env('APP_URL_SSO') . '/api/logmeout');
 
         return $response;
     }

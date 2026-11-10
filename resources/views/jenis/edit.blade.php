@@ -22,12 +22,21 @@
             </div>
         @endif
 
-        <div class="card border-0 shadow-sm rounded-4">
+        <div class="card glass-card border-0 rounded-4">
             <div class="card-body p-4">
                 <form method="POST" action="{{ route('jenis.update', ['id' => $surat->id]) }}">
                     @csrf
 
                     <div class="row g-4">
+                        @if ($hasPushRoute)
+                            <div class="col-12">
+                                <label for="push_route" class="form-label fw-semibold">Route notifikasi aplikasi</label>
+                                <input id="push_route" name="push_route" type="text" class="form-control rounded-4 @error('push_route') is-invalid @enderror"
+                                       value="{{ old('push_route', $surat->push_route) }}" placeholder="esuket-skbn-progress" maxlength="255">
+                                <div class="form-text">Dipakai saat surat ditandatangani. Kosongkan jika jenis surat belum punya halaman progres di aplikasi.</div>
+                                @error('push_route') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                        @endif
                         <div class="col-12">
                             <label class="form-label fw-semibold">Deskripsi Surat</label>
                             @if ($hasDetail)
@@ -49,7 +58,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-dark rounded-4 fw-semibold mt-4" @disabled(! $hasDetail && ! $hasPersyaratan)>
+                    <button type="submit" class="btn btn-primary rounded-4 fw-semibold mt-4" @disabled(! $hasDetail && ! $hasPersyaratan && ! $hasPushRoute)>
                         <i class="ri-save-3-fill me-1"></i> Update
                     </button>
                 </form>
