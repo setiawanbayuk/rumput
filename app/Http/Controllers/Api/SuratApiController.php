@@ -20,7 +20,7 @@ class SuratApiController extends Controller
 {
     protected function masterJenisCollection()
     {
-        $columns = ['id', 'nama'];
+        $columns = ['id', 'name', 'jenis'];
         foreach (['assets', 'detail', 'persyaratan', 'is_active'] as $optionalColumn) {
             if (Schema::hasColumn('jenis_surats', $optionalColumn)) {
                 $columns[] = $optionalColumn;
@@ -34,8 +34,9 @@ class SuratApiController extends Controller
         }
 
         return $query->get($columns)->map(function ($item) {
-            $nama = trim((string) ($item->nama ?? ''));
-            $jenis = $this->deriveJenisFromNama($nama, (int) $item->id);
+            $nama = trim((string) $item->name);
+            $jenis = trim((string) $item->jenis);
+            $jenis = $jenis !== '' ? strtolower($jenis) : $this->deriveJenisFromNama($nama, (int) $item->id);
 
             return [
                 'id' => (int) $item->id,
@@ -47,7 +48,7 @@ class SuratApiController extends Controller
                 'assets' => $item->assets ?? null,
                 'detail' => $item->detail ?? null,
                 'persyaratan' => $item->persyaratan ?? null,
-                'is_active' => property_exists($item, 'is_active') ? (int) ($item->is_active ?? 1) : 1,
+                'is_active' => (int) ($item->is_active ?? 1),
             ];
         })->values();
     }
@@ -349,16 +350,16 @@ class SuratApiController extends Controller
 				foreach ($this->rejectedColumnNames() as $column) {
 					if (Schema::hasColumn('surat_pengajuans', $column)) {
 						$value = $surat->{$column} ?? null;
-			
+
 						if ($value !== null && trim((string) $value) !== '') {
 							return true;
 						}
 					}
 				}
-			
+
 				// 2. Cek status langsung dari kolom status
 				$status = strtolower(trim((string) ($surat->status ?? '')));
-			
+
 				$rejectedStatusValues = [
 					'ditolak',
 					'tolak',
@@ -374,15 +375,15 @@ class SuratApiController extends Controller
 					'98',
 					'97',
 				];
-			
+
 				if (in_array($status, $rejectedStatusValues, true)) {
 					return true;
 				}
-			
+
 				// 3. Cek nama status dari relasi status, jika model punya relasi st
 				try {
 					$statusName = '';
-			
+
 					if (isset($surat->st)) {
 						if (is_array($surat->st)) {
 							$statusName = strtolower(trim((string) ($surat->st['name'] ?? $surat->st['nama'] ?? '')));
@@ -390,7 +391,7 @@ class SuratApiController extends Controller
 							$statusName = strtolower(trim((string) ($surat->st->name ?? $surat->st->nama ?? '')));
 						}
 					}
-			
+
 					if (
 						$statusName !== '' &&
 						(
@@ -406,10 +407,10 @@ class SuratApiController extends Controller
 				} catch (\Throwable $e) {
 					// Relasi status tidak wajib ada.
 				}
-			
+
 				// 4. Cek variable JSON, karena beberapa sistem menyimpan alasan/status penolakan di variable
 				$variable = $this->getExistingVariableData($surat);
-			
+
 				foreach ([
 					'alasan',
 					'alasan_penolakan',
@@ -423,10 +424,10 @@ class SuratApiController extends Controller
 						return true;
 					}
 				}
-			
+
 				if (isset($variable['status'])) {
 					$variableStatus = strtolower(trim((string) $variable['status']));
-			
+
 					if (
 						str_contains($variableStatus, 'tolak') ||
 						str_contains($variableStatus, 'reject') ||
@@ -436,7 +437,7 @@ class SuratApiController extends Controller
 						return true;
 					}
 				}
-			
+
 				return false;
 			}
 
@@ -667,23 +668,23 @@ class SuratApiController extends Controller
     protected function responseData(SuratPengajuan $surat, string $resolvedJenis, ?array $master = null): array
 	{
 		$master = $master ?: $this->masterJenisCollection()->firstWhere('jenis', $resolvedJenis);
-	
+
 		$formatTanggal = function ($value) {
 			if (!$value) {
 				return null;
 			}
-	
+
 			return Carbon::parse($value)->timezone('Asia/Jakarta')->format('Y-m-d');
 		};
-	
+
 		$formatDateTime = function ($value) {
 			if (!$value) {
 				return null;
 			}
-	
+
 			return Carbon::parse($value)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s');
 		};
-	
+
 		$pdfInfo = $this->resolvePdfInfo($surat);
 		$ratingInfo = $this->ratingResponseFields($surat);
 
@@ -709,13 +710,13 @@ class SuratApiController extends Controller
 			'komentar' => $ratingInfo['komentar'],
 			'rating_at' => $ratingInfo['rating_at'],
 			'sudah_rating' => $ratingInfo['sudah_rating'],
-	
+
 			// FIX UTAMA: jangan kirim Carbon mentah ke JSON
 			'tgl_surat' => $formatTanggal($surat->tgl_surat),
 			'created_at' => $formatDateTime($surat->created_at),
 			'updated_at' => $formatDateTime($surat->updated_at),
 		];
-	
+
 		foreach (['alasan_penolakan', 'alasan_tolak', 'alasan', 'keterangan_penolakan', 'catatan_penolakan', 'tanggal_ditolak', 'tgl_ditolak', 'rejected_at'] as $column) {
 			if (Schema::hasColumn('surat_pengajuans', $column)) {
 				if (in_array($column, ['tanggal_ditolak', 'tgl_ditolak'], true)) {
@@ -727,10 +728,10 @@ class SuratApiController extends Controller
 				}
 			}
 		}
-	
+
 		return $data;
 	}
-	
+
 
     public function store(Request $request)
     {
