@@ -8,4 +8,6 @@ Semua operasi memakai base path `/api` dan token Sanctum. Isi **Authorize** deng
 
 Pada `POST /surat/store` untuk pengajuan baru, kirim `jenis_surat`, `nik`, `peruntukan`, dan berkas gambar `pengantar` sebagai multipart. Field lain mengikuti respons `/surat/form-config?jenis_surat={kode}` dan dapat dikirim dalam satu field teks `variable` berisi object JSON, misalnya `{"keterangan":"Untuk administrasi","kepada":"Kelurahan"}`. Controller mengambil `kepada` untuk kolom utama dan menyimpan field tambahan lain ke JSON `variable`. Format lama yang mengirim field tambahan satu per satu tetap didukung. Endpoint revisi menerima `pengantar` baru secara opsional.
 
-Sumber kebenaran spesifikasi ini adalah `routes/api.php` dan `app/Http/Controllers/Api/SuratApiController.php`. Bila perilaku controller berubah, perbarui berkas OpenAPI ini bersama perubahan tersebut.
+Untuk mendaftarkan token notifikasi perangkat setelah login, gunakan `POST /device/fcm-token` dengan bearer token Sanctum dan body JSON berisi `device_id`, `platform` (`android` atau `ios`), dan `fcm_token`. `device_id` harus unik untuk perangkat dan token FCM harus memiliki panjang 20–4096 karakter. Pengguna ditentukan dari token Sanctum, bukan dari body request.
+
+Sumber kebenaran spesifikasi ini adalah `routes/api.php`, `app/Http/Controllers/Api/SuratApiController.php`, dan `app/Http/Controllers/Api/EsuketDeviceTokenController.php`. Bila perilaku controller berubah, perbarui berkas OpenAPI ini bersama perubahan tersebut.
