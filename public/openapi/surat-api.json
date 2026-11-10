@@ -18,9 +18,55 @@
   "tags": [
     {
       "name": "Surat"
+    },
+    {
+      "name": "Notifikasi"
     }
   ],
   "paths": {
+    "/device/fcm-token": {
+      "post": {
+        "tags": [
+          "Notifikasi"
+        ],
+        "operationId": "storeFcmToken",
+        "summary": "Simpan token FCM perangkat",
+        "description": "Daftarkan atau perbarui token Firebase Cloud Messaging perangkat pengguna yang sedang login. Wajib menggunakan bearer token Sanctum. Identitas pengguna selalu diambil dari token login, bukan dari body request.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FcmTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token perangkat berhasil didaftarkan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FcmTokenSuccess"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Perangkat berhasil didaftarkan untuk notifikasi E-SUKET.",
+                  "platform": "android"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
     "/jenis-surat": {
       "get": {
         "tags": [
@@ -831,6 +877,62 @@
       }
     },
     "schemas": {
+      "FcmTokenRequest": {
+        "type": "object",
+        "required": [
+          "device_id",
+          "platform",
+          "fcm_token"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "ID unik perangkat yang digunakan aplikasi untuk memperbarui atau menghapus pendaftaran token.",
+            "example": "android-device-123"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios"
+            ],
+            "example": "android"
+          },
+          "fcm_token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 4096,
+            "description": "Token FCM terbaru dari Firebase Messaging."
+          }
+        }
+      },
+      "FcmTokenSuccess": {
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "platform"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios"
+            ]
+          }
+        }
+      },
       "Success": {
         "type": "object",
         "required": [
