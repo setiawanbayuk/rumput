@@ -1,0 +1,7 @@
+$kind: http-request
+description: Referensi RT.
+url: "{{local}}/api/rt"
+method: GET
+headers:
+  Accept: application/json
+order: 14000

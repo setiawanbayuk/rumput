@@ -1,0 +1,3 @@
+$kind: collection
+description: Postman form-data lengkap. Setiap request ini melakukan INSERT baru (status=0); jangan kirim ID pengajuan dalam body. File pengantar WAJIB pilih secara manual, tidak ada path hardcoded. Tersedia varian SKTM, SKDOM, SKUSAHA.
+order: 3000

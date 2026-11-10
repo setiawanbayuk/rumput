@@ -45,6 +45,12 @@ Route::prefix('auth')->group(function () {
 
 Route::post('/resident/simpan', [ResidentController::class, 'simpan']);
 Route::post('/registermobile', [RegisterController::class, 'registermobile']);
+
+// API khusus Firebase Cloud Messaging (Android/iOS), WAJIB token login Sanctum.
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/device/fcm-token', [\App\Http\Controllers\Api\EsuketDeviceTokenController::class, 'store']);
+    Route::delete('/device/fcm-token', [\App\Http\Controllers\Api\EsuketDeviceTokenController::class, 'destroy']);
+});
 Route::get('/registermobile/list', [RegisterController::class, 'listRegisterMobile']);
 Route::get('/registermobile/detail/{id}', [RegisterController::class, 'detailRegisterMobile']);
 Route::get('/profile/{id}', [RegisterController::class, 'profile']);

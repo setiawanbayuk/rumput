@@ -1,0 +1,10 @@
+$kind: http-request
+description: Filter berdasarkan jenis surat.
+url: "{{local}}/api/surat/history?nik={{nik_warga}}&jenis_surat={{jenis_surat}}"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  nik: "{{nik_warga}}"
+  jenis_surat: "{{jenis_surat}}"
+order: 2000

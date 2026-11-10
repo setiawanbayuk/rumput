@@ -1,0 +1,7 @@
+$kind: http-request
+description: "Diperbaiki dari request lama: path rating, bukan tracking."
+url: "{{local}}/api/surat/{{pengajuan_id}}/rating"
+method: GET
+headers:
+  Accept: application/json
+order: 9000

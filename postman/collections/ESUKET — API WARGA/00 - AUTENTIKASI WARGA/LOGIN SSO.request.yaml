@@ -1,0 +1,21 @@
+$kind: http-request
+description: Alternatif login menggunakan token SSO valid.
+url: "{{local}}/api/auth/login_sso?sso_token={{token_sso}}"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  sso_token: "{{token_sso}}"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |
+      let data={}; try { data=pm.response.json(); } catch(e) {}
+      pm.test('Login menghasilkan token', function () { pm.expect(data.token).to.be.a('string').and.not.empty; });
+      if (data.token) {
+        if (pm.environment.name) pm.environment.set('api-key', data.token);
+        else { pm.collectionVariables.set('api-key', data.token); console.warn('Pilih environment agar token tidak tersimpan permanen di koleksi.'); }
+      }
+    language: text/javascript
+order: 2000

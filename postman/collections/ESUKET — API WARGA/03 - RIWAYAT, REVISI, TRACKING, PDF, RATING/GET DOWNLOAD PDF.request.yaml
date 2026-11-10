@@ -1,0 +1,7 @@
+$kind: http-request
+description: Buka/unduh PDF jika dokumen sudah disetujui.
+url: "{{local}}/api/surat/{{pengajuan_id}}/download-pdf"
+method: GET
+headers:
+  Accept: application/json
+order: 8000

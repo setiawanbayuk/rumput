@@ -1,0 +1,9 @@
+$kind: http-request
+description: Endpoint khusus lama untuk skdom. Jalur berbeda dengan universal /surat/store.
+url: "{{local}}/api/skdom?nik={{nik_warga}}"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  nik: "{{nik_warga}}"
+order: 5000

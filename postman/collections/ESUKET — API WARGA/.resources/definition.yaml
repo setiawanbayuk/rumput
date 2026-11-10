@@ -1,0 +1,27 @@
+$kind: collection
+description: Disusun dari routes/api.php, SuratApiController.php, dan public/openapi/surat-api.json pada arsip esuket Revisi (22 Okt 2026). Koleksi baru non-destruktif, tidak mengubah koleksi Postman asli; nama request utama mengikuti daftar yang sudah ada. Pilih environment ESUKET LOCAL. Semua request /api/surat/* memakai Bearer {{api-key}}. File pengantar harus dipilih ulang di Postman. Request baru menulis ke surat_pengajuans, sedangkan endpoint legacy /api/suket dst merupakan jalur berbeda.
+variables:
+  local: http://127.0.0.1:8000
+  addrs: ""
+  api-key: ""
+  email_warga: ""
+  password_warga: ""
+  token_sso: ""
+  nik_warga: ""
+  nama_warga: ""
+  phone_warga: ""
+  jenis_surat: suket
+  id_warga: ""
+  pengajuan_id: ""
+  id_instansi: ""
+  id_rw: ""
+  id_rt: ""
+  foto_path: ""
+  pendaftaran_email: ""
+  pendaftaran_password: ""
+auth:
+  - id: fc097a41-ec14-4a18-a5c7-d9e473453019
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{api-key}}"

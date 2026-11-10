@@ -1,0 +1,7 @@
+$kind: http-request
+description: Referensi kelurahan; berasal dari route resource.
+url: "{{local}}/api/kelurahan"
+method: GET
+headers:
+  Accept: application/json
+order: 12000

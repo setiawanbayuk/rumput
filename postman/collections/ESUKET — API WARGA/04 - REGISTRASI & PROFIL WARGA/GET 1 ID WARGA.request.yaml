@@ -1,0 +1,9 @@
+$kind: http-request
+description: Profil user warga berdasarkan id.
+url: "{{local}}/api/registermobile/detail/{{id_warga}}"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: noauth
+order: 3000

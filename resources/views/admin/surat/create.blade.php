@@ -3,6 +3,7 @@
 @section('title', $title)
 
 @section('content')
+<style>[data-ktp-gated][hidden]{display:none!important}</style>
 <div class="container mt-2">
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -16,7 +17,7 @@
                         @csrf
                         <input type="hidden" name="jenis_surat" value="{{ $jenis }}">
 
-                        <div class="row" style="min-height: 500px;">
+                        <div class="row" @if ((int) auth()->user()->role_id !== 1) style="min-height: 500px;" @endif>
                             <div class="col-md-6 mb-4">
                                 <div class="card h-100 border-1 shadow-sm rounded-4" style="background: #fff; border-color: #AEA07A">
                                     <div class="card-body">
@@ -31,12 +32,14 @@
                                             @include('admin.surat.partials.scan-ktp')
                                         @endif
 
-                                        <x-pribadi></x-pribadi>
+                                        <div id="ktp-warga-fields" data-ktp-gated @if ((int) auth()->user()->role_id === 1 && !$errors->any() && !old('nik')) hidden @endif>
+                                            <x-pribadi></x-pribadi>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-6 mb-4">
+                            <div id="ktp-surat-fields" data-ktp-gated class="col-md-6 mb-4" @if ((int) auth()->user()->role_id === 1 && !$errors->any() && !old('nik')) hidden @endif>
                                 <div class="card h-40 border-1 shadow-sm rounded-4" style="background: #fff; border-color: #AEA07A">
                                     <div class="card-body">
 
@@ -156,7 +159,7 @@
                                                     @endforeach
                                                 </div>
                                             @elseif ($jenis === 'skhsl')
-                                                
+
                                                 @foreach ([
                                                     'kepada' => 'Nama Anak / Siswa',
                                                     'kepada_tempat_lhr' => 'Tempat Lahir Anak',
@@ -188,7 +191,7 @@
 
                                                 <input type="hidden" name="surat_keperluan" id="surat_keperluan" value="{{ old('surat_keperluan') }}">
                                             @elseif (in_array($jenis, ['skboro', 'boro']))
-                                               
+
 
                                                 <div class="row mb-3">
                                                     <label for="tgl_awal" class="col-md-3 col-form-label text-md-start ms-2">Mulai Berlaku</label>
@@ -323,8 +326,8 @@
 @push('scripts')
 <script type="text/javascript" src="{{ asset('assets/js/personal.js') }}"></script>
 @if ((int) auth()->user()->role_id === 1)
-<script defer src="{{ asset('assets/js/ktp-parser.js') }}?v=3"></script>
-<script defer src="{{ asset('assets/js/ktp-scanner.js') }}?v=3"></script>
+<script defer src="/assets/js/ktp-parser.js?v=19"></script>
+<script defer src="/assets/js/ktp-scanner.js?v=19"></script>
 @endif
 <script>
 document.addEventListener('DOMContentLoaded', function () {

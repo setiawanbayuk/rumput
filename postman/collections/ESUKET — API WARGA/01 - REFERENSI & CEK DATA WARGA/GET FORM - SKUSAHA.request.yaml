@@ -1,0 +1,13 @@
+$kind: http-request
+description: Form config untuk SKUSAHA
+url: "{{local}}/api/surat/form-config?jenis_surat=skusaha"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  jenis_surat: skusaha
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP sukses', function () { pm.expect(pm.response.code).to.be.oneOf([200,201]); });
+    language: text/javascript
+order: 8000

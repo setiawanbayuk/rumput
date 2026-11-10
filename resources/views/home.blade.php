@@ -92,7 +92,7 @@
                 @endif --}}
 
                 <div class="d-flex gap-2">
-                    @if (auth()->user()->role_id == 1 || auth()->user()->role_id == 8 || auth()->user()->role_id == 9)
+                    @if (auth()->user()->role_id == 8 || auth()->user()->role_id == 9)
                         <div class="dropdown">
                             <button class="btn btn-sm btn-primary dropdown-toggle"  style="border-radius: 8px" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="ri-add-fill me-2"></i>

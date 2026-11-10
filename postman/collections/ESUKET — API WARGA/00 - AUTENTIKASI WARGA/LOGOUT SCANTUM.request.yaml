@@ -1,0 +1,7 @@
+$kind: http-request
+description: Mencabut semua token pengguna ini (berhati-hati).
+url: "{{local}}/api/auth/logout"
+method: POST
+headers:
+  Accept: application/json
+order: 4000

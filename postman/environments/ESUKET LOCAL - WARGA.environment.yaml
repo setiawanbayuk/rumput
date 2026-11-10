@@ -1,0 +1,38 @@
+name: ESUKET LOCAL - WARGA
+values:
+  - key: local
+    value: 'http://127.0.0.1:8000'
+  - key: addrs
+    value: ''
+  - key: api-key
+    value: ''
+  - key: email_warga
+    value: ''
+  - key: password_warga
+    value: ''
+  - key: token_sso
+    value: ''
+  - key: nik_warga
+    value: ''
+  - key: nama_warga
+    value: ''
+  - key: phone_warga
+    value: ''
+  - key: jenis_surat
+    value: suket
+  - key: id_warga
+    value: ''
+  - key: pengajuan_id
+    value: ''
+  - key: id_instansi
+    value: ''
+  - key: id_rw
+    value: ''
+  - key: id_rt
+    value: ''
+  - key: foto_path
+    value: ''
+  - key: pendaftaran_email
+    value: ''
+  - key: pendaftaran_password
+    value: ''

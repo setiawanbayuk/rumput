@@ -1,0 +1,7 @@
+$kind: http-request
+description: Alternatif jalur tracking NIK 16 digit (memilih pengajuan terbaru).
+url: "{{local}}/api/surat/{{nik_warga}}/tracking"
+method: GET
+headers:
+  Accept: application/json
+order: 6000

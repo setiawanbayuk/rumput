@@ -1,0 +1,7 @@
+$kind: http-request
+description: Profil akun login. Pastikan id_instansi, id_rw, id_rt sesuai warga.
+url: "{{local}}/api/auth/profile"
+method: GET
+headers:
+  Accept: application/json
+order: 11000

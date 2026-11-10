@@ -1,0 +1,9 @@
+$kind: http-request
+description: Alias profil user warga.
+url: "{{local}}/api/profile/{{id_warga}}"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: noauth
+order: 4000

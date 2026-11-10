@@ -1,0 +1,80 @@
+$kind: http-request
+description: Body multipart lengkap untuk sktm. Pengantar sebagai File; field tambahan dikirim flat dan disimpan sebagai variable JSON oleh backend.
+url: "{{local}}/api/surat/store"
+method: POST
+headers:
+  Accept: application/json
+body:
+  type: formdata
+  content:
+    - type: text
+      key: jenis_surat
+      value: sktm
+    - type: text
+      key: nik
+      value: "{{nik_warga}}"
+    - type: text
+      key: peruntukan
+      value: Permohonan bantuan pendidikan
+    - type: text
+      key: register_as
+      value: sekolah
+    - type: text
+      key: kategori
+      value: Non DTKS
+    - type: text
+      key: keterangan
+      value: Pemohon memerlukan bantuan biaya sekolah
+    - type: text
+      key: keperluan_lainnya
+      value: Bantuan pendidikan
+    - type: text
+      key: kepada
+      value: Nama Siswa
+    - type: text
+      key: kepada_tempat_lhr
+      value: Kediri
+    - type: text
+      key: kepada_tgl_lhr
+      value: 2012-05-01
+    - type: text
+      key: kepada_gender
+      value: "2"
+    - type: text
+      key: kepada_hubungan
+      value: Putrinya
+    - type: text
+      key: kepada_sekolah
+      value: SMP Negeri Contoh
+    - type: text
+      key: kepada_kelas
+      value: "8"
+    - type: text
+      key: kepada_alamat_sekolah
+      value: Kota Kediri
+    - type: file
+      key: pengantar
+      src: []
+      description: PILIH ULANG JPG/JPEG/PNG asli, <= 2 MiB (wajib). Jangan gunakan path file lama.
+scripts:
+  - type: afterResponse
+    code: |-
+      let payload = {};
+      try { payload = pm.response.json(); } catch (e) {}
+      pm.test('POST surat berhasil (201)', function () { pm.response.to.have.status(201); });
+      pm.test('Respons sukses + ID surat tersedia', function () {
+        pm.expect(payload.status).to.eql('success');
+        pm.expect(payload.data).to.be.an('object');
+        pm.expect(payload.data.id || payload.data.pengajuan_id).to.exist;
+      });
+      if (pm.response.code === 201 && payload.data) {
+        const id = payload.data.id || payload.data.pengajuan_id;
+        if (id) {
+          if (pm.environment.name) pm.environment.set('pengajuan_id', String(id));
+          else pm.collectionVariables.set('pengajuan_id', String(id));
+        }
+      }
+      if (pm.response.code === 422) console.warn('Validasi gagal:', payload.errors || payload);
+      if (pm.response.code === 500) console.warn('Periksa log Laravel dan struktur jenis_surats:', payload.message || payload);
+    language: text/javascript
+order: 5000

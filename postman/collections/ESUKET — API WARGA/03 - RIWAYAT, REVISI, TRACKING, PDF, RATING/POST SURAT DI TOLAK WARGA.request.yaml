@@ -1,0 +1,31 @@
+$kind: http-request
+description: Revisi hanya jika surat ditolak; NIK & jenis harus tetap sama. File pengantar opsional (baris file dinonaktifkan).
+url: "{{local}}/api/surat/{{pengajuan_id}}/revisi"
+method: POST
+headers:
+  Accept: application/json
+body:
+  type: formdata
+  content:
+    - type: text
+      key: nik
+      value: "{{nik_warga}}"
+    - type: text
+      key: peruntukan
+      value: Perbaikan berkas sesuai catatan admin
+    - type: text
+      key: jenis_surat
+      value: "{{jenis_surat}}"
+    - type: text
+      key: keterangan
+      value: Data sudah diperbaiki sesuai catatan
+    - type: file
+      key: pengantar
+      src: []
+      description: OPSIONAL saat revisi; pilih file hanya jika ingin mengganti pengantar.
+      disabled: true
+scripts:
+  - type: afterResponse
+    code: pm.test("Revisi mengembalikan 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 4000

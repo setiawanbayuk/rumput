@@ -1,0 +1,13 @@
+$kind: http-request
+description: "Ganti jenis_surat di environment untuk mengambil field lengkap. Tersedia 7 jenis: suket, skbn, sktm, skdom, skhsl, skusaha, skboro."
+url: "{{local}}/api/surat/form-config?jenis_surat={{jenis_surat}}"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  jenis_surat: "{{jenis_surat}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP sukses', function () { pm.expect(pm.response.code).to.be.oneOf([200,201]); });
+    language: text/javascript
+order: 2000

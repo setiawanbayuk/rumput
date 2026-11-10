@@ -1,0 +1,3 @@
+$kind: collection
+description: Endpoint registermobile bersifat publik; password unik kuat dan email/NIK belum terdaftar.
+order: 5000

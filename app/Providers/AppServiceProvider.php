@@ -25,5 +25,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // Observasi terpusat: semua perubahan status via web / mobile tercakup.
+        \App\Models\SuratPengajuan::observe(\App\Observers\SuratPengajuanPushObserver::class);
     }
 }

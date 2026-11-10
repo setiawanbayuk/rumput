@@ -1,0 +1,7 @@
+$kind: http-request
+description: Referensi RW.
+url: "{{local}}/api/rw"
+method: GET
+headers:
+  Accept: application/json
+order: 13000

@@ -1,0 +1,27 @@
+$kind: http-request
+description: Login dengan akun warga; mengembalikan token Sanctum.
+url: "{{local}}/api/auth/login"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{email_warga}}",
+      "password": "{{password_warga}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |
+      let data={}; try { data=pm.response.json(); } catch(e) {}
+      pm.test('Login menghasilkan token', function () { pm.expect(data.token).to.be.a('string').and.not.empty; });
+      if (data.token) {
+        if (pm.environment.name) pm.environment.set('api-key', data.token);
+        else { pm.collectionVariables.set('api-key', data.token); console.warn('Pilih environment agar token tidak tersimpan permanen di koleksi.'); }
+      }
+    language: text/javascript
+order: 1000

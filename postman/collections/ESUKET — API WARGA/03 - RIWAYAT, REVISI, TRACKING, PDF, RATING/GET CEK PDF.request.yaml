@@ -1,0 +1,7 @@
+$kind: http-request
+description: URL PDF jika sudah tersedia.
+url: "{{local}}/api/surat/{{pengajuan_id}}/pdf-url"
+method: GET
+headers:
+  Accept: application/json
+order: 7000

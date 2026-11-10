@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: 16907903-310b-4451-86ce-536c2b194fb5
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/ESUKET — API WARGA: 214a41da-bcdb-4ecf-87b0-604be340c254
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

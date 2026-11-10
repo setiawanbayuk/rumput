@@ -1,0 +1,3 @@
+$kind: collection
+description: Jalankan LOGIN SCANTUM terlebih dahulu. Token disimpan ke environment api-key secara otomatis; jangan simpan token literal.
+order: 1000

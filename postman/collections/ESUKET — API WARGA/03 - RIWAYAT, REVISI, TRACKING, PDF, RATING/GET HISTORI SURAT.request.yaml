@@ -1,0 +1,13 @@
+$kind: http-request
+description: Riwayat pengajuan untuk NIK (tanpa jenis/filter).
+url: "{{local}}/api/surat/history?nik={{nik_warga}}"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  nik: "{{nik_warga}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP sukses', function () { pm.expect(pm.response.code).to.be.oneOf([200,201]); });
+    language: text/javascript
+order: 1000

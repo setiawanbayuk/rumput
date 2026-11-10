@@ -1,0 +1,16 @@
+$kind: http-request
+description: Rating 1–5 untuk surat selesai (atur sesuai kebutuhan).
+url: "{{local}}/api/surat/{{pengajuan_id}}/rating"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nik": "{{nik_warga}}",
+      "rating": 5,
+      "komentar": "Layanan sangat baik"
+    }
+order: 10000

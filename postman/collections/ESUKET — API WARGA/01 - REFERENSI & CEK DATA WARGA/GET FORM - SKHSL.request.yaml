@@ -1,0 +1,13 @@
+$kind: http-request
+description: Form config untuk SKHSL
+url: "{{local}}/api/surat/form-config?jenis_surat=skhsl"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  jenis_surat: skhsl
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP sukses', function () { pm.expect(pm.response.code).to.be.oneOf([200,201]); });
+    language: text/javascript
+order: 7000

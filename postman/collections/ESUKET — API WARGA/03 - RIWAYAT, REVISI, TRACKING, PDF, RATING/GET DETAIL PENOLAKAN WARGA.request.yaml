@@ -1,0 +1,7 @@
+$kind: http-request
+description: Detail surat, termasuk status/penolakan untuk bahan revisi.
+url: "{{local}}/api/surat/detail/{{pengajuan_id}}"
+method: GET
+headers:
+  Accept: application/json
+order: 3000

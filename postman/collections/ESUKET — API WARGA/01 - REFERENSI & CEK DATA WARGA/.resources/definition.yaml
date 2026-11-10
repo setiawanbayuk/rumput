@@ -1,0 +1,3 @@
+$kind: collection
+description: Lihat daftar jenis aktif dan form-config sebelum insert surat. NIK harus ada pada residents.
+order: 2000

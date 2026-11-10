@@ -1,0 +1,60 @@
+$kind: http-request
+description: "Request universal DINAMIS: ganti jenis_surat pada environment; Pre-request Script otomatis memilih contoh variable JSON sesuai jenis. Body dipisahkan menjadi field utama dan variable. File pengantar wajib diseleksi manual."
+url: "{{local}}/api/surat/store"
+method: POST
+headers:
+  Accept: application/json
+body:
+  type: formdata
+  content:
+    - type: text
+      key: jenis_surat
+      value: "{{jenis_surat}}"
+      description: "Ubah di environment: suket/skbn/sktm/skdom/skhsl/skusaha/skboro"
+    - type: text
+      key: nik
+      value: "{{nik_warga}}"
+    - type: text
+      key: peruntukan
+      value: Keperluan administrasi sesuai jenis surat
+    - type: text
+      key: variable
+      value: "{{variable_surat}}"
+      description: Otomatis disusun oleh Pre-request Script dari jenis_surat. Berisi field tambahan (tidak mengandung nik/peruntukan).
+    - type: file
+      key: pengantar
+      src: []
+      description: File asli JPG/JPEG/PNG <= 2 MiB, HARUS DIPILIH di Postman.
+scripts:
+  - type: beforeRequest
+    code: |
+      const kind = String(pm.variables.get('jenis_surat') || 'suket').toLowerCase();
+      const examples = {"suket":{"keterangan":"Pemohon memerlukan keterangan untuk administrasi","kepada":"{{nama_warga}}"},"skbn":{"kepada":"{{nama_warga}}"},"sktm":{"register_as":"perorangan","kategori":"Non DTKS","keterangan":"Keterangan kondisi ekonomi pemohon","keperluan_lainnya":"Bantuan kebutuhan dasar"},"skdom":{"register_as":"perorangan","kepada":"{{nama_warga}}","alamat_domisili":"Alamat domisili lengkap sesuai pengajuan"},"skhsl":{"kepada":"Nama Anak / Penerima","kepada_tempat_lhr":"Kediri","kepada_tgl_lhr":"2010-01-01","kepada_gender":"2","kepada_hubungan":"Putrinya","kepada_sekolah":"SMA Negeri Contoh","kepada_kelas":"11","kepada_alamat_sekolah":"Kota Kediri","penghasilan":"3000000","terbilang":"Tiga juta rupiah"},"skusaha":{"register_as":"kelurahan","nama_usaha":"Usaha Contoh","alamat_usaha":"Alamat usaha lengkap","kepada":"{{nama_warga}}"},"skboro":{"provinsi_boro":"Jawa Timur","kabko_boro":"Kota Surabaya","kecamatan_boro":"Wonokromo","kelurahan_boro":"Darmo","alamat_boro":"Alamat tujuan boro lengkap","tgl_awal":"2026-11-01","tgl_akhir":"2026-11-30","jumlah_pengikut":"0"}};
+      if (!examples[kind]) throw new Error('jenis_surat tidak dikenal: ' + kind + '. Pilih suket/skbn/sktm/skdom/skhsl/skusaha/skboro.');
+      if (examples[kind].kepada === '{{nama_warga}}') {
+        examples[kind].kepada = String(pm.variables.get('nama_warga') || '');
+      }
+      pm.variables.set('variable_surat', JSON.stringify(examples[kind]));
+      console.log('Pengajuan dinamis: '+kind,examples[kind]);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      let payload = {};
+      try { payload = pm.response.json(); } catch (e) {}
+      pm.test('POST surat berhasil (201)', function () { pm.response.to.have.status(201); });
+      pm.test('Respons sukses + ID surat tersedia', function () {
+        pm.expect(payload.status).to.eql('success');
+        pm.expect(payload.data).to.be.an('object');
+        pm.expect(payload.data.id || payload.data.pengajuan_id).to.exist;
+      });
+      if (pm.response.code === 201 && payload.data) {
+        const id = payload.data.id || payload.data.pengajuan_id;
+        if (id) {
+          if (pm.environment.name) pm.environment.set('pengajuan_id', String(id));
+          else pm.collectionVariables.set('pengajuan_id', String(id));
+        }
+      }
+      if (pm.response.code === 422) console.warn('Validasi gagal:', payload.errors || payload);
+      if (pm.response.code === 500) console.warn('Periksa log Laravel dan struktur jenis_surats:', payload.message || payload);
+    language: text/javascript
+order: 1000

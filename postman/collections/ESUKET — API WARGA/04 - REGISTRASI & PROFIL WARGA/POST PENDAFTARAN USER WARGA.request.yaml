@@ -1,0 +1,45 @@
+$kind: http-request
+description: Daftar user role warga/mobile. Kewajiban unique users.email dan users.nik, telepon digit 10–13, password kompleks.
+url: "{{local}}/api/registermobile"
+method: POST
+headers:
+  Accept: application/json
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: "{{nama_warga}}"
+    - type: text
+      key: email
+      value: "{{pendaftaran_email}}"
+    - type: text
+      key: nik
+      value: "{{nik_warga}}"
+    - type: text
+      key: phone
+      value: "{{phone_warga}}"
+      description: 10 s.d. 13 digit, isi nomor uji valid
+    - type: text
+      key: id_instansi
+      value: "{{id_instansi}}"
+    - type: text
+      key: id_rw
+      value: "{{id_rw}}"
+    - type: text
+      key: id_rt
+      value: "{{id_rt}}"
+    - type: text
+      key: password
+      value: "{{pendaftaran_password}}"
+    - type: text
+      key: password_confirmation
+      value: "{{pendaftaran_password}}"
+    - type: file
+      key: foto
+      src: []
+      description: OPSIONAL, JPG/JPEG/PNG/WEBP maks 2 MiB. Aktifkan dan pilih file jika diperlukan.
+      disabled: true
+auth:
+  type: noauth
+order: 1000

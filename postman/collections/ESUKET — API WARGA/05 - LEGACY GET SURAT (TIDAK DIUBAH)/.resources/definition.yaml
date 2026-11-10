@@ -1,0 +1,3 @@
+$kind: collection
+description: Jalur legacy terpisah. POST legacy sengaja tidak disalin ulang agar body detail yang sudah ada di koleksi lama tetap aman.
+order: 6000
