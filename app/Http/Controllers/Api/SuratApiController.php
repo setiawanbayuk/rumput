@@ -20,7 +20,7 @@ class SuratApiController extends Controller
 {
     protected function masterJenisCollection()
     {
-        $columns = ['id', 'nama'];
+        $columns = ['id', 'name', 'jenis'];
         foreach (['assets', 'detail', 'persyaratan', 'is_active'] as $optionalColumn) {
             if (Schema::hasColumn('jenis_surats', $optionalColumn)) {
                 $columns[] = $optionalColumn;
@@ -34,8 +34,9 @@ class SuratApiController extends Controller
         }
 
         return $query->get($columns)->map(function ($item) {
-            $nama = trim((string) ($item->nama ?? ''));
-            $jenis = $this->deriveJenisFromNama($nama, (int) $item->id);
+            $nama = trim((string) $item->name);
+            $jenis = trim((string) $item->jenis);
+            $jenis = $jenis !== '' ? strtolower($jenis) : $this->deriveJenisFromNama($nama, (int) $item->id);
 
             return [
                 'id' => (int) $item->id,
@@ -47,7 +48,7 @@ class SuratApiController extends Controller
                 'assets' => $item->assets ?? null,
                 'detail' => $item->detail ?? null,
                 'persyaratan' => $item->persyaratan ?? null,
-                'is_active' => property_exists($item, 'is_active') ? (int) ($item->is_active ?? 1) : 1,
+                'is_active' => (int) ($item->is_active ?? 1),
             ];
         })->values();
     }
