@@ -391,6 +391,13 @@ trait GeneratePDF
         } finally {
             $zip->close();
         }
+
+        $missingMarkers = array_values(array_diff($markerValues, array_keys($matchedMarkers)));
+        if ($missingMarkers !== []) {
+            throw new \RuntimeException(
+                'Placeholder koordinat TTE tidak ditemukan di dokumen: '.implode(', ', $missingMarkers)
+            );
+        }
     }
 
     protected function hasValidTteImageSpec($imageSpec): bool

@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Traits\GlobalFunction;
 use App\Traits\GeneratePDF;
+use App\Http\Controllers\Requests\EsignController;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\TemplateProcessor;
 use ZipArchive;
@@ -11,6 +12,46 @@ use Tests\TestCase;
 
 class TteImagePlacementTest extends TestCase
 {
+    public function test_generated_pdf_validation_checks_each_requested_tte_marker(): void
+    {
+        $controller = new class extends EsignController
+        {
+            public array $requestedMarkers = [];
+
+            public function get_esign_coordinate($input, $flag)
+            {
+                $this->requestedMarkers[] = $flag;
+
+                return ['status' => true, 'hasil' => [['page' => 1, 'data' => [1, 1, 2, 2]]]];
+            }
+        };
+
+        (new \ReflectionMethod($controller, 'assertTteCoordinateMarkersInPdf'))
+            ->invoke($controller, 'generated.pdf', ['tte_lurah', 'tte_camat']);
+
+        $this->assertSame([
+            '__TTE_LURAH_POSITION__',
+            '__TTE_CAMAT_POSITION__',
+        ], $controller->requestedMarkers);
+    }
+
+    public function test_generated_pdf_validation_fails_if_a_tte_marker_is_missing(): void
+    {
+        $controller = new class extends EsignController
+        {
+            public function get_esign_coordinate($input, $flag)
+            {
+                return ['status' => false, 'message' => 'marker tidak ditemukan'];
+            }
+        };
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('__TTE_LURAH_POSITION__');
+
+        (new \ReflectionMethod($controller, 'assertTteCoordinateMarkersInPdf'))
+            ->invoke($controller, 'generated.pdf', ['tte_lurah']);
+    }
+
     public function test_tte_placeholders_are_kept_as_hidden_coordinate_markers(): void
     {
         $templatePath = sys_get_temp_dir().'\\tte-template-'.uniqid('', true).'.docx';
@@ -35,6 +76,7 @@ class TteImagePlacementTest extends TestCase
             $processor = new TemplateProcessor($templatePath);
             (new \ReflectionMethod($signer, 'fillTemplateValuesSafely'))->invoke($signer, $processor, $data);
             (new \ReflectionMethod($signer, 'applyTteImagePlaceholders'))->invoke($signer, $processor, $data);
+            $this->assertSame([], $processor->getVariables());
             $processor->saveAs($outputPath);
 
             (new \ReflectionMethod($signer, 'hideTteCoordinateMarkers'))->invoke(
@@ -76,6 +118,50 @@ class TteImagePlacementTest extends TestCase
             }
 
             $this->assertCount(2, $hiddenMarkers);
+        } finally {
+            @unlink($templatePath);
+            @unlink($outputPath);
+        }
+    }
+
+    public function test_missing_required_coordinate_marker_fails_pdf_generation(): void
+    {
+        $templatePath = sys_get_temp_dir().'\\tte-template-'.uniqid('', true).'.docx';
+        $outputPath = sys_get_temp_dir().'\\tte-markers-'.uniqid('', true).'.docx';
+        $word = new PhpWord;
+        $word->addSection()->addText('${tte_lurah}');
+        \PhpOffice\PhpWord\IOFactory::createWriter($word, 'Word2007')->save($templatePath);
+
+        $signer = new class
+        {
+            use GeneratePDF;
+        };
+        $data = [
+            'tte_lurah' => '',
+            'tte_camat' => '',
+            '__tte_coordinate_markers' => ['tte_lurah', 'tte_camat'],
+        ];
+
+        try {
+            $processor = new TemplateProcessor($templatePath);
+            (new \ReflectionMethod($signer, 'applyTteImagePlaceholders'))->invoke($signer, $processor, $data);
+            $processor->saveAs($outputPath);
+
+            $exception = null;
+            try {
+                (new \ReflectionMethod($signer, 'hideTteCoordinateMarkers'))->invoke(
+                    $signer,
+                    $outputPath,
+                    $data['__tte_coordinate_markers']
+                );
+            } catch (\ReflectionException $e) {
+                throw $e;
+            } catch (\Throwable $e) {
+                $exception = $e->getPrevious() ?? $e;
+            }
+
+            $this->assertInstanceOf(\RuntimeException::class, $exception);
+            $this->assertStringContainsString('__TTE_CAMAT_POSITION__', $exception->getMessage());
         } finally {
             @unlink($templatePath);
             @unlink($outputPath);

@@ -1015,6 +1015,27 @@ class EsignController extends Controller
         $data['__cleanup_images'] = array_values(array_unique($cleanupImages));
     }
 
+    protected function assertTteCoordinateMarkersInPdf(string $pdfPath, array $placeholders): void
+    {
+        $markerValues = [
+            'tte_lurah' => '__TTE_LURAH_POSITION__',
+            'tte_camat' => '__TTE_CAMAT_POSITION__',
+        ];
+
+        foreach (array_unique($placeholders) as $placeholder) {
+            if (! isset($markerValues[$placeholder])) {
+                throw new \InvalidArgumentException("Placeholder koordinat TTE tidak dikenal: {$placeholder}");
+            }
+
+            $marker = $markerValues[$placeholder];
+            $coordinates = $this->get_esign_coordinate($pdfPath, $marker);
+            if (($coordinates['status'] ?? false) !== true || empty($coordinates['hasil'])) {
+                $message = $coordinates['message'] ?? 'penanda tidak terbaca di PDF hasil generate';
+                throw new \RuntimeException("PDF tidak memuat penanda {$marker}: {$message}");
+            }
+        }
+    }
+
     protected function buildPdfDataUniversal(SuratPengajuan $surat, ?int $tteRole = null): array
     {
         $resident = Resident::where('nik', $surat->nik)->first();
@@ -1229,12 +1250,21 @@ class EsignController extends Controller
                     $pdfPath = public_path($suratPengajuan->file);
                 } else {
                     $data = $this->buildPdfDataUniversal($suratPengajuan, $role);
-                    $data['__tte_coordinate_markers'] = ['tte_lurah', 'tte_camat'];
+                    $data['__tte_coordinate_markers'] = ['tte_lurah'];
+                    if (strtolower((string) $suratPengajuan->jenis_surat) === 'sktm') {
+                        $data['__tte_coordinate_markers'][] = 'tte_camat';
+                    }
                     $templateFile = $this->resolveTemplateFileUniversal($suratPengajuan->jenis_surat, (int) $suratPengajuan->id_kel, $variableData);
                     $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
                         ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
                         : $this->generatePdf($data, $templateFile, $outputPdfName);
                 }
+
+                $requiredTteMarkers = ['tte_lurah'];
+                if (strtolower((string) $suratPengajuan->jenis_surat) === 'sktm') {
+                    $requiredTteMarkers[] = 'tte_camat';
+                }
+                $this->assertTteCoordinateMarkersInPdf($pdfPath, $requiredTteMarkers);
 
                 $context = $this->requireUniversalSignerContext($suratPengajuan);
                 $lurah = $context['pejabat'];
@@ -1423,9 +1453,18 @@ class EsignController extends Controller
                 false
             );
 
-            $data['__tte_coordinate_markers'] = ['tte_lurah', 'tte_camat'];
+            $data['__tte_coordinate_markers'] = ['tte_lurah'];
+            if (strtolower((string) $jenisSurat) === 'sktm') {
+                $data['__tte_coordinate_markers'][] = 'tte_camat';
+            }
             $pdfPath = ($jenisSurat === 'skboro') ? $this->generatePdfTable($data, $templateFile, $outputPdfName) : $this->generatePdf($data, $templateFile, $outputPdfName);
         }
+
+        $requiredTteMarkers = ['tte_lurah'];
+        if (strtolower((string) $jenisSurat) === 'sktm') {
+            $requiredTteMarkers[] = 'tte_camat';
+        }
+        $this->assertTteCoordinateMarkersInPdf($pdfPath, $requiredTteMarkers);
 
         $isCamat = ((int) ($output['role'] ?? 0) === 5);
         $customTteImage = null;
