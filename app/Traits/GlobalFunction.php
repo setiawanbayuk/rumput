@@ -80,7 +80,7 @@ trait GlobalFunction
 
                 $qrSize = (int) ($params['qr_size'] ?? 95);
                 // Koordinat marker Word dipakai sebagai titik tengah patokan.
-                // Jika memakai gambar gabungan QR + kartu TTE, seluruh blok gambar dipusatkan pada marker.
+                // Untuk gambar gabungan, QR berada di sisi kiri dan memenuhi tinggi gambar.
                 $markerCenterX = $coord[0] + (($coord[2] - $coord[0]) / 2);
                 $markerCenterY = $coord[1] + (($coord[3] - $coord[1]) / 2);
 
@@ -96,7 +96,7 @@ trait GlobalFunction
                     'file_name'  => $fileName,
                     'verify'     => $params['verify'] ?? config('app.url'),
                     'page'       => (int) ($hasil['page'] ?? 1),
-                    'x'          => (float) ($useCustomImage ? ($markerCenterX - ($imageWidth / 2) + $offsetX) : ($markerCenterX - ($qrSize / 2) + $offsetX)),
+                    'x'          => (float) ($useCustomImage ? ($markerCenterX - ($imageHeight / 2) + $offsetX) : ($markerCenterX - ($qrSize / 2) + $offsetX)),
                     'y'          => (float) ($useCustomImage ? ($markerCenterY - ($imageHeight / 2) + $offsetY) : ($markerCenterY - ($qrSize / 2) + $offsetY)),
                     'qr_size'    => $qrSize,
                     'image_path' => $params['image_path'] ?? null,

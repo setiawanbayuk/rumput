@@ -1280,11 +1280,9 @@ class EsignController extends Controller
                 'verify'     => $verifyUrl,
                 'use_custom_image' => !empty($customTteImage['full_path']),
                 'image_path' => $customTteImage['full_path'] ?? null,
-                'image_width' => 260,
+                'image_width' => 308,
                 'image_height' => 75,
                 'qr_size' => 75,
-                'offset_x' => ($role === 3)?(strtolower((string) $suratPengajuan->jenis_surat) === 'sktm' ? 172 : 160): 0,
-                'offset_y' => 0,
                 'role'      => $role,
             ]);
 
@@ -1457,11 +1455,9 @@ class EsignController extends Controller
             'verify'     => $verifyUrl,
             'use_custom_image' => !empty($customTteImage['full_path']),
             'image_path' => $customTteImage['full_path'] ?? null,
-            'image_width' => 260,
+            'image_width' => 308,
             'image_height' => 75,
             'qr_size' => 75,
-            'offset_x' => (!$isCamat && $jenisSurat !== 'sktm') ? 250 : 250,
-            'offset_y' => 0,
             'role'      => (int) ($output['role'] ?? 0),
         ]);
 
