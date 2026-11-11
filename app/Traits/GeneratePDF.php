@@ -99,18 +99,16 @@ trait GeneratePDF
     /**
      * Isi placeholder teks biasa, tetapi JANGAN menyentuh marker TTE.
      *
-     * Penting:
-     * - ${qr} dipakai sebagai patokan posisi TTE Lurah.
-     * - [[qr_camat]] / ~camat~ dipakai sebagai patokan posisi TTE Camat.
-     *
-     * Jika key 'qr' ikut di-setValue kosong, marker ${qr} akan hilang dari DOCX/PDF.
-     * Akibatnya proses TTE berikutnya tidak menemukan posisi barcode dan hasilnya kosong.
+     * TTE placeholders are handled separately so signing can preserve their locations
+     * as coordinate markers in the generated PDF.
      */
     protected function fillTemplateValuesSafely(TemplateProcessor $templateProcessor, array $data): void
     {
         $reservedTteMarkers = [
             'qr',
             'qr_camat',
+            'tte_lurah',
+            'tte_camat',
             // Placeholder khusus tabel BORO. Jangan di-setValue kosong,
             // karena akan diproses dengan setComplexBlock/cloneBlock di generatePdfTable().
             'header',
@@ -132,13 +130,27 @@ trait GeneratePDF
     }
 
     /**
-     * Gambar TTE yang dibuat sendiri ditempel di template Word,
-     * sedangkan QR/barcode resmi tetap ditempel oleh BSrE pada marker ${qr}~ / ~camat~.
-     * Placeholder ini sengaja dipisah agar hasilnya seperti format lama: QR bersebelahan dengan kartu TTE.
+     * Placeholder TTE menjadi patokan koordinat QR saat dokumen dibuat untuk ditandatangani.
      */
     protected function applyTteImagePlaceholders(TemplateProcessor $templateProcessor, array $data): void
     {
+        $coordinateMarkers = (array) ($data['__tte_coordinate_markers'] ?? []);
+
         foreach (['tte_lurah', 'tte_camat'] as $placeholder) {
+            if (in_array($placeholder, $coordinateMarkers, true)) {
+                $marker = $placeholder === 'tte_camat'
+                    ? '__TTE_CAMAT_POSITION__'
+                    : '__TTE_LURAH_POSITION__';
+
+                try {
+                    $templateProcessor->setValue($placeholder, $marker);
+                } catch (\Throwable $e) {
+                    // The marker is absent in some templates; coordinate lookup will report that explicitly.
+                }
+
+                continue;
+            }
+
             $imageSpec = $data[$placeholder] ?? null;
             $path = null;
             $width = 225;
@@ -192,16 +204,16 @@ trait GeneratePDF
     }
 
     /**
-     * Fallback otomatis untuk template yang belum punya placeholder gambar TTE.
-     * Banyak template lama hanya punya marker ${qr}~ / ~camat~ untuk posisi barcode BSrE.
-     * Method ini membuat copy DOCX sementara lalu menyisipkan ${tte_lurah}/${tte_camat}
-     * di sebelah marker tersebut, sehingga Non-SKTM tetap menampilkan gambar TTE tanpa
-     * harus mengganti semua template custom satu per satu.
+     * Add missing TTE placeholders at legacy marker positions on a temporary template.
+     * Existing TTE placeholders remain the source of truth for QR placement.
      */
     protected function prepareTemplateForTteImages(string $templateFile, array $data): array
     {
-        $needsLurah = $this->hasValidTteImageSpec($data['tte_lurah'] ?? null);
-        $needsCamat = $this->hasValidTteImageSpec($data['tte_camat'] ?? null);
+        $coordinateMarkers = (array) ($data['__tte_coordinate_markers'] ?? []);
+        $needsLurah = $this->hasValidTteImageSpec($data['tte_lurah'] ?? null)
+            || in_array('tte_lurah', $coordinateMarkers, true);
+        $needsCamat = $this->hasValidTteImageSpec($data['tte_camat'] ?? null)
+            || in_array('tte_camat', $coordinateMarkers, true);
 
         if (! $needsLurah && ! $needsCamat) {
             return [$templateFile, null];
@@ -262,6 +274,123 @@ trait GeneratePDF
         $zip->close();
 
         return [$tempTemplate, $tempTemplate];
+    }
+
+    protected function hideTteCoordinateMarkers(string $docxPath, array $coordinateMarkers): void
+    {
+        if ($coordinateMarkers === []) {
+            return;
+        }
+
+        $markerValues = [];
+        foreach ($coordinateMarkers as $placeholder) {
+            if ($placeholder === 'tte_lurah') {
+                $markerValues[] = '__TTE_LURAH_POSITION__';
+            } elseif ($placeholder === 'tte_camat') {
+                $markerValues[] = '__TTE_CAMAT_POSITION__';
+            }
+        }
+
+        if ($markerValues === []) {
+            return;
+        }
+
+        $zip = new ZipArchive;
+        if ($zip->open($docxPath) !== true) {
+            throw new \RuntimeException('Gagal membuka dokumen sementara untuk menyembunyikan marker koordinat TTE.');
+        }
+
+        $wordNamespace = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+        $matchedMarkers = [];
+
+        try {
+            for ($index = 0; $index < $zip->numFiles; $index++) {
+                $name = $zip->getNameIndex($index);
+                if (! is_string($name) || ! preg_match('#^word/(document|header\d+|footer\d+)\.xml$#', $name)) {
+                    continue;
+                }
+
+                $xml = $zip->getFromName($name);
+                if (! is_string($xml) || $xml === '') {
+                    continue;
+                }
+
+                $document = new \DOMDocument;
+                $document->preserveWhiteSpace = true;
+                if (! $document->loadXML($xml, LIBXML_NONET)) {
+                    throw new \RuntimeException("XML dokumen TTE tidak valid: {$name}");
+                }
+
+                $xpath = new \DOMXPath($document);
+                $xpath->registerNamespace('w', $wordNamespace);
+                $changed = false;
+
+                foreach ($xpath->query('//w:r') as $run) {
+                    $text = '';
+                    foreach ($run->getElementsByTagNameNS($wordNamespace, 't') as $textNode) {
+                        $text .= $textNode->textContent;
+                    }
+
+                    if (! in_array($text, $markerValues, true)) {
+                        continue;
+                    }
+
+                    $marker = $text;
+                    $matchedMarkers[$marker] = true;
+                    $properties = null;
+                    foreach ($run->childNodes as $child) {
+                        if ($child instanceof \DOMElement && $child->namespaceURI === $wordNamespace && $child->localName === 'rPr') {
+                            $properties = $child;
+                            break;
+                        }
+                    }
+
+                    if (! $properties) {
+                        $properties = $document->createElementNS($wordNamespace, 'w:rPr');
+                        $run->insertBefore($properties, $run->firstChild);
+                    }
+
+                    $color = null;
+                    foreach ($properties->childNodes as $child) {
+                        if ($child instanceof \DOMElement && $child->namespaceURI === $wordNamespace && $child->localName === 'color') {
+                            $color = $child;
+                            break;
+                        }
+                    }
+
+                    if (! $color) {
+                        $color = $document->createElementNS($wordNamespace, 'w:color');
+                        $properties->appendChild($color);
+                    }
+
+                    $color->setAttributeNS($wordNamespace, 'w:val', 'FFFFFF');
+                    foreach (['sz', 'szCs'] as $sizeName) {
+                        $size = null;
+                        foreach ($properties->childNodes as $child) {
+                            if ($child instanceof \DOMElement && $child->namespaceURI === $wordNamespace && $child->localName === $sizeName) {
+                                $size = $child;
+                                break;
+                            }
+                        }
+
+                        if (! $size) {
+                            $size = $document->createElementNS($wordNamespace, 'w:'.$sizeName);
+                            $properties->appendChild($size);
+                        }
+
+                        $size->setAttributeNS($wordNamespace, 'w:val', '2');
+                    }
+
+                    $changed = true;
+                }
+
+                if ($changed) {
+                    $zip->addFromString($name, $document->saveXML());
+                }
+            }
+        } finally {
+            $zip->close();
+        }
     }
 
     protected function hasValidTteImageSpec($imageSpec): bool
@@ -402,6 +531,8 @@ trait GeneratePDF
         $templateProcessor->saveAs($tempDocxPath);
 
         try {
+            $this->hideTteCoordinateMarkers($tempDocxPath, (array) ($data['__tte_coordinate_markers'] ?? []));
+
             return $this->convertDocxToPdf($tempDocxPath, $outputPdfPath, $outputPdf);
         } finally {
             if (File::exists($tempDocxPath)) {
@@ -634,6 +765,8 @@ trait GeneratePDF
         $templateProcessor->saveAs($tempDocxPath);
 
         try {
+            $this->hideTteCoordinateMarkers($tempDocxPath, (array) ($data['__tte_coordinate_markers'] ?? []));
+
             return $this->convertDocxToPdf($tempDocxPath, $outputPdfPath, $outputPdf);
         } finally {
             if (File::exists($tempDocxPath)) {

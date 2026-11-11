@@ -1229,6 +1229,7 @@ class EsignController extends Controller
                     $pdfPath = public_path($suratPengajuan->file);
                 } else {
                     $data = $this->buildPdfDataUniversal($suratPengajuan, $role);
+                    $data['__tte_coordinate_markers'] = ['tte_lurah', 'tte_camat'];
                     $templateFile = $this->resolveTemplateFileUniversal($suratPengajuan->jenis_surat, (int) $suratPengajuan->id_kel, $variableData);
                     $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
                         ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
@@ -1274,15 +1275,14 @@ class EsignController extends Controller
                 'file_name'  => $outputPdfName . '.pdf',
                 'nik'        => $output['nik'] ?? '',
                 'passphrase' => $output['passphrase'] ?? '',
-                'qr_loc'     => $role === 5
-                    ? ['~camat~', '~camat', '[[qr_camat]]']
-                    : ['${qr}', '${qr}~'],
+                'qr_loc'     => $role === 5 ? '__TTE_CAMAT_POSITION__' : '__TTE_LURAH_POSITION__',
                 'verify'     => $verifyUrl,
                 'use_custom_image' => !empty($customTteImage['full_path']),
                 'image_path' => $customTteImage['full_path'] ?? null,
                 'image_width' => 308,
                 'image_height' => 75,
                 'qr_size' => 75,
+                'allow_coordinate_fallback' => false,
                 'role'      => $role,
             ]);
 
@@ -1423,6 +1423,7 @@ class EsignController extends Controller
                 false
             );
 
+            $data['__tte_coordinate_markers'] = ['tte_lurah', 'tte_camat'];
             $pdfPath = ($jenisSurat === 'skboro') ? $this->generatePdfTable($data, $templateFile, $outputPdfName) : $this->generatePdf($data, $templateFile, $outputPdfName);
         }
 
@@ -1451,13 +1452,14 @@ class EsignController extends Controller
             'file_name'  => $outputPdfName . '.pdf',
             'nik'        => $output['nik'],
             'passphrase' => $output['passphrase'],
-            'qr_loc'     => $isCamat ? ['~camat~', '~camat', '[[qr_camat]]'] : ['${qr}', '${qr}~'],
+            'qr_loc'     => $isCamat ? '__TTE_CAMAT_POSITION__' : '__TTE_LURAH_POSITION__',
             'verify'     => $verifyUrl,
             'use_custom_image' => !empty($customTteImage['full_path']),
             'image_path' => $customTteImage['full_path'] ?? null,
             'image_width' => 308,
             'image_height' => 75,
             'qr_size' => 75,
+            'allow_coordinate_fallback' => false,
             'role'      => (int) ($output['role'] ?? 0),
         ]);
 

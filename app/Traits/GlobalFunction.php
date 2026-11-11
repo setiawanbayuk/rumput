@@ -24,8 +24,8 @@ trait GlobalFunction
          * bukan QR/barcode seperti alur lama, dan Camat sering gagal 500.
          *
          * Method ini mengembalikan pola lama yang sudah cocok untuk QR/barcode BSrE:
-         * 1. cari koordinat marker di PDF dengan signminer (contoh: ~ atau [[qr_camat]])
-         * 2. panggil endpoint /sign/pdf dengan image=false dan linkQR
+         * 1. cari koordinat placeholder TTE Lurah/Camat di PDF dengan signminer
+         * 2. panggil endpoint /sign/pdf dengan QR atau gambar gabungan QR + kartu TTE
          * 3. hasil PDF binary ditulis ke storage/app/public/pdf/{file_name}
          *
          * Jadi TTE Lurah tampil barcode/QR, dan TTE Camat menimpa file hasil TTE Lurah
