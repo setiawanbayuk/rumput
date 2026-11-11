@@ -323,6 +323,15 @@
                             </li> --}}
                         @endif
 
+                        @if ((int) auth()->user()->role_id === 1)
+                            <li class="sidebar-item">
+                                <a class="sidebar-link {{ request()->routeIs('admin.esuket-push.*') ? 'active' : '' }}" href="{{ route('admin.esuket-push.index') }}">
+                                    <i class="ri-notification-3-line"></i>
+                                    <span class="sidebar-text">Log Push SSO</span>
+                                </a>
+                            </li>
+                        @endif
+
                         {{-- SECTION: PENGATURAN / TOOLS --}}
                         <li class="sidebar-item">
                             <a href="#" class="sidebar-link has-dropdown {{ request()->routeIs('docs.surat.*') ? '' : 'collapsed' }}" data-bs-toggle="collapse"

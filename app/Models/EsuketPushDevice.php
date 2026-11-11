@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EsuketPushDevice extends Model
 {
@@ -13,4 +14,9 @@ class EsuketPushDevice extends Model
     protected $casts = ['fcm_token' => 'encrypted'];
 
     protected $hidden = ['fcm_token', 'token_hash'];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

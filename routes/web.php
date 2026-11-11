@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\SuratAdminController;
 use App\Http\Controllers\Admin\ManajemenWargaController;
+use App\Http\Controllers\Admin\EsuketPushMonitorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JenisController;
@@ -312,6 +313,10 @@ Route::middleware(['auth', 'role:1'])->prefix('admin/manajemen-warga')->name('ad
     Route::get('/options/kecamatan', [ManajemenWargaController::class, 'kecamatanOptions'])->name('options.kecamatan');
     Route::get('/options/kelurahan', [ManajemenWargaController::class, 'kelurahanOptions'])->name('options.kelurahan');
     Route::get('/options/rt-rw', [ManajemenWargaController::class, 'rtRwOptions'])->name('options.rtrw');
+});
+
+Route::middleware(['auth', 'role:1'])->prefix('admin/esuket-push')->name('admin.esuket-push.')->group(function () {
+    Route::get('/', [EsuketPushMonitorController::class, 'index'])->name('index');
 });
 
 Route::middleware(['auth'])->prefix('tools')->name('tools.')->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EsuketPushDelivery extends Model
 {
@@ -14,4 +15,14 @@ class EsuketPushDelivery extends Model
     ];
 
     protected $casts = ['sent_at' => 'datetime'];
+
+    public function device(): BelongsTo
+    {
+        return $this->belongsTo(EsuketPushDevice::class, 'push_device_id');
+    }
+
+    public function surat(): BelongsTo
+    {
+        return $this->belongsTo(SuratPengajuan::class, 'surat_pengajuan_id');
+    }
 }
