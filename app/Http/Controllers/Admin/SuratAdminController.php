@@ -1812,12 +1812,7 @@ class SuratAdminController extends Controller
                 $nomorSurat = $this->getNoSrt($surat);
                 $verifyUrl = env('APP_URL', url('/')) . '/verify/' . $surat->jenis_surat . '/' . $surat->id;
 
-                $alamatLengkap = trim(
-                    ($residentData['alamat'] ?? '') .
-                    (!empty($residentData['kelurahan_nm']) ? ' KEL. ' . $residentData['kelurahan_nm'] : '') .
-                    (!empty($residentData['kecamatan_nm']) ? ' KEC. ' . $residentData['kecamatan_nm'] : '') .
-                    (!empty($residentData['kabko_nm']) ? ' ' . $residentData['kabko_nm'] : '')
-                );
+                $alamatLengkap = $this->formatResidentAddress(array_merge($variableData, $residentData));
 
                 $data = [
                     'skpd_kec'            => $this->resolveSkpdKecamatanName($skpdSurat, $residentData),
@@ -1845,16 +1840,17 @@ class SuratAdminController extends Controller
                     'surat_pendidikan'    => $residentData['pendidikan_nm'] ?? '',
                     'surat_alamat'        => $alamatLengkap,
                     'surat_kepada'        => $surat->kepada ?? '',
-                    'surat_peruntukan'    => $this->buildAutoSuratMeta($surat->peruntukan, $variableData['keperluan_lainnya'] ?? null)['untuk'],
+                    'surat_peruntukan'    => $surat->jenis_surat === 'sktm'
+                        ? $this->formatSktmPeruntukan($surat->peruntukan, $variableData)
+                        : $this->buildAutoSuratMeta($surat->peruntukan, $variableData['keperluan_lainnya'] ?? null)['untuk'],
                     'surat_keterangan'    => $variableData['keterangan_tambahan'] ?? $variableData['keperluan'] ?? '',
                     'surat_kategori'      => $variableData['surat_kategori'] ?? $this->buildAutoSuratMeta($surat->peruntukan, $variableData['keperluan_lainnya'] ?? null)['kategori'],
                     'surat_catatan'       => $variableData['surat_catatan'] ?? $this->buildAutoSuratMeta($surat->peruntukan, $variableData['keperluan_lainnya'] ?? null)['catatan'],
                     'link'                => $verifyUrl,
                     'show_qr'             => in_array((int) $surat->status, [4, 9], true),
-                    // Marker kosong untuk Lurah tetap menyisakan tanda ~ di template.
-                    // Marker Camat tetap disiapkan agar PDF sebelum TTE Camat masih punya titik tag.
+                    // Placeholder lawas ${qr}~ / ~camat~ tidak dipakai untuk TTE.
                     'qr'                  => '',
-                    'qr_camat'            => '[[qr_camat]]',
+                    'qr_camat'            => '',
 
                     'jenis_surat'         => $surat->jenis_surat ?? '',
                     'kd_jenis_surat'      => $surat->kd_jenis_surat ?? '',
@@ -1878,6 +1874,8 @@ class SuratAdminController extends Controller
                 }
 
                 if ($surat->jenis_surat === 'sktm') {
+                    // Variable DOCX lama tidak boleh menimpa hasil teks Keperluan Lainnya.
+                    $data['surat_peruntukan'] = $this->formatSktmPeruntukan($surat->peruntukan, $variableData);
                     $data['surat_kepada'] = $surat->kepada ?? ($variableData['kepada'] ?? '');
                     $data['surat_kepada_tempat_lhr'] = $variableData['kepada_tempat_lhr'] ?? '';
                     $data['surat_kepada_tgl_lhr'] = $variableData['kepada_tgl_lhr'] ?? '';
@@ -1946,6 +1944,9 @@ class SuratAdminController extends Controller
                         break;
                 }
 
+                // Jangan gunakan surat_alamat lama dari variable; utamakan residents.data.
+                $data['surat_alamat'] = $this->formatResidentAddress(array_merge($variableData, $residentData));
+
                 return $data;
             }
 
@@ -1966,7 +1967,8 @@ class SuratAdminController extends Controller
         }
 
         $boroSuffix = $surat->jenis_surat === 'skboro' ? '_BORO_PENGIKUT_TABLE_V5_SPACING_RELATION' : '';
-        $suffix = ($manualSignature ? '_BASAH_ONLY_MENGETAHUI_V4_PEMOHON_FIX' : '') . $boroSuffix;
+        // Revisi placeholder TTE dan alamat RT/RW harus membatalkan cache PDF lama.
+        $suffix = ($manualSignature ? '_BASAH_ONLY_MENGETAHUI_V4_PEMOHON_FIX' : '') . $boroSuffix . '_TTE_RTRW_V2' . ($surat->jenis_surat === 'sktm' ? '_SKTM_PERUNTUKAN_V3' : '');
         $outputPdf = hash('sha256', strtoupper($surat->jenis_surat) . '_' . $surat->id . $suffix);
         $pdfPath = $surat->jenis_surat === 'skboro'
             ? $this->generatePdfTable($data, $templateFile, $outputPdf)
@@ -1988,7 +1990,7 @@ class SuratAdminController extends Controller
                 }
 
                 $boroSuffix = $surat->jenis_surat === 'skboro' ? '_BORO_PENGIKUT_TABLE_V5_SPACING_RELATION' : '';
-                $suffix = $boroSuffix;
+                $suffix = $boroSuffix . '_TTE_RTRW_V2' . ($surat->jenis_surat === 'sktm' ? '_SKTM_PERUNTUKAN_V3' : '');
                 $outputPdf = hash('sha256', strtoupper($surat->jenis_surat) . '_' . $surat->id . $suffix);
 
                 $candidates = [
@@ -2010,23 +2012,29 @@ class SuratAdminController extends Controller
 
             protected function getSignedPdfPathForTteFlow(\App\Models\SuratPengajuan $surat): ?string
             {
-                $status = (int) $surat->status;
-                if (empty($surat->file) || !in_array($status, [4, 9, 11, 8], true)) {
+                if (empty($surat->file) || !in_array((int) $surat->status, [4, 8, 9, 11], true)) {
                     return null;
                 }
 
                 $variable = $this->decodeFlexibleValue($surat->variable);
-                $isManualSignature = !empty($variable['manual_signature'])
-                    || (($variable['signature_mode'] ?? null) === 'manual');
-
-                // Untuk surat yang sudah TTE, preview/cetak wajib membuka file hasil TTE dari kolom file.
-                // Kalau digenerate ulang dari template, QR/img TTE hilang dan nama pejabat bisa kembali salah.
-                if ($isManualSignature) {
+                if (!empty($variable['manual_signature']) || ($variable['signature_mode'] ?? '') === 'manual') {
                     return null;
                 }
 
-                $candidate = public_path($surat->file);
-                return is_file($candidate) ? $candidate : null;
+                $relative = str_replace('\\', '/', trim((string) $surat->file));
+                if (!preg_match('#^storage/pdf/([A-Za-z0-9_.-]+\.pdf)$#i', $relative, $match)) {
+                    abort(404, 'Referensi file PDF TTE tidak valid.');
+                }
+
+                // Gunakan storage asli saat symlink public/storage belum dibuat di lokal.
+                foreach ([storage_path('app/public/pdf/'.$match[1]), public_path($relative)] as $path) {
+                    if (is_file($path) && filesize($path) > 0) {
+                        return $path;
+                    }
+                }
+
+                // Jangan diam-diam generate ulang PDF tanpa TTE Lurah/Camat.
+                abort(404, 'PDF yang telah ditandatangani tidak ditemukan. Periksa storage/app/public/pdf dan php artisan storage:link.');
             }
 
             public function preview($id)

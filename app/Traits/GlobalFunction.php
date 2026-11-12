@@ -15,152 +15,181 @@ use Intervention\Image\Typography\FontFactory;
 
 trait GlobalFunction
 {
+    /**
+     * Penandatanganan BSrE yang hanya memakai marker posisi TTE baru.
+     * Lurah menandatangani PDF hasil generate; Camat menandatangani salinan
+     * PDF Lurah secara incremental sehingga signature sebelumnya tetap ada.
+     */
     public function TTE_sign(array $params)
     {
-        /**
-         * FIX FINAL SKTM TTE:
-         * Sistem sebelumnya memakai endpoint /v2/sign/pdf + imageBase64/tag.
-         * Hasilnya di PDF muncul stempel tulisan "Ditandatangani secara elektronik...",
-         * bukan QR/barcode seperti alur lama, dan Camat sering gagal 500.
-         *
-         * Method ini mengembalikan pola lama yang sudah cocok untuk QR/barcode BSrE:
-         * 1. cari koordinat placeholder TTE Lurah/Camat di PDF dengan signminer
-         * 2. panggil endpoint /sign/pdf dengan QR atau gambar gabungan QR + kartu TTE
-         * 3. hasil PDF binary ditulis ke storage/app/public/pdf/{file_name}
-         *
-         * Jadi TTE Lurah tampil barcode/QR, dan TTE Camat menimpa file hasil TTE Lurah
-         * tanpa generate ulang template.
-         */
+        $stagingPath = null;
         try {
-            if (empty($params['path']) || !file_exists($params['path'])) {
-                return ['status' => 'error', 'message' => 'File PDF tidak ditemukan: ' . ($params['path'] ?? '-')];
+            $sourcePath = (string) ($params['path'] ?? '');
+            if (! is_file($sourcePath) || filesize($sourcePath) <= 0) {
+                return ['status' => 'error', 'message' => 'PDF sumber TTE tidak ditemukan.'];
             }
 
-            $fileName = $params['file_name'] ?? ('signed_' . time() . '.pdf');
-            $targetPath = storage_path('app/public/pdf/' . $fileName);
-
-            if (!is_dir(dirname($targetPath))) {
-                @mkdir(dirname($targetPath), 0777, true);
+            $marker = (string) ($params['qr_loc'] ?? '');
+            if (! in_array($marker, ['__TTE_LURAH_POSITION__', '__TTE_CAMAT_POSITION__'], true)) {
+                return ['status' => 'error', 'message' => 'Posisi TTE wajib ${tte_lurah} atau ${tte_camat}; marker QR lama tidak didukung.'];
             }
 
-            // Untuk Camat, input adalah PDF hasil TTE Lurah. Copy dulu ke nama output Camat,
-            // agar proses TTE Camat tidak menghilangkan TTE Lurah.
-            if (realpath($params['path']) !== realpath($targetPath)) {
-                @copy($params['path'], $targetPath);
+            $meta = $this->get_esign_coordinate($sourcePath, $marker);
+            if (($meta['status'] ?? false) !== true || empty($meta['hasil'])) {
+                return ['status' => 'error', 'message' => 'Marker TTE tidak ditemukan pada PDF: '.$marker];
             }
 
-            clearstatcache(true, $targetPath);
-            if (!file_exists($targetPath) || filesize($targetPath) <= 0) {
-                return ['status' => 'error', 'message' => 'Gagal menyiapkan file PDF untuk proses TTE.'];
+            if (count($meta['hasil']) !== 1) {
+                return ['status' => 'error', 'message' => 'Placeholder TTE ditemukan lebih dari satu kali. Posisi TTE harus tunggal pada setiap dokumen.'];
             }
 
-            $tagInput = $params['qr_loc'] ?? '~';
-            $tagCandidates = is_array($tagInput) ? $tagInput : [$tagInput];
-            $tagCandidates = array_values(array_unique(array_filter(array_map(function ($tag) {
-                return trim((string) $tag);
-            }, $tagCandidates), fn ($tag) => $tag !== '')));
-
-            if (empty($tagCandidates)) {
-                $tagCandidates = ['~'];
+            $hasil = end($meta['hasil']);
+            $coord = $hasil['data'] ?? null;
+            if (! is_array($coord) || count($coord) !== 4) {
+                return ['status' => 'error', 'message' => 'Koordinat TTE dari PDF tidak valid.'];
             }
 
-            $lastError = null;
-            foreach ($tagCandidates as $tag) {
-                $meta = $this->get_esign_coordinate($targetPath, $tag);
+            $isCamat = $marker === '__TTE_CAMAT_POSITION__';
+            $beforeSignatures = $this->countPdfByteRangeSignatures($sourcePath);
+            if ($beforeSignatures < 0 || ($isCamat && $beforeSignatures < 1)) {
+                return ['status' => 'error', 'message' => 'Camat wajib memakai PDF bertanda tangan Lurah yang masih valid secara struktur.'];
+            }
 
-                if (($meta['status'] ?? false) !== true || empty($meta['hasil'])) {
-                    $lastError = 'Marker TTE tidak ditemukan di PDF: ' . $tag;
-                    Log::warning($lastError, ['file' => $targetPath]);
-                    continue;
+            $fileName = basename((string) ($params['file_name'] ?? ''));
+            if (! preg_match('/^[A-Za-z0-9_.-]+\.pdf$/i', $fileName)) {
+                return ['status' => 'error', 'message' => 'Nama output PDF TTE tidak valid.'];
+            }
+
+            $outputDir = storage_path('app/public/pdf/');
+            if (! is_dir($outputDir) && ! @mkdir($outputDir, 0777, true) && ! is_dir($outputDir)) {
+                return ['status' => 'error', 'message' => 'Folder penyimpanan TTE tidak dapat dibuat.'];
+            }
+
+            // File kerja unik mencegah kegagalan BSrE menimpa PDF sah yang sudah ada.
+            $stagingName = 'ESUKET_TTE_TEMP_'.bin2hex(random_bytes(12)).'.pdf';
+            $stagingPath = $outputDir.$stagingName;
+            if (! @copy($sourcePath, $stagingPath) || filesize($stagingPath) <= 0) {
+                return ['status' => 'error', 'message' => 'Gagal menyalin PDF sumber TTE ke file kerja.'];
+            }
+
+            $qrSize = (int) ($params['qr_size'] ?? 95);
+            $useCustomImage = ! empty($params['use_custom_image']) && ! empty($params['image_path']);
+            $imageWidth = $useCustomImage ? (int) ($params['image_width'] ?? 308) : $qrSize;
+            $imageHeight = $useCustomImage ? (int) ($params['image_height'] ?? 75) : $qrSize;
+            if ($imageWidth <= 0 || $imageHeight <= 0) {
+                return ['status' => 'error', 'message' => 'Ukuran visual TTE tidak valid.'];
+            }
+
+            // Posisi TTE berdasarkan titik tengah placeholder yang sebenarnya,
+            // bukan lagi pusat QR lama. X wajib dikurangi SETENGAH LEBAR gambar.
+            $centerX = ((float) $coord[0] + (float) $coord[2]) / 2;
+            $centerY = ((float) $coord[1] + (float) $coord[3]) / 2;
+            $x = $centerX - ($imageWidth / 2) + (float) ($params['offset_x'] ?? 0);
+            $y = $centerY - ($imageHeight / 2) + (float) ($params['offset_y'] ?? 0);
+
+            // Jangan biarkan gambar keluar halaman (terutama placeholder Lurah
+            // yang ditempatkan di sisi kanan tabel Word).
+            $pageWidth = (float) ($hasil['page_width'] ?? 0);
+            $pageHeight = (float) ($hasil['page_height'] ?? 0);
+            $margin = 5.0;
+            if ($pageWidth > 0) {
+                if ($imageWidth > $pageWidth - 2 * $margin) {
+                    return ['status' => 'error', 'message' => 'Lebar gambar TTE melebihi ukuran halaman surat.'];
                 }
-
-                // Ambil koordinat marker terakhir yang ditemukan.
-                $hasil = end($meta['hasil']);
-                $coord = $hasil['data'] ?? [0, 0, 0, 0];
-
-                $qrSize = (int) ($params['qr_size'] ?? 95);
-                // Koordinat marker Word dipakai sebagai titik tengah patokan.
-                // Untuk gambar gabungan, QR berada di sisi kiri dan memenuhi tinggi gambar.
-                $markerCenterX = $coord[0] + (($coord[2] - $coord[0]) / 2);
-                $markerCenterY = $coord[1] + (($coord[3] - $coord[1]) / 2);
-
-                $useCustomImage = !empty($params['use_custom_image']) && !empty($params['image_path']);
-                $imageWidth = (int) ($params['image_width'] ?? 330);
-                $imageHeight = (int) ($params['image_height'] ?? 90);
-                $offsetX = (float) ($params['offset_x'] ?? 0);
-                $offsetY = (float) ($params['offset_y'] ?? 0);
-
-                $signData = [
-                    'nik'        => $params['nik'] ?? '',
-                    'passphrase' => $params['passphrase'] ?? '',
-                    'file_name'  => $fileName,
-                    'verify'     => $params['verify'] ?? config('app.url'),
-                    'page'       => (int) ($hasil['page'] ?? 1),
-                    'x'          => (float) ($useCustomImage ? ($markerCenterX - ($imageHeight / 2) + $offsetX) : ($markerCenterX - ($qrSize / 2) + $offsetX)),
-                    'y'          => (float) ($useCustomImage ? ($markerCenterY - ($imageHeight / 2) + $offsetY) : ($markerCenterY - ($qrSize / 2) + $offsetY)),
-                    'qr_size'    => $qrSize,
-                    'image_path' => $params['image_path'] ?? null,
-                    'image_width' => $imageWidth,
-                    'image_height' => $imageHeight,
-                ];
-
-                $response = $useCustomImage
-                    ? $this->TTE_Visible_Image($signData)
-                    : $this->TTE_Visible_QR($signData);
-
-                if (($response['status'] ?? false) === true) {
-                    return ['status' => 'success', 'message' => 'Esign Berhasil', 'tag' => $tag];
+                $x = max($margin, min($x, $pageWidth - $imageWidth - $margin));
+            } else {
+                $x = max(0, $x);
+            }
+            if ($pageHeight > 0) {
+                if ($imageHeight > $pageHeight - 2 * $margin) {
+                    return ['status' => 'error', 'message' => 'Tinggi gambar TTE melebihi halaman surat.'];
                 }
-
-                $lastError = 'Gagal Esign marker ' . $tag . ': ' . ($response['message'] ?? 'Unknown Error');
-                Log::error($lastError, ['file' => $targetPath]);
+                $y = max($margin, min($y, $pageHeight - $imageHeight - $margin));
+            } else {
+                $y = max(0, $y);
             }
 
-            // Fallback terakhir agar proses tidak berhenti total ketika marker dari PDF tidak terbaca oleh pdfminer.
-            // Ini hanya dipakai jika semua marker gagal ditemukan/dipakai. Koordinat dibuat khusus untuk template SKTM 1 halaman.
-            // Lurah: kanan bawah area tanda tangan Lurah. Camat: bawah tengah area tanda tangan Camat.
-            if (($params['allow_coordinate_fallback'] ?? true) !== false) {
-                $role = (int) ($params['role'] ?? 0);
-                $isCamat = $role === 5;
-                $useCustomImage = !empty($params['use_custom_image']) && !empty($params['image_path']);
-                $fallbackImageWidth = (int) ($params['image_width'] ?? 330);
-                $fallbackImageHeight = (int) ($params['image_height'] ?? 90);
-                $fallback = [
-                    'nik'        => $params['nik'] ?? '',
-                    'passphrase' => $params['passphrase'] ?? '',
-                    'file_name'  => $fileName,
-                    'verify'     => $params['verify'] ?? config('app.url'),
-                    'page'       => 1,
-                    'x'          => (float) ($params['fallback_x'] ?? ($isCamat ? 255 : 390)),
-                    'y'          => (float) ($params['fallback_y'] ?? ($isCamat ? 85 : 230)),
-                    'qr_size'    => (int) ($params['qr_size'] ?? 95),
-                    'image_path' => $params['image_path'] ?? null,
-                    'image_width' => $fallbackImageWidth,
-                    'image_height' => $fallbackImageHeight,
-                ];
+            $signData = [
+                'nik' => $params['nik'] ?? '',
+                'passphrase' => $params['passphrase'] ?? '',
+                'file_name' => $stagingName,
+                'verify' => $params['verify'] ?? config('app.url'),
+                'page' => (int) ($hasil['page'] ?? 1),
+                'x' => $x,
+                'y' => $y,
+                'qr_size' => $qrSize,
+                'image_path' => $params['image_path'] ?? null,
+                'image_width' => $imageWidth,
+                'image_height' => $imageHeight,
+            ];
 
-                Log::warning('Marker TTE tidak ditemukan, memakai fallback koordinat SKTM.', [
-                    'file' => $targetPath,
-                    'role' => $role,
-                    'fallback' => $fallback,
-                    'last_error' => $lastError,
+            $response = $useCustomImage
+                ? $this->TTE_Visible_Image($signData)
+                : $this->TTE_Visible_QR($signData);
+            if (($response['status'] ?? false) !== true) {
+                return ['status' => 'error', 'message' => $response['message'] ?? 'BSrE gagal menandatangani PDF.'];
+            }
+
+            $afterSignatures = $this->countPdfByteRangeSignatures($stagingPath);
+            if ($afterSignatures <= $beforeSignatures) {
+                Log::error('TTE ditolak: jumlah signature PDF tidak bertambah.', [
+                    'marker' => $marker,
+                    'sebelum' => $beforeSignatures,
+                    'sesudah' => $afterSignatures,
                 ]);
-
-                $fallbackResponse = $useCustomImage
-                    ? $this->TTE_Visible_Image($fallback)
-                    : $this->TTE_Visible_QR($fallback);
-                if (($fallbackResponse['status'] ?? false) === true) {
-                    return ['status' => 'success', 'message' => 'Esign Berhasil dengan fallback koordinat', 'tag' => 'fallback-coordinate'];
-                }
-
-                $lastError = 'Fallback koordinat gagal: ' . ($fallbackResponse['message'] ?? $lastError ?? 'Unknown Error');
+                return ['status' => 'error', 'message' => 'PDF hasil BSrE tidak mempertahankan rantai TTE sebelumnya. Dokumen asli tidak diubah.'];
             }
 
-            return ['status' => 'error', 'message' => $lastError ?: 'TTE gagal. Marker tidak ditemukan atau response BSrE tidak valid.'];
+            $targetPath = $outputDir.$fileName;
+            $backupPath = null;
+            if (is_file($targetPath)) {
+                $backupPath = $outputDir.'.tte_backup_'.bin2hex(random_bytes(12)).'.pdf';
+                if (! @rename($targetPath, $backupPath)) {
+                    return ['status' => 'error', 'message' => 'Gagal menyiapkan penggantian PDF TTE tanpa menghapus file lama.'];
+                }
+            }
+
+            if (! @rename($stagingPath, $targetPath)) {
+                if ($backupPath !== null) {
+                    @rename($backupPath, $targetPath);
+                }
+                return ['status' => 'error', 'message' => 'Gagal menyimpan PDF TTE final. Dokumen lama dipulihkan.'];
+            }
+            $stagingPath = null;
+            if ($backupPath !== null) {
+                @unlink($backupPath);
+            }
+
+            Log::info('TTE berhasil dengan marker baru.', [
+                'marker' => $marker,
+                'file' => $fileName,
+                'signatures' => $afterSignatures,
+            ]);
+            return ['status' => 'success', 'message' => 'Esign Berhasil', 'tag' => $marker];
         } catch (\Throwable $e) {
-            Log::error('TTE_sign Exception: ' . $e->getMessage());
-            return ['status' => 'error', 'message' => 'Sistem Error: ' . $e->getMessage()];
+            Log::error('TTE_sign Exception: '.$e->getMessage());
+            return ['status' => 'error', 'message' => 'Sistem Error: '.$e->getMessage()];
+        } finally {
+            if ($stagingPath !== null && is_file($stagingPath)) {
+                @unlink($stagingPath);
+            }
         }
+    }
+
+    /**
+     * Setiap TTE PDF PAdES memiliki ByteRange; tanda tangan tahap Camat
+     * harus menambah signature tanpa menghapus tanda tangan Lurah.
+     */
+    protected function countPdfByteRangeSignatures(string $pdfPath): int
+    {
+        if (! is_file($pdfPath) || filesize($pdfPath) <= 0) {
+            return -1;
+        }
+        $content = @file_get_contents($pdfPath);
+        if ($content === false || ! str_starts_with($content, '%PDF-')) {
+            return -1;
+        }
+        return preg_match_all('/\/ByteRange\\s*\\[/i', $content);
     }
 
     protected function getPythonCommand(): string
@@ -198,7 +227,12 @@ trait GlobalFunction
                 }
                 $coord = [(float) $parts[0], (float) $parts[1], (float) $parts[2], (float) $parts[3]];
                 $page = ((int) $parts[4]) + 1;
-                $hasil[] = ['page' => $page, 'data' => $coord];
+                $hasil[] = [
+                    'page' => $page,
+                    'data' => $coord,
+                    'page_width' => isset($parts[5]) && is_numeric($parts[5]) ? (float) $parts[5] : null,
+                    'page_height' => isset($parts[6]) && is_numeric($parts[6]) ? (float) $parts[6] : null,
+                ];
             }
 
             return !empty($hasil)

@@ -898,7 +898,7 @@ class SkboroController extends Controller
             'surat_agama' => $penduduk['agama_nm'],
             'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
             'surat_pendidikan' => $penduduk['pendidikan_nm'],
-            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_alamat' => $this->formatResidentAddress($penduduk),
             'surat_tgl' => $tglSurat,
             'surat_tgl_berlaku' =>  $surat['tgl_awal'] . ' s/d ' .  $surat['tgl_akhir'],
             'surat_tujuan' => 'Desa / Kelurahan : ' . $surat['kel_boro_nm'] . ' Kecamatan : ' . $surat['kec_boro_nm'] . ' Kabupaten : ' . $surat['kabko_boro_nm'] . ' Provinsi : ' . $surat['prov_boro_nm'],
@@ -919,6 +919,7 @@ class SkboroController extends Controller
         }
         $outputPdf = hash('sha256', 'SKBORO_' . $id);
         // Generate PDF dari template
+        $data['surat_alamat'] = $this->formatResidentAddress($penduduk);
         $pdfPath = $this->generatePdfTable($data, $templateFile, $outputPdf);
 
         return response()->file($pdfPath);

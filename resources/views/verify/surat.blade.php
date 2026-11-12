@@ -176,7 +176,7 @@
                             </div>
                         </div>
                         <h1 class="headline">Verifikasi <span>Dokumen Resmi</span></h1>
-                        
+
                         <div class="badges">
                             <!--<span class="badge gold">✓ Terverifikasi Arsip E-Suket</span>-->
                         </div>
@@ -279,7 +279,7 @@
                         </div>
 
                         <div class="note">
-                            <strong>Catatan resmi:</strong> Halaman ini hanya untuk validasi keaslian dokumen. Untuk melihat isi lengkap surat, gunakan dokumen PDF resmi yang diterima dari kanal pelayanan, bukan dari halaman publik scan QR/Barcode.
+                            <strong>Catatan resmi:</strong> Halaman ini hanya untuk validasi keaslian dokumen. Untuk melihat isi lengkap surat, gunakan dokumen PDF resmi yang diterima dari ASNDigital/Website Resmi Pemerintahan,Validasi TTE https://tte.komdigi.go.id/verifyPDF
                         </div>
                     </div>
                     <div class="watermark">E-SUKET</div>

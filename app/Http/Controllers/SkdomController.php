@@ -737,7 +737,7 @@ class SkdomController extends Controller
             'surat_agama' => $penduduk['agama_nm'],
             'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
             'surat_pendidikan' => $penduduk['pendidikan_nm'],
-            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_alamat' => $this->formatResidentAddress($penduduk),
             'surat_keterangan' => $surat['jenis'] == 'perorangan' ?
                 'Bahwa nama tersebut di atas benar - benar berdomisili di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) :
                 'Pendiri / pemilik usaha ' . $surat['nama_perusahaan'] . ' yang bertempat di ' . $surat['alamat_domisili'] . ', Kel. ' . ucfirst(strtolower($penduduk['kelurahan_nm'])) . ' Kec. ' . ucfirst(strtolower($penduduk['kecamatan_nm'])) . ' ' .  ucwords(strtolower($penduduk['kabko_nm'])) . ' yang berstatus bangunan ' . $surat['status_bangunan'] . ' dengan karyawan berjumlah ' . $surat['jumlah_karyawan'] . ' orang.',
@@ -757,6 +757,7 @@ class SkdomController extends Controller
         }
         $outputPdf = hash('sha256', 'SKDOM_' . $id);
         // Generate PDF dari template
+        $data['surat_alamat'] = $this->formatResidentAddress($penduduk);
         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
 
         return response()->file($pdfPath);

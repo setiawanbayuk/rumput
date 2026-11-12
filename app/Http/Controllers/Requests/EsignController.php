@@ -1033,6 +1033,9 @@ class EsignController extends Controller
                 $message = $coordinates['message'] ?? 'penanda tidak terbaca di PDF hasil generate';
                 throw new \RuntimeException("PDF tidak memuat penanda {$marker}: {$message}");
             }
+            if (count($coordinates['hasil']) !== 1) {
+                throw new \RuntimeException("PDF memuat posisi {$marker} lebih dari satu. Setiap placeholder TTE harus unik.");
+            }
         }
     }
 
@@ -1058,12 +1061,7 @@ class EsignController extends Controller
         $nomorSurat = $this->getNoSrt($surat);
         $verifyUrl = config('app.url') . '/verify/' . $surat->jenis_surat . '/' . $surat->id;
 
-        $alamatLengkap = trim(
-            ($residentData['alamat'] ?? '') .
-            (!empty($residentData['kelurahan_nm']) ? ' KEL. ' . $residentData['kelurahan_nm'] : '') .
-            (!empty($residentData['kecamatan_nm']) ? ' KEC. ' . $residentData['kecamatan_nm'] : '') .
-            (!empty($residentData['kabko_nm']) ? ' ' . $residentData['kabko_nm'] : '')
-        );
+        $alamatLengkap = $this->formatResidentAddress(array_merge($variableData, $residentData));
 
         $data = [
             'skpd_kec'         => $this->resolveSkpdKecamatanName($skpd, $residentData),
@@ -1095,10 +1093,9 @@ class EsignController extends Controller
             'surat_kategori'   => $variableData['surat_kategori'] ?? '',
             'surat_catatan'    => $variableData['surat_catatan'] ?? '',
             'link'             => $verifyUrl,
-            // Jangan isi qr dengan gambar saat proses TTE. Template cukup menyisakan tag ~ untuk Lurah.
-            'qr'               => '${qr}',
-            // Tag Camat sengaja berupa teks biasa agar tetap bisa dicari API saat TTE Camat.
-            'qr_camat'         => '~camat~',
+            // Marker legacy tidak digunakan. Lokasi TTE hanya dari ${tte_lurah}/${tte_camat}.
+            'qr'               => '',
+            'qr_camat'         => '',
         ];
 
         foreach ($residentData as $key => $value) {
@@ -1115,6 +1112,10 @@ class EsignController extends Controller
 
 
         if (strtolower((string) $surat->jenis_surat) === 'sktm') {
+            // SKTM sekolah/perorangan: sumber keperluan Lainnya adalah input
+            // keperluan_lainnya, bukan label pilihan di surat_pengajuans.peruntukan.
+            $data['surat_peruntukan'] = $this->formatSktmPeruntukan($surat->peruntukan, $variableData);
+
             $takeSktmValue = function (string $key, string $fallbackKey = null) use ($variableData, $surat) {
                 $fallbackKey = $fallbackKey ?: $key;
                 $value = $variableData[$key] ?? $variableData[$fallbackKey] ?? null;
@@ -1197,7 +1198,51 @@ class EsignController extends Controller
             false
         );
 
+        // Variable template dapat berisi surat_alamat lama; sumber utama tetap residents.data.
+        $data['surat_alamat'] = $this->formatResidentAddress(array_merge($variableData, $residentData));
+
         return $data;
+    }
+
+    /**
+     * Ambil BERKAS HASIL TTE Lurah (bukan file hasil generate ulang).
+     * Cek lokasi storage fisik juga karena di lokal public/storage symlink
+     * terkadang belum dibuat. Gagal tertutup jika Lurah belum TTE.
+     */
+    protected function resolveLurahSignedPdfForCamat($surat): string
+    {
+        $relative = str_replace('\\', '/', trim((string) ($surat->file ?? '')));
+        if (! preg_match('#^storage/pdf/([A-Za-z0-9_.-]+\.pdf)$#i', $relative, $match)) {
+            throw new \RuntimeException('PDF TTE Lurah tidak tercatat dengan benar. Camat tidak boleh generate ulang surat.');
+        }
+
+        $candidates = [
+            storage_path('app/public/pdf/'.$match[1]),
+            public_path($relative),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (! is_file($candidate) || filesize($candidate) <= 0) {
+                continue;
+            }
+
+            $header = file_get_contents($candidate, false, null, 0, 5);
+            if ($header !== '%PDF-') {
+                continue;
+            }
+
+            // ByteRange wajib ada pada PDF yang benar-benar sudah ditandatangani.
+            // Tanpa ini, signing Camat terhadap PDF draft akan menghilangkan TTE Lurah.
+            $contents = file_get_contents($candidate);
+            if ($contents !== false && preg_match('/\/ByteRange\s*\[/i', $contents)) {
+                return $candidate;
+            }
+        }
+
+        throw new \RuntimeException(
+            'PDF hasil TTE Lurah tidak tersedia atau belum bertanda tangan digital. '
+            .'TTE Camat dibatalkan agar tanda tangan Lurah tidak hilang.'
+        );
     }
 
     public function sign(Request $request)
@@ -1244,10 +1289,14 @@ class EsignController extends Controller
                 $registrasiKecamatan = trim((string) ($suratPengajuan->no_register ?? ($variableData['no_register_kecamatan'] ?? ($variableData['register_kecamatan'] ?? ''))));
                 $outputPdfName = strtoupper($suratPengajuan->jenis_surat) . "_{$suratPengajuan->id}_signed" . ($role === 5 ? '_camat' : '');
 
-                // KHUSUS CAMAT: pakai PDF hasil TTE Lurah yang sudah tersimpan.
-                // Jangan generate ulang dari template agar QR/TTE Lurah tidak hilang.
-                if ($role === 5 && !empty($suratPengajuan->file) && file_exists(public_path($suratPengajuan->file))) {
-                    $pdfPath = public_path($suratPengajuan->file);
+                if ($role === 5) {
+                    if (strtolower((string) $suratPengajuan->jenis_surat) !== 'sktm') {
+                        throw new \RuntimeException('TTE Camat hanya berlaku untuk SKTM.');
+                    }
+                    // Camat menambah signature pada hasil TTE Lurah yang asli.
+                    // Tidak ada fallback generate DOCX/PDF di tahap Camat.
+                    $pdfPath = $this->resolveLurahSignedPdfForCamat($suratPengajuan);
+                    $this->assertTteCoordinateMarkersInPdf($pdfPath, ['tte_camat']);
                 } else {
                     $data = $this->buildPdfDataUniversal($suratPengajuan, $role);
                     $data['__tte_coordinate_markers'] = ['tte_lurah'];
@@ -1258,13 +1307,9 @@ class EsignController extends Controller
                     $pdfPath = $suratPengajuan->jenis_surat === 'skboro'
                         ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
                         : $this->generatePdf($data, $templateFile, $outputPdfName);
+                    // Wajib simpan dua posisi untuk SKTM sejak tahap Lurah.
+                    $this->assertTteCoordinateMarkersInPdf($pdfPath, $data['__tte_coordinate_markers']);
                 }
-
-                $requiredTteMarkers = ['tte_lurah'];
-                if (strtolower((string) $suratPengajuan->jenis_surat) === 'sktm') {
-                    $requiredTteMarkers[] = 'tte_camat';
-                }
-                $this->assertTteCoordinateMarkersInPdf($pdfPath, $requiredTteMarkers);
 
                 $context = $this->requireUniversalSignerContext($suratPengajuan);
                 $lurah = $context['pejabat'];
@@ -1413,7 +1458,7 @@ class EsignController extends Controller
             'surat_agama'     => $penduduk['agama_nm'] ?? '',
             'surat_pekerjaan' => $penduduk['pekerjaan_nm'] ?? '',
             'surat_pendidikan' => $penduduk['pendidikan_nm'] ?? '',
-            'surat_alamat'    => trim(($penduduk['alamat'] ?? '') . ' KEL. ' . ($penduduk['kelurahan_nm'] ?? '') . ' KEC. ' . ($penduduk['kecamatan_nm'] ?? '') . ' ' . ($penduduk['kabko_nm'] ?? '')),
+            'surat_alamat'    => $this->formatResidentAddress($penduduk),
             'surat_tgl'       => Carbon::parse($surat->tgl_surat)->isoFormat('D MMMM Y'),
             'link'            => $verifyUrl
         ];
@@ -1430,43 +1475,51 @@ class EsignController extends Controller
         };
 
 
-        $outputPdfName = strtoupper($jenisSurat) . "_{$id}_signed";
-        if (in_array($jenisSurat, ['skkelahiran', 'skkematian'])) {
-            $pdfPath = $this->generateSpecialPdf($surat, $jenisSurat, $nomorSurat, $pejabat, $verifyUrl, $id);
-        } else {
-            $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => $jenisSurat])->first();
-            if ($template && !empty($surat->variable)) {
-                $templateFile = public_path($template->path_docs);
-                $data = array_merge($data, $surat->variable);
-            } else {
-                $templateFile = $jenisSurat == 'sktm'
-                    ? ($surat->jenis == 'sekolah' ? public_path('templates/SKTM_SEKOLAH.docx') : public_path('templates/SKTM_PERORANGAN.docx'))
-                    : public_path("templates/{$templateDefault}");
-            }
-
-            $this->attachTteImagePlaceholders(
-                $data,
-                $pejabat,
-                $camat,
-                false,
-                $surat->no_register ?? null,
-                false
-            );
-
-            $data['__tte_coordinate_markers'] = ['tte_lurah'];
-            if (strtolower((string) $jenisSurat) === 'sktm') {
-                $data['__tte_coordinate_markers'][] = 'tte_camat';
-            }
-            $pdfPath = ($jenisSurat === 'skboro') ? $this->generatePdfTable($data, $templateFile, $outputPdfName) : $this->generatePdf($data, $templateFile, $outputPdfName);
-        }
-
-        $requiredTteMarkers = ['tte_lurah'];
-        if (strtolower((string) $jenisSurat) === 'sktm') {
-            $requiredTteMarkers[] = 'tte_camat';
-        }
-        $this->assertTteCoordinateMarkersInPdf($pdfPath, $requiredTteMarkers);
-
         $isCamat = ((int) ($output['role'] ?? 0) === 5);
+        if ($isCamat && $jenisSurat !== 'sktm') {
+            return response()->json(['message' => 'TTE Camat hanya untuk SKTM.', 'status' => 'error'], 422);
+        }
+        $outputPdfName = strtoupper($jenisSurat) . "_{$id}_signed" . ($isCamat ? '_camat' : '');
+        try {
+            if ($isCamat) {
+                // PENTING: tahap Camat hanya memakai PDF yang sudah di-TTE Lurah.
+                // Re-generate di sini akan menghapus tanda tangan Lurah sebelumnya.
+                $pdfPath = $this->resolveLurahSignedPdfForCamat($surat);
+                $this->assertTteCoordinateMarkersInPdf($pdfPath, ['tte_camat']);
+            } elseif (in_array($jenisSurat, ['skkelahiran', 'skkematian'])) {
+                $pdfPath = $this->generateSpecialPdf($surat, $jenisSurat, $nomorSurat, $pejabat, $verifyUrl, $id);
+                $this->assertTteCoordinateMarkersInPdf($pdfPath, ['tte_lurah']);
+            } else {
+                $template = SuratTemplate::where(['id_kel' => $surat->id_kel, 'jenis' => $jenisSurat])->first();
+                if ($template && !empty($surat->variable)) {
+                    $templateFile = public_path($template->path_docs);
+                    $data = array_merge($data, $surat->variable);
+                } else {
+                    $templateFile = $jenisSurat == 'sktm'
+                        ? ($surat->jenis == 'sekolah' ? public_path('templates/SKTM_SEKOLAH.docx') : public_path('templates/SKTM_PERORANGAN.docx'))
+                        : public_path("templates/{$templateDefault}");
+                }
+
+                $data['surat_alamat'] = $this->formatResidentAddress($penduduk);
+                $this->attachTteImagePlaceholders($data, $pejabat, $camat, false, $surat->no_register ?? null, false);
+                $data['__tte_coordinate_markers'] = ['tte_lurah'];
+                if ($jenisSurat === 'sktm') {
+                    $data['__tte_coordinate_markers'][] = 'tte_camat';
+                }
+                $pdfPath = $jenisSurat === 'skboro'
+                    ? $this->generatePdfTable($data, $templateFile, $outputPdfName)
+                    : $this->generatePdf($data, $templateFile, $outputPdfName);
+                $this->assertTteCoordinateMarkersInPdf($pdfPath, $data['__tte_coordinate_markers']);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal menyiapkan PDF TTE per jenis.', [
+                'jenis' => $jenisSurat,
+                'id' => $id,
+                'message' => $e->getMessage(),
+            ]);
+            return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 422);
+        }
+
         $customTteImage = null;
         $temporaryFilesToDelete = [];
         if ($isCamat && $camat) {

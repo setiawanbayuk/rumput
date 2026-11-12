@@ -11,6 +11,72 @@ use ZipArchive;
 
 trait GeneratePDF
 {
+    /**
+     * Alamat pada semua jenis surat bersumber dari JSON residents.data.
+     * Kolom rt/rw adalah nomor lingkungan (bukan ID tabel master).
+     * Tetap kompatibel dengan data lama yang belum mengisi RT/RW.
+     */
+    protected function formatResidentAddress(array $residentData): string
+    {
+        $parts = [];
+        $alamat = trim((string) ($residentData['alamat'] ?? ''));
+        if ($alamat !== '') {
+            $parts[] = $alamat;
+        }
+
+        foreach (['rt' => 'RT', 'rw' => 'RW'] as $field => $label) {
+            $number = trim((string) ($residentData[$field] ?? $residentData[$field.'_nm'] ?? ''));
+            // Beberapa input lama sudah berupa "RT 001" / "RW 002".
+            $number = trim((string) preg_replace('/^'.preg_quote($label, '/').'\s*[.:\/-]?\s*/iu', '', $number));
+            if ($number !== '') {
+                $parts[] = $label.' '.$number;
+            }
+        }
+
+        foreach (['kelurahan_nm' => 'KEL.', 'kecamatan_nm' => 'KEC.', 'kabko_nm' => ''] as $field => $label) {
+            $value = trim((string) ($residentData[$field] ?? ''));
+            if ($value !== '') {
+                $parts[] = $label !== '' ? $label.' '.$value : $value;
+            }
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * Peruntukan SKTM sekolah/perorangan memakai tujuan sebenarnya yang diinput
+     * pada pilihan "Lainnya", bukan label dropdown. Digunakan bersama oleh
+     * preview Admin dan generator PDF TTE Lurah/Camat.
+     */
+    protected function formatSktmPeruntukan(?string $peruntukan, array $variableData): string
+    {
+        $selected = trim((string) ($peruntukan ?? ''));
+        $isLainnya = in_array(strtolower($selected), ['lainnya', 'lainya'], true);
+        $tujuan = $isLainnya
+            ? trim((string) ($variableData['keperluan_lainnya'] ?? ''))
+            : $selected;
+
+        // Data lama dapat menyimpan teks akhir di variable.surat_peruntukan.
+        // Abaikan label dropdown agar tidak kembali mencetak "Lainnya".
+        if ($isLainnya && $tujuan === '') {
+            $tersimpan = trim((string) ($variableData['surat_peruntukan'] ?? ''));
+            if ($tersimpan !== '' && !in_array(strtolower($tersimpan), ['lainnya', 'lainya', 'pengajuan lainnya', 'pengajuan lainya'], true)) {
+                $tujuan = $tersimpan;
+            }
+        }
+
+        if ($tujuan === '') {
+            // Jangan menebak isi keperluan yang tidak tersimpan.
+            return $isLainnya ? 'Lainnya' : '';
+        }
+
+        if (preg_match('/^pengajuan(?:\s|$)/iu', $tujuan)) {
+            return $tujuan;
+        }
+
+        return 'Pengajuan ' . ucwords($tujuan);
+    }
+
     protected function buildQrImage(string $link): ?string
     {
         $code = time().'_'.uniqid();
@@ -204,75 +270,146 @@ trait GeneratePDF
     }
 
     /**
-     * Add missing TTE placeholders at legacy marker positions on a temporary template.
-     * Existing TTE placeholders remain the source of truth for QR placement.
+     * Siapkan salinan DOCX untuk setiap generate (termasuk preview dan TTD basah).
+     * Template asli TIDAK diubah. Word/WPS sering memecah ${tte_lurah}
+     * menjadi banyak w:r/w:t; gabungkan macro khusus TTE agar PhpWord
+     * selalu mengenalinya. Marker lama ${qr}~ dan ~camat~ dibersihkan
+     * TANPA membuat TTE baru di posisi QR lama.
+     *
+     * Untuk proses BSrE, ${tte_lurah}/${tte_camat} tetap dipertahankan;
+     * nilai koordinat disisipkan oleh applyTteImagePlaceholders().
      */
     protected function prepareTemplateForTteImages(string $templateFile, array $data): array
     {
-        $coordinateMarkers = (array) ($data['__tte_coordinate_markers'] ?? []);
-        $needsLurah = $this->hasValidTteImageSpec($data['tte_lurah'] ?? null)
-            || in_array('tte_lurah', $coordinateMarkers, true);
-        $needsCamat = $this->hasValidTteImageSpec($data['tte_camat'] ?? null)
-            || in_array('tte_camat', $coordinateMarkers, true);
-
-        if (! $needsLurah && ! $needsCamat) {
+        if (! is_file($templateFile) || strtolower(pathinfo($templateFile, PATHINFO_EXTENSION)) !== 'docx') {
             return [$templateFile, null];
         }
 
-        if (! file_exists($templateFile)) {
-            return [$templateFile, null];
-        }
+        $coordinateMarkers = array_values(array_intersect(
+            (array) ($data['__tte_coordinate_markers'] ?? []),
+            ['tte_lurah', 'tte_camat']
+        ));
+        // Satu-satunya posisi TTE adalah ${tte_lurah} dan ${tte_camat}.
+        // ${qr}~ / ~camat~ adalah marker usang; tidak boleh dijadikan fallback.
 
         $this->ensurePdfFolders();
-
         $tempTemplate = storage_path('app/public/doc/template_tte_'.uniqid('', true).'.docx');
         if (! @copy($templateFile, $tempTemplate)) {
-            return [$templateFile, null];
+            throw new \RuntimeException('Gagal membuat salinan sementara template surat.');
         }
 
         $zip = new ZipArchive;
         if ($zip->open($tempTemplate) !== true) {
-            if (File::exists($tempTemplate)) {
-                File::delete($tempTemplate);
-            }
-
-            return [$templateFile, null];
+            File::delete($tempTemplate);
+            throw new \RuntimeException('Template DOCX tidak dapat dibuka.');
         }
 
-        $xmlNames = [];
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
-            if (preg_match('#^word/(document|header\d+|footer\d+)\.xml$#', $name)) {
-                $xmlNames[] = $name;
-            }
-        }
+        $namespace = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+        $documents = [];
+        $hasAnchor = ['tte_lurah' => false, 'tte_camat' => false];
 
-        foreach ($xmlNames as $xmlName) {
-            $xml = $zip->getFromName($xmlName);
-            if (! is_string($xml) || $xml === '') {
-                continue;
+        try {
+            // Proses semua isi Word, termasuk header/footer. XML tidak diproses
+            // dengan regex HTML agar tidak merusak tabel dan format surat.
+            for ($index = 0; $index < $zip->numFiles; $index++) {
+                $name = $zip->getNameIndex($index);
+                if (! is_string($name) || ! preg_match('#^word/(document|header\d+|footer\d+)\.xml$#', $name)) {
+                    continue;
+                }
+
+                $xml = $zip->getFromName($name);
+                if (! is_string($xml) || $xml === '') {
+                    continue;
+                }
+                $document = new \DOMDocument;
+                $document->preserveWhiteSpace = true;
+                if (! $document->loadXML($xml, LIBXML_NONET)) {
+                    throw new \RuntimeException('XML template surat tidak valid: '.$name);
+                }
+                $xpath = new \DOMXPath($document);
+                $xpath->registerNamespace('w', $namespace);
+                $paragraphs = [];
+                foreach ($xpath->query('//w:p') as $paragraph) {
+                    $texts = [];
+                    foreach ($paragraph->getElementsByTagNameNS($namespace, 't') as $node) {
+                        $texts[] = $node->textContent;
+                    }
+                    $joined = implode('', $texts);
+                    foreach (array_keys($hasAnchor) as $anchor) {
+                        if (str_contains($joined, '${'.$anchor.'}')) {
+                            $hasAnchor[$anchor] = true;
+                        }
+                    }
+                    $paragraphs[] = [$paragraph, $joined];
+                }
+                $documents[$name] = [$document, $xpath, $paragraphs];
             }
 
-            $originalXml = $xml;
+            // Sengaja TIDAK memigrasikan marker lama ke posisi TTE:
+            // auto-injection di paragraf ${qr}~ menyebabkan tanda tangan
+            // Lurah/Camat bertumpuk di area QR lama.
 
-            if ($needsLurah && ! str_contains($xml, '${tte_lurah}')) {
-                $xml = $this->injectTtePlaceholderAfterMarker($xml, '${qr}~', 'tte_lurah');
-                $xml = $this->injectTtePlaceholderAfterMarker($xml, '${qr}', 'tte_lurah');
+            foreach ($documents as $name => [$document, $xpath]) {
+                foreach ($xpath->query('//w:p') as $paragraph) {
+                    $nodes = [];
+                    $joined = '';
+                    foreach ($paragraph->getElementsByTagNameNS($namespace, 't') as $node) {
+                        $nodes[] = $node;
+                        $joined .= $node->textContent;
+                    }
+                    if ($joined === '') {
+                        continue;
+                    }
+
+                    // Match atas gabungan teks, termasuk macro yang dipecah
+                    // menjadi beberapa Word run / spellcheck proofErr.
+                    preg_match_all('/\$\{(?:tte_lurah|tte_camat|qr_camat|qr)\}~?|\[\[qr_camat\]\]|~camat~/iu', $joined, $matches, PREG_OFFSET_CAPTURE);
+                    foreach (array_reverse($matches[0]) as [$token, $start]) {
+                        $end = $start + strlen($token);
+                        $normalized = strtolower($token);
+                        $replacement = match (true) {
+                            str_starts_with($normalized, '${tte_lurah}') => '${tte_lurah}',
+                            str_starts_with($normalized, '${tte_camat}') => '${tte_camat}',
+                            str_starts_with($normalized, '${qr}') => '',
+                            default => '',
+                        };
+                        $cursor = 0;
+                        $inserted = false;
+                        foreach ($nodes as $node) {
+                            $value = $node->textContent;
+                            $next = $cursor + strlen($value);
+                            if ($next > $start && $cursor < $end) {
+                                $left = max(0, $start - $cursor);
+                                $right = min(strlen($value), $end - $cursor);
+                                $node->textContent = substr($value, 0, $left)
+                                    . ($inserted ? '' : $replacement)
+                                    . substr($value, $right);
+                                $inserted = true;
+                            }
+                            $cursor = $next;
+                        }
+                    }
+                }
+                if ($zip->addFromString($name, $document->saveXML()) === false) {
+                    throw new \RuntimeException('Gagal memperbarui XML template sementara: '.$name);
+                }
             }
 
-            if ($needsCamat && ! str_contains($xml, '${tte_camat}')) {
-                $xml = $this->injectTtePlaceholderAfterMarker($xml, '~camat~', 'tte_camat');
-                $xml = $this->injectTtePlaceholderAfterMarker($xml, '[[qr_camat]]', 'tte_camat');
-                $xml = $this->injectTtePlaceholderAfterMarker($xml, '${qr_camat}', 'tte_camat');
+            // Jangan diam-diam mengirimkan TTE ke posisi berbeda jika anchor hilang.
+            foreach ($coordinateMarkers as $anchor) {
+                if (! $hasAnchor[$anchor]) {
+                    throw new \RuntimeException(
+                        'Template surat wajib memiliki placeholder ${'.$anchor.'} pada lokasi TTE yang benar. Marker ${qr}~ / ~camat~ tidak digunakan sebagai pengganti.'
+                    );
+                }
             }
-
-            if ($xml !== $originalXml) {
-                $zip->addFromString($xmlName, $xml);
-            }
+        } catch (\Throwable $e) {
+            $zip->close();
+            File::delete($tempTemplate);
+            throw $e;
         }
 
         $zip->close();
-
         return [$tempTemplate, $tempTemplate];
     }
 
@@ -515,23 +652,9 @@ trait GeneratePDF
 
         $this->ensurePdfFolders();
 
+        // Tidak membuat QR terpisah pada ${qr}; QR visual sudah menjadi
+        // bagian dari gambar TTE BSrE di ${tte_lurah}/${tte_camat}.
         $qrPath = null;
-        if (! empty($data['show_qr'])) {
-            $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
-            if (
-                $qrPath &&
-                file_exists($qrPath) &&
-                filesize($qrPath) > 0 &&
-                @getimagesize($qrPath) !== false
-            ) {
-                $templateProcessor->setImageValue('qr', [
-                    'path' => $qrPath,
-                    'width' => 100,
-                    'height' => 100,
-                    'ratio' => true,
-                ]);
-            }
-        }
 
         $tempDocxPath = storage_path('app/public/doc/'.uniqid('', true).'.docx');
         $outputPdfPath = storage_path('app/public/pdf/');
@@ -749,23 +872,8 @@ trait GeneratePDF
 
         $this->ensurePdfFolders();
 
+        // Tidak membuat QR terpisah pada marker lawas ${qr}.
         $qrPath = null;
-        if (! empty($data['show_qr'])) {
-            $qrPath = $this->buildQrImage($data['link'] ?? url('/'));
-            if (
-                $qrPath &&
-                file_exists($qrPath) &&
-                filesize($qrPath) > 0 &&
-                @getimagesize($qrPath) !== false
-            ) {
-                $templateProcessor->setImageValue('qr', [
-                    'path' => $qrPath,
-                    'width' => 100,
-                    'height' => 100,
-                    'ratio' => true,
-                ]);
-            }
-        }
 
         $tempDocxPath = storage_path('app/public/doc/'.uniqid('', true).'.docx');
         $outputPdfPath = storage_path('app/public/pdf/');

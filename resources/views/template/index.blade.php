@@ -34,7 +34,7 @@
         @endif
 
         <div class="alert alert-info">
-            <strong>Cara kerja Template Surat:</strong> download template default/custom, edit file DOCX di Word tanpa menghapus placeholder penting seperti <code>${qr}</code>, <code>[[qr_camat]]</code>, nama, alamat, dan variabel surat lain. Setelah upload ulang, sistem menyimpan sebagai <b>custom template kelurahan</b>. Preview/cetak surat berikutnya untuk jenis surat itu akan memakai template custom terbaru. Jika custom dihapus, sistem kembali memakai template default.
+            <strong>Cara kerja Template Surat:</strong> download template default/custom, edit file DOCX di Word tanpa menghapus placeholder penting seperti <code>${tte_lurah}</code> (semua jenis), <code>${tte_camat}</code> (SKTM), <code>${surat_alamat}</code>, nama, dan variabel surat lain. RT/RW otomatis berasal dari data warga; marker lama <code>${qr}~</code> dan <code>~camat~</code> tidak perlu digunakan. Setelah upload ulang, sistem menyimpan sebagai <b>custom template kelurahan</b>. Preview/cetak surat berikutnya untuk jenis surat itu akan memakai template custom terbaru. Jika custom dihapus, sistem kembali memakai template default.
         </div>
 
         <div class="d-flex gap-2 mt-3 mb-3">

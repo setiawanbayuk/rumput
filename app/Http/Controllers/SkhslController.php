@@ -767,7 +767,7 @@ class SkhslController extends Controller
             'surat_agama' => $penduduk['agama_nm'],
             'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
             'surat_pendidikan' => $penduduk['pendidikan_nm'],
-            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_alamat' => $this->formatResidentAddress($penduduk),
             'surat_keterangan' => 'Adalah benar-benar dengan penghasilan perbulan sebesar Rp. ' . number_format($surat['penghasilan'], 2, ',', '.') . ' (' . $surat['terbilang'] . ').',
             'surat_kepada' => $surat->kepada,
             'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
@@ -791,6 +791,7 @@ class SkhslController extends Controller
         }
         $outputPdf = hash('sha256', 'SKHSL_' . $id);
         // Generate PDF dari template
+        $data['surat_alamat'] = $this->formatResidentAddress($penduduk);
         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
 
         return response()->file($pdfPath);

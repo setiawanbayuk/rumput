@@ -37,7 +37,7 @@ def line_text_and_chars(line):
     return text, chars
 
 
-def print_flag_bbox_from_line(line, page_no):
+def print_flag_bbox_from_line(line, page_no, page_width, page_height):
     text, chars = line_text_and_chars(line)
     clean_text = text.replace('\n', '')
     idx = clean_text.find(myflag)
@@ -56,7 +56,7 @@ def print_flag_bbox_from_line(line, page_no):
         x1 = max(c.bbox[2] for c in selected)
         y1 = max(c.bbox[3] for c in selected)
 
-    print(f"{x0}, {y0}, {x1}, {y1}, {page_no}!")
+    print(f"{x0}, {y0}, {x1}, {y1}, {page_no}, {page_width}, {page_height}!")
     return True
 
 
@@ -79,13 +79,13 @@ with open(myfile, 'rb') as fp:
         found_on_page = False
         for obj in iter_layout(layout):
             if isinstance(obj, LTTextLine):
-                if print_flag_bbox_from_line(obj, page_no):
+                if print_flag_bbox_from_line(obj, page_no, layout.width, layout.height):
                     found_on_page = True
 
-        # Backward-compatible fallback: if no exact line-level match, search textbox bbox.
-        # This should rarely run; marker should be a single small line in the Word template.
-        if not found_on_page:
+        # Marker TTE baru tidak boleh fallback ke bbox seluruh paragraf:
+        # koordinat terlalu lebar akan memindahkan visual TTE dari placeholder aslinya.
+        if not found_on_page and myflag not in ('__TTE_LURAH_POSITION__', '__TTE_CAMAT_POSITION__'):
             for obj in layout:
                 if isinstance(obj, LTTextBoxHorizontal) and myflag in obj.get_text():
                     x0, y0, x1, y1 = obj.bbox
-                    print(f"{x0}, {y0}, {x1}, {y1}, {page_no}!")
+                    print(f"{x0}, {y0}, {x1}, {y1}, {page_no}, {layout.width}, {layout.height}!")

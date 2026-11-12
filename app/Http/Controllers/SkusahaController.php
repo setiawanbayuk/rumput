@@ -714,7 +714,7 @@ class SkusahaController extends Controller
             'surat_agama' => $penduduk['agama_nm'],
             'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
             'surat_pendidikan' => $penduduk['pendidikan_nm'],
-            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_alamat' => $this->formatResidentAddress($penduduk),
             'surat_keterangan' => 'Menurut pernyataannya memiliki kegiatan / usaha ' . $surat['nama_usaha'] . ' yang beralamat di ' . $surat['alamat_usaha'],
             'surat_kepada' => $surat->kepada,
             'surat_kepada_tempat_lhr' => $surat->kepada_tempat_lhr,
@@ -738,6 +738,7 @@ class SkusahaController extends Controller
         }
         $outputPdf = hash('sha256', 'SKUSAHA_' . $id);
         // Generate PDF dari template
+        $data['surat_alamat'] = $this->formatResidentAddress($penduduk);
         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
 
         return response()->file($pdfPath);

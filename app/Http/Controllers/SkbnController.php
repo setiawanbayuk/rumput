@@ -606,7 +606,7 @@ class SkbnController extends Controller
             'surat_agama' => $penduduk['agama_nm'],
             'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
             'surat_pendidikan' => $penduduk['pendidikan_nm'],
-            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_alamat' => $this->formatResidentAddress($penduduk),
             'surat_keterangan' => 'Menurut pernyataan yang bersangkutan belum pernah menikah / kawin.',
             'surat_kepada' => $surat->kepada,
             'surat_peruntukan' => $surat->peruntukan,
@@ -626,6 +626,7 @@ class SkbnController extends Controller
         }
         $outputPdf = hash('sha256', 'SKBN_' . $id);
         // Generate PDF dari template
+        $data['surat_alamat'] = $this->formatResidentAddress($penduduk);
         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
 
         return response()->file($pdfPath);

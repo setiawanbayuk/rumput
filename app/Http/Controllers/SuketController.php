@@ -719,7 +719,7 @@ class SuketController extends Controller
             'surat_agama' => $penduduk['agama_nm'],
             'surat_pekerjaan' => $penduduk['pekerjaan_nm'],
             'surat_pendidikan' => $penduduk['pendidikan_nm'],
-            'surat_alamat' => $penduduk['alamat'] . ' KEL. ' . $penduduk['kelurahan_nm'] . ' KEC. ' . $penduduk['kecamatan_nm'] . ' ' .  $penduduk['kabko_nm'],
+            'surat_alamat' => $this->formatResidentAddress($penduduk),
             'surat_keterangan' => $surat->keterangan,
             'surat_kepada' => $surat->kepada,
             'surat_peruntukan' => $surat->peruntukan,
@@ -739,6 +739,7 @@ class SuketController extends Controller
         }
         $outputPdf = hash('sha256', 'SUKET_' . $id);
         // Generate PDF dari template
+        $data['surat_alamat'] = $this->formatResidentAddress($penduduk);
         $pdfPath = $this->generatePdf($data, $templateFile, $outputPdf);
         return response()->file($pdfPath);
     }

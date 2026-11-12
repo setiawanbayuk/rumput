@@ -101,11 +101,28 @@
             return workerPromise;
         }
         function canWrite(id) {
-            const field = byId(id);
-            if (!field) return false;
-            const old = ocrWritten.get(id);
-            return !String(field.value || '').trim() || (old !== undefined && String(field.value) === String(old));
-        }
+                const field = byId(id);
+                if (!field) return false;
+
+                // Jangan biarkan OCR menimpa hasil CARI residents.
+                const residentNik = window.__esuketResidentsAppliedNik;
+
+                if (
+                    residentNik &&
+                    String(byId('nik')?.value || '').trim() ===
+                    String(residentNik).trim()
+                ) {
+                    return false;
+                }
+
+                const old = ocrWritten.get(id);
+
+                return !String(field.value || '').trim() ||
+                    (
+                        old !== undefined &&
+                        String(field.value) === String(old)
+                    );
+            }
         function setText(id, value) {
             const field = byId(id);
             if (!field || !value || !canWrite(id)) return false;
@@ -157,7 +174,7 @@
                 result = data.find(item => item && item.id != null && matched(id, item.text, value));
                 if (result) break;
             }
-            if (!result) return false; // Jangan pernah mengarang kode master.
+            if (!result || !canWrite(id)) return false; // Jangan pernah mengarang kode master.
             let option = Array.from(select.options).find(option => String(option.value) === String(result.id));
             if (!option) {
                 option = new Option(result.text, String(result.id));
@@ -266,6 +283,7 @@
             if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size === 0 || file.size > MAX_BYTES) {
                 status('Gunakan foto JPG, PNG, atau WebP dengan ukuran maksimal 15 MB.', true); return;
             }
+            window.__esuketResidentsAppliedNik = '';
             loading(true);
             reveal(); // Form tampil dan tetap bisa dilengkapi, walau OCR foto gagal.
             status('Membaca KTP, mohon periksa dan lengkapi kolom setelah proses selesai…');

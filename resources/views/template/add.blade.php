@@ -8,7 +8,7 @@
             <div class="card-header bg-transparent py-3 fw-bold">Upload / Ganti Template Custom</div>
             <div class="card-body">
                 <div class="alert alert-warning">
-                    <strong>Penting:</strong> upload DOCX di sini akan menjadi template aktif untuk kelurahan ini dan jenis surat yang dipilih. Jangan hapus placeholder penting seperti <code>${qr}</code> untuk TTE Lurah dan <code>[[qr_camat]]</code> untuk TTE Camat SKTM.
+                    <strong>Penting:</strong> upload DOCX di sini akan menjadi template aktif untuk kelurahan ini dan jenis surat yang dipilih. Gunakan <code>${tte_lurah}</code> sebagai posisi TTE Lurah dan <code>${tte_camat}</code> untuk TTE Camat (khusus SKTM). Marker lama <code>${qr}~</code> / <code>~camat~</code> tidak diperlukan lagi.
                 </div>
 
                 @if ($errors->any())

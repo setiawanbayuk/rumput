@@ -33,6 +33,21 @@ function checkNIK() {
             const pick = (...values) =>
                 values.find(v => v !== undefined && v !== null && v !== "");
 
+            // Jika warga ditemukan, prioritaskan database
+            // terhadap pengisian OCR yang masih berjalan.
+            const residentFound = pick(
+                root.nik,
+                biodata.nik,
+                root.name,
+                root.nama,
+                biodata.name,
+                biodata.nama
+            );
+
+            if (residentFound !== undefined) {
+                window.__esuketResidentsAppliedNik = String(nik).trim();
+            }
+
             $("#nik").val(pick(root.nik, biodata.nik, nik) || "");
             $("#kk").val(pick(root.kk, biodata.kk) || "");
             $("#name").val(toUpperSafe(pick(root.name, root.nama, biodata.name, biodata.nama) || ""));
