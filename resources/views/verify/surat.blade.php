@@ -247,12 +247,6 @@
                                 <div class="label">Kecamatan</div>
                                 <div class="value">{{ $kecamatanName ?: '-' }}</div>
                             </div>
-                            @if(!empty($signedAt))
-                                <div class="info full">
-                                    <div class="label">Waktu TTE / Verifikasi</div>
-                                    <div class="value">{{ $signedAt }}</div>
-                                </div>
-                            @endif
                         </div>
                     </div>
                 </div>
@@ -271,6 +265,14 @@
                                         <div><strong>Jabatan:</strong> {{ $signer['jabatan'] }}</div>
                                         <div><strong>NIP:</strong> <span class="masked">{{ $signer['nip'] }}</span></div>
                                         <div><strong>Wilayah:</strong> {{ $signer['wilayah'] ?: '-' }}</div>
+                                        @if(!empty($signer['waktu_tte']))
+                                            <div><strong>Sertifikat BSrE:</strong> {{ !empty($signer['sertifikat_terpercaya']) ? 'Terpercaya' : 'Perlu pemeriksaan' }}</div>
+                                            <div><strong>Waktu TTE:</strong> {{ $signer['waktu_tte'] }}</div>
+                                        @elseif(!empty($signer['waktu_verifikasi_manual']))
+                                            <div><strong>Waktu Verifikasi Manual:</strong> {{ $signer['waktu_verifikasi_manual'] }}</div>
+                                        @elseif(!$isManual)
+                                            <div><strong>Waktu TTE:</strong> Belum tersedia dari API BSrE</div>
+                                        @endif
                                     </div>
                                 </div>
                             @empty
@@ -278,9 +280,27 @@
                             @endforelse
                         </div>
 
-                        <div class="note">
-                            <strong>Catatan resmi:</strong> Halaman ini hanya untuk validasi keaslian dokumen. Untuk melihat isi lengkap surat, gunakan dokumen PDF resmi yang diterima dari ASNDigital/Website Resmi Pemerintahan,Validasi TTE https://tte.komdigi.go.id/verifyPDF
-                        </div>
+                        @if(!$isManual && !empty($tteVerification))
+                            <div class="note">
+                                <strong>Verifikasi TTE BSrE:</strong> {{ $tteVerification['message'] }}
+                            </div>
+                        @endif
+
+
+                    <div class="note">
+                        <strong>Catatan Resmi:</strong>
+                        Halaman Ini Hanya Untuk Validasi Keaslian Dokumen.
+                        Untuk Melihat Isi Lengkap Surat, Gunakan Dokumen PDF Resmi
+                        Yang Diterima Dari ASN Digital/Website Resmi Pemerintahan.
+                        Validasi TTE Upload Dokumen dapat dilakukan melalui
+                        <a href="https://tte.komdigi.go.id/verifyPDF"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="color: #2563eb; text-decoration: underline; font-weight: 600;">
+                            https://tte.komdigi.go.id/verifyPDF
+                        </a>
+                    </div>
+
                     </div>
                     <div class="watermark">E-SUKET</div>
                 </aside>

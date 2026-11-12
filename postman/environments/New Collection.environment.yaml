@@ -1,0 +1,6 @@
+name: New Collection
+values:
+  - key: baseUrl
+    value: 'http://103.78.106.79'
+  - key: api-key
+    value: ''

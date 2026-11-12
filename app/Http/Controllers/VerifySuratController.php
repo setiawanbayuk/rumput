@@ -10,6 +10,8 @@ use App\Models\SuratPengajuan;
 use App\Traits\GetNoSurat;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class VerifySuratController extends Controller
@@ -101,9 +103,19 @@ class VerifySuratController extends Controller
             ];
         }
 
-        $signedAt = $this->resolveSignedAt($surat, $isSktm, $isManual);
-        $keperluan = $this->resolveKeperluan($surat, $variable);
-        $keperluanLainnya = $this->resolveKeperluanLainnya($surat, $variable);
+        // Halaman scan QR hanya menampilkan identitas dan waktu TTE dari hasil
+        // verifikasi PDF asli melalui API BSrE. Histori status lokal bukan waktu TTE.
+        // Surat TTD basah tetap memakai alur manual yang sudah ada.
+        $tteVerification = $isManual ? null : $this->verifyPdfWithBsre($surat);
+        if (! $isManual) {
+            $signers = $this->applyBsreSigners($signers, $tteVerification, $isSktm, $skpd, $kecamatanName);
+        } else {
+            $manualVerifiedAt = $this->resolveSignedAt($surat, $isSktm, true);
+            foreach ($signers as &$manualSigner) {
+                $manualSigner['waktu_verifikasi_manual'] = $manualVerifiedAt;
+            }
+            unset($manualSigner);
+        }
 
         return view('verify.surat', [
             'found' => true,
@@ -116,7 +128,7 @@ class VerifySuratController extends Controller
             'kecamatanName' => $kecamatanName,
             'nomorSurat' => $this->getNoSrt($surat),
             'tanggalSurat' => $this->formatTanggal($surat->tgl_surat),
-            'signedAt' => $signedAt,
+            'tteVerification' => $tteVerification,
             'jenisLabel' => $this->jenisLabel($jenisFinal),
             'namaPemohon' => $this->maskName($residentData['name'] ?? $residentData['nama'] ?? $surat->kepada ?? '-'),
             // Data berikut sengaja tidak dikirim ke view publik demi perlindungan data pribadi:
@@ -128,6 +140,208 @@ class VerifySuratController extends Controller
             'isSktm' => $isSktm,
             'signers' => $signers,
                     ]);
+    }
+
+    /**
+     * Verifikasi PDF FINAL yang tercatat pada surat_pengajuans, tanpa mengekspos
+     * file PDF maupun kredensial BSrE ke halaman publik.
+     *
+     * Project ini menandatangani menggunakan API v1 /sign/pdf, sehingga
+     * verifikasi memakai API v1 /sign/verify (POST signed_file).
+     */
+    protected function verifyPdfWithBsre(SuratPengajuan $surat): array
+    {
+        $result = [
+            'available' => false,
+            'valid' => false,
+            'signatures' => [],
+            'message' => 'Informasi TTE dari BSrE belum dapat ditampilkan.',
+        ];
+
+        // Hanya PDF milik surat ini di penyimpanan resmi E-Suket yang boleh dibaca.
+        $storedFile = str_replace('\\', '/', trim((string) ($surat->file ?? '')));
+        if (! preg_match('#^/?storage/pdf/([A-Za-z0-9_.-]+\.pdf)$#i', $storedFile, $matches)) {
+            $result['message'] = 'PDF bertanda tangan belum tersedia untuk diverifikasi BSrE.';
+            return $result;
+        }
+
+        $fileName = $matches[1];
+        $pdfPath = null;
+        foreach ([
+            storage_path('app/public/pdf/'.$fileName),
+            public_path('storage/pdf/'.$fileName),
+        ] as $candidate) {
+            if (is_file($candidate) && is_readable($candidate) && filesize($candidate) > 0) {
+                $pdfPath = $candidate;
+                break;
+            }
+        }
+
+        if (! $pdfPath) {
+            $result['message'] = 'Arsip PDF hasil TTE belum ditemukan pada server.';
+            return $result;
+        }
+
+        $apiBase = rtrim(trim((string) env('APP_URL_TTE', '')), '/');
+        $apiUser = trim((string) env('ESIGN_USER', ''));
+        $apiPass = (string) env('ESIGN_PASS', '');
+        if ($apiBase === '' || $apiUser === '' || $apiPass === '') {
+            return $result;
+        }
+
+        $stream = null;
+        try {
+            $stream = fopen($pdfPath, 'rb');
+            if (! is_resource($stream)) {
+                return $result;
+            }
+
+            // File dikirim antarsistem di sisi server; tidak ada endpoint download publik.
+            $response = Http::withBasicAuth($apiUser, $apiPass)
+                ->acceptJson()
+                ->connectTimeout(4)
+                ->timeout(15)
+                ->attach('signed_file', $stream, $fileName, ['Content-Type' => 'application/pdf'])
+                ->post($apiBase.'/sign/verify');
+
+            if (! $response->successful()) {
+                Log::warning('Verifikasi PDF BSrE gagal', [
+                    'surat_id' => $surat->id,
+                    'http_status' => $response->status(),
+                ]);
+                return $result;
+            }
+
+            $payload = $response->json();
+            if (! is_array($payload)) {
+                return $result;
+            }
+            // Beberapa gateway membungkus respons BSrE di properti data.
+            if (isset($payload['data']) && is_array($payload['data'])) {
+                $payload = $payload['data'];
+            }
+            if (! isset($payload['details']) || ! is_array($payload['details'])) {
+                return $result;
+            }
+
+            $signatures = [];
+            foreach ($payload['details'] as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+                $infoSigner = $item['info_signer'] ?? [];
+                $infoSignature = $item['signature_document'] ?? [];
+                if (! is_array($infoSigner) || ! is_array($infoSignature)) {
+                    continue;
+                }
+                $signatures[] = [
+                    'nama' => trim((string) ($infoSigner['signer_name'] ?? '')),
+                    'waktu_tte' => $this->formatBsreSignedAt($infoSignature['signed_in'] ?? null),
+                    'raw_signed_at' => trim((string) ($infoSignature['signed_in'] ?? '')),
+                    'sertifikat_terpercaya' => ($infoSigner['cert_user_certified'] ?? null) === true,
+                    'dokumen_utuh' => ($infoSignature['document_integrity'] ?? null) === true,
+                ];
+            }
+
+            // Urutan TTE pada SKTM: Lurah dahulu, kemudian Camat. Waktu dan
+            // nama selalu berasal dari detail tanda tangan masing-masing.
+            // Urutkan secara kronologis (field signed_in), bukan nama pejabat DB.
+            if ($signatures && ! in_array('', array_column($signatures, 'raw_signed_at'), true)) {
+                usort($signatures, static function ($a, $b) {
+                    return strcmp($a['raw_signed_at'], $b['raw_signed_at']);
+                });
+            }
+
+            $summary = strtoupper(trim((string) ($payload['summary'] ?? '')));
+            $summary = preg_replace('/\s+/', ' ', $summary);
+            $summaryValid = (bool) preg_match('/^(?:DOCUMENT )?VALID\s*!*$/', $summary);
+            $declaredCount = (int) ($payload['jumlah_signature'] ?? count($signatures));
+            $signaturesValid = count($signatures) > 0 && $declaredCount === count($signatures);
+            foreach ($signatures as $signature) {
+                if (! $signature['sertifikat_terpercaya'] || ! $signature['dokumen_utuh']) {
+                    $signaturesValid = false;
+                    break;
+                }
+            }
+
+            return [
+                'available' => true,
+                'valid' => $summaryValid && $signaturesValid,
+                'signatures' => $signatures,
+                'message' => $summaryValid && $signaturesValid
+                    ? 'Tanda tangan elektronik dan integritas PDF dinyatakan valid oleh BSrE.'
+                    : 'Hasil BSrE memerlukan pemeriksaan lebih lanjut; jangan anggap TTE valid.',
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Tidak dapat menghubungi layanan verifikasi TTE BSrE', [
+                'surat_id' => $surat->id,
+                'exception' => get_class($e),
+            ]);
+            return $result;
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+    }
+
+    protected function formatBsreSignedAt($value): ?string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            // API v1 BSrE mengembalikan waktu lokal tanpa offset, contoh:
+            // 2026-11-12 09:59:28.00. Tampilkan sesuai zona waktu Kota Kediri.
+            return Carbon::parse(trim($value), 'Asia/Jakarta')
+                ->timezone('Asia/Jakarta')
+                ->locale('id')
+                ->translatedFormat('d F Y, H:i:s').' WIB';
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /** Penetapan peran mengikuti urutan proses E-Suket: TTE Lurah -> TTE Camat. */
+    protected function applyBsreSigners(array $signers, ?array $tte, bool $isSktm, $skpd, string $kecamatanName): array
+    {
+        $apiSignatures = $tte['signatures'] ?? [];
+        $roles = ['Penandatangan Tingkat Kelurahan'];
+        if ($isSktm) {
+            $roles[] = 'Penandatangan Tingkat Kecamatan';
+        }
+
+        $byRole = [];
+        foreach ($signers as $signer) {
+            $byRole[$signer['sebagai'] ?? ''] = $signer;
+        }
+
+        $resolved = [];
+        foreach ($roles as $index => $roleName) {
+            $signature = $apiSignatures[$index] ?? null;
+            if (! isset($byRole[$roleName]) && $signature === null) {
+                continue;
+            }
+
+            $signer = $byRole[$roleName] ?? [
+                'nip' => '-',
+                'jabatan' => $index === 0 ? 'LURAH' : 'CAMAT',
+                'sebagai' => $roleName,
+                'level' => $roleName,
+                'wilayah' => $index === 0
+                    ? trim('Kelurahan '.strtoupper((string) optional($skpd)->nama))
+                    : trim('Kecamatan '.$kecamatanName),
+            ];
+            $name = $signature['nama'] ?? '';
+            $signer['nama'] = $name !== '' ? $name : 'Belum terkonfirmasi melalui BSrE';
+            $signer['name'] = $signer['nama'];
+            $signer['waktu_tte'] = $signature['waktu_tte'] ?? null;
+            $signer['sertifikat_terpercaya'] = $signature['sertifikat_terpercaya'] ?? null;
+            $resolved[] = $signer;
+        }
+
+        return $resolved;
     }
 
     protected function decodeValue($value): array

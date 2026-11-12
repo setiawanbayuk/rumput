@@ -1,0 +1,14 @@
+$kind: http-request
+name: http://103.78.106.79/api/sign/verify
+description: |-
+  Generated from cURL: curl --location 'http://103.78.106.79/api/sign/verify' \
+  --form 'signed_file=@"/path/to/surat.pdf"'
+url: "{{baseUrl}}/api/sign/verify"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: signed_file
+      src: /path/to/surat.pdf
+order: 1000
