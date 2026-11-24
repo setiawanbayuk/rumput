@@ -18,7 +18,9 @@ class KabkoController extends Controller
         if (isset($request->id)) {
             $kabko = Kabko::where('id', $request->id)->paginate();
         } else {
-            $kabko = Kabko::where('kode_provinsi', $request->kode_provinsi)->where('nama', 'like', '%' . $request->q . '%')->paginate();
+            $kabko = Kabko::where('nama', 'like', '%' . $request->q . '%')
+                ->when($request->filled('kode_provinsi'), fn ($query) => $query->where('kode_provinsi', $request->kode_provinsi))
+                ->paginate();
         }
         $data = Kabko_resource::collection($kabko);
         return response()->json($data, 200);
