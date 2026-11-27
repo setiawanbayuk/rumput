@@ -14,6 +14,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Yajra\DataTables\DataTables;
 use App\Models\Pejabat;
 use App\Models\SuratTemplate;
@@ -86,8 +88,24 @@ class SuratAdminController extends Controller
             ];
         };
 
+        // Jumlah surat yang sedang berada di tangan petugas untuk perbaikan.
+        // Catatan lama tetap disimpan, tetapi tidak lagi dihitung setelah surat dinaikkan.
+        $countReturnedForUser = function () use ($roleId): int {
+            $waitingStatus = match ($roleId) {
+                1 => [0, 1], 4 => [2], 3 => [4], 10 => [12], 6 => [11],
+                default => [],
+            };
+            if (!$waitingStatus) { return 0; }
+            return $this->scopeSuratToCurrentUser(SuratPengajuan::query())
+                ->whereIn('status', $waitingStatus)
+                ->whereRaw("variable IS NOT NULL AND JSON_VALID(variable) AND CAST(JSON_UNQUOTE(JSON_EXTRACT(variable, '$.catatan_penurunan_terakhir.ke_status')) AS UNSIGNED) = status")
+                ->count();
+        };
+
         if (request()->ajax() && request()->boolean('notif_counts')) {
-            return response()->json($buildAdminSuratCounts())
+            return response()->json(array_merge($buildAdminSuratCounts(), [
+                'suratDikembalikanCount' => $countReturnedForUser(),
+            ]))
                 ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
                 ->header('Pragma', 'no-cache');
         }
@@ -101,6 +119,12 @@ class SuratAdminController extends Controller
             // Filter wilayah sudah diterapkan oleh scopeSuratToCurrentUser().
             // Jangan menambah where id_kel = id_instansi lagi di sini,
             // karena Camat/Sekcam memakai id_instansi kecamatan dan harus membaca semua kelurahan dalam id_kec yang sama.
+
+            // Nilai default registrasi dihitung satu kali per permintaan DataTable.
+            // Hanya digunakan oleh Admin Kecamatan (role 10), tidak memengaruhi Sekcam lama.
+            $defaultRegistrasiKecamatan = $roleId === 10
+                ? $this->defaultRegistrasiKecamatan($user)
+                : null;
 
             if ($roleId === 1) {
                 // Hilangkan surat TTD Basah yang sudah upload bukti dari Pelayanan Warga.
@@ -125,6 +149,9 @@ class SuratAdminController extends Controller
                           $qq->where('status', 4)->where('jenis_surat', 'sktm');
                       });
                 });
+            } elseif ($roleId === 10) {
+                // Meja baru Admin Kecamatan: menerima SKTM setelah TTE Lurah.
+                $query->where('jenis_surat', 'sktm')->where('status', 12);
             } elseif ($roleId === 6) {
                 // Sekretaris/Adm Camat melihat SKTM yang sudah dinaikkan dari Lurah ke Kecamatan.
                 $query->where('jenis_surat', 'sktm')->where('status', 11);
@@ -187,7 +214,7 @@ class SuratAdminController extends Controller
                 })->editColumn('tgl_surat', function ($row) {
                     return Carbon::parse($row->tgl_surat)->isoFormat('D MMMM Y');
                 })
-                ->addColumn('action', function ($row) use ($user) {
+                ->addColumn('action', function ($row) use ($user, $defaultRegistrasiKecamatan) {
                     $id         = $row->id;
                     $status     = $row->status;
                     $role       = $user->role_id;
@@ -199,18 +226,40 @@ class SuratAdminController extends Controller
                     $submitter_type = $this->resolveSubmitterType($row);
                     $manual_signature = !empty($variableRow['manual_signature']) || (($variableRow['signature_mode'] ?? null) === 'manual');
                     $bukti_ttd_basah = $variableRow['bukti_ttd_basah'] ?? null;
+                    $alur_admin_kecamatan = !empty($variableRow['alur_admin_kecamatan']);
+                    // SKTM bertanda tangan Lurah yang sedang turun berjenjang untuk melengkapi lampiran.
+                    $isRevisiBuktiSktm = $alur_admin_kecamatan
+                        && !empty($variableRow['revisi_bukti_sktm_kelurahan'])
+                        && filled($row->file);
+                    $buktiSudahDilengkapi = !empty($variableRow['revisi_bukti_sktm_dilengkapi_at']);
+                    // SKTM yang dikembalikan sebelum patch ini juga boleh diturunkan berjenjang.
+                    if (!$isRevisiBuktiSktm && $alur_admin_kecamatan && (int) $status === 4
+                        && filled($row->file)
+                        && (int) data_get($variableRow, 'catatan_penurunan_terakhir.oleh_role_id') === 10
+                        && (int) data_get($variableRow, 'catatan_penurunan_terakhir.ke_status') === 4) {
+                        $isRevisiBuktiSktm = true;
+                    }
 
+                    $catatanTerakhir = $variableRow['catatan_penurunan_terakhir'] ?? null;
+                    // Tampilkan ikon catatan DALAM grup Action agar tidak mengambang di atas tombol lain.
+                    $catatanHtml = is_array($catatanTerakhir) && !empty($catatanTerakhir['catatan'])
+                        ? '<button type="button" class="btn btn-outline-warning btn-sm js-lihat-catatan" data-catatan="' . e((string) $catatanTerakhir['catatan']) . '" title="Lihat catatan penurunan" aria-label="Lihat catatan penurunan"><i class="ri-chat-1-line"></i></button>' : '';
                     if ($role == 1) {
-                        return view('includes.button-admin', compact('id', 'route', 'status', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
+                        return view('includes.button-admin', compact('id', 'route', 'status', 'submitter_type', 'manual_signature', 'bukti_ttd_basah', 'catatanHtml', 'isRevisiBuktiSktm', 'buktiSudahDilengkapi'))->render();
                     } elseif (in_array($role, [3, 5])) {
-                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
+                        return view('includes.button-kaopd', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah', 'isRevisiBuktiSktm', 'buktiSudahDilengkapi', 'catatanHtml'))->render();
+                    } elseif ((int) $role === 10) {
+                        $kodeJenisSurat = trim((string) ($row->kd_jenis_surat ?? '')) ?: 'SKTM';
+                        return view('includes.button-admin-kecamatan', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah', 'variableRow', 'defaultRegistrasiKecamatan', 'kodeJenisSurat', 'catatanHtml'))->render();
                     } else {
-                        return view('includes.button-verifikator', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah'));
+                        return view('includes.button-verifikator', compact('id', 'status', 'nomorSurat', 'jenis', 'role', 'route', 'submitter_type', 'manual_signature', 'bukti_ttd_basah', 'alur_admin_kecamatan', 'isRevisiBuktiSktm', 'buktiSudahDilengkapi', 'catatanHtml'))->render();
                     }
                 })
                 ->rawColumns(['action', 'tipe'])
                 ->make(true);
         }
+
+        $suratDikembalikanCount = $countReturnedForUser();
 
         $title = "Daftar Pengajuan Surat";
 
@@ -219,7 +268,7 @@ class SuratAdminController extends Controller
         $wargaMasukCount = $adminCounts['wargaMasukCount'];
         $manualPendingCount = $adminCounts['manualPendingCount'];
 
-        return view('admin.surat.index', compact('title', 'statusCounts', 'wargaMasukCount', 'manualPendingCount'));
+        return view('admin.surat.index', compact('title', 'statusCounts', 'wargaMasukCount', 'manualPendingCount', 'suratDikembalikanCount'));
     }
 
     /**
@@ -241,7 +290,7 @@ class SuratAdminController extends Controller
     protected function isKecamatanRole($user = null): bool
     {
         $user = $user ?: auth()->user();
-        return $user && in_array((int) $user->role_id, [5, 6], true);
+        return $user && in_array((int) $user->role_id, [5, 6, 10], true);
     }
 
     protected function currentUserKelurahanIds($user = null): ?array
@@ -263,7 +312,7 @@ class SuratAdminController extends Controller
             return [];
         }
 
-        if (in_array($roleId, [5, 6], true)) {
+        if (in_array($roleId, [5, 6, 10], true)) {
             $skpdInstansi = Skpd::find($idInstansi);
 
             if (!$skpdInstansi) {
@@ -327,6 +376,9 @@ class SuratAdminController extends Controller
         }
 
         $query->whereIn('id_kel', $kelurahanIds);
+        if ((int) $user->role_id === 10) {
+            $query->where('jenis_surat', 'sktm');
+        }
 
         if ((int) $user->role_id === 8) {
             if (!is_null($user->id_rw) && $user->id_rw !== '') {
@@ -444,13 +496,25 @@ class SuratAdminController extends Controller
         if ($roleId === 4 && $currentStatus === 2 && $nextStatus === 3) {
             return null;
         }
-
-        // Khusus SKTM: setelah TTE Lurah status 4, Lurah baru boleh menaikkan ke Kecamatan/Sekcam (status 11).
-        if ($roleId === 3 && $currentStatus === 4 && $nextStatus === 11 && strtolower((string) $surat->jenis_surat) === 'sktm') {
+        if ($roleId === 4 && $currentStatus === 2 && $nextStatus === 4
+            && strtolower((string) $surat->jenis_surat) === 'sktm'
+            && !empty(data_get($surat->variable, 'revisi_bukti_sktm_kelurahan'))
+            && !empty(data_get($surat->variable, 'revisi_bukti_sktm_dilengkapi_at'))
+            && filled($surat->file)) {
             return null;
         }
 
-        // Sekretaris/Adm Camat menaikkan SKTM dari meja kecamatan ke Camat untuk TTE.
+        // Baru: Lurah -> Admin Kecamatan (12).
+        if ($roleId === 3 && $currentStatus === 4 && $nextStatus === 12 && strtolower((string) $surat->jenis_surat) === 'sktm') {
+            return null;
+        }
+
+        // Baru: Admin Kecamatan -> Sekcam.
+        if ($roleId === 10 && $currentStatus === 12 && $nextStatus === 11 && strtolower((string) $surat->jenis_surat) === 'sktm') {
+            return null;
+        }
+
+        // Sekcam -> Camat (tetap berlaku untuk SKTM lama dan baru).
         if ($roleId === 6 && $currentStatus === 11 && $nextStatus === 8 && strtolower((string) $surat->jenis_surat) === 'sktm') {
             return null;
         }
@@ -794,7 +858,7 @@ class SuratAdminController extends Controller
                         $rules['kepada_sekolah'] = 'required_if:register_as,sekolah|nullable|string|max:255';
                         $rules['kepada_kelas'] = 'required_if:register_as,sekolah|nullable|string|max:50';
                         $rules['kepada_alamat_sekolah'] = 'required_if:register_as,sekolah|nullable|string';
-                    } elseif ($request->jenis_surat !== 'skboro') {
+                    } elseif (!in_array($request->jenis_surat, ['skboro', 'skkematian'], true)) {
                         $rules['kepada'] = 'required|string|max:255';
                     }
 
@@ -860,11 +924,8 @@ class SuratAdminController extends Controller
                 }
 
                 if ($request->jenis_surat === 'skkematian') {
-                    $rules['nama_meninggal'] = 'required|string|max:255';
-                    $rules['hari_meninggal'] = 'nullable|string|max:255';
-                    $rules['tanggal_meninggal'] = 'required|string|max:255';
-                    $rules['tempat_meninggal'] = 'required|string|max:255';
-                    $rules['penyebab_meninggal'] = 'nullable|string';
+                    // Form F-2.29. Identitas jenazah tetap berasal dari x-pribadi/OCR dan residents.data.
+                    $rules = array_merge($rules, \App\Support\SkKematianFields::rules());
                 }
 
                 if ($request->jenis_surat === 'suket') {
@@ -1034,6 +1095,7 @@ class SuratAdminController extends Controller
                             'kepada',
                             'no_surat',
                             'pengantar',
+                            'bukti_pendukung',
                             'tgl_surat',
                             'tahun',
                             'id_instansi',
@@ -1275,6 +1337,14 @@ class SuratAdminController extends Controller
         // Simpan data Update Web Admin
         public function update(Request $request, $id)
         {
+            $existing = $this->findSuratForCurrentUserOrFail($id);
+            $existingVariable = $this->decodeFlexibleValue($existing->variable);
+            if (strtolower((string) $existing->jenis_surat) === 'sktm' &&
+                (in_array((int) $existing->status, [4, 8, 9, 11, 12], true)
+                    || !empty($existingVariable['revisi_bukti_sktm_kelurahan'])) &&
+                filled($existing->file)) {
+                abort(409, 'SKTM sudah ditandatangani Lurah. Isi surat tidak boleh diedit; revisi bukti pendukung melalui aksi khusus tanpa mengubah PDF.');
+            }
             $rules = [
                 'jenis_surat'    => 'required|string',
                 'kd_jenis_surat' => 'required|string|max:50',
@@ -1388,11 +1458,7 @@ class SuratAdminController extends Controller
             }
 
             if ($request->jenis_surat === 'skkematian') {
-                $rules['nama_meninggal'] = 'required|string|max:255';
-                $rules['hari_meninggal'] = 'nullable|string|max:255';
-                $rules['tanggal_meninggal'] = 'required|string|max:255';
-                $rules['tempat_meninggal'] = 'required|string|max:255';
-                $rules['penyebab_meninggal'] = 'nullable|string';
+                $rules = array_merge($rules, \App\Support\SkKematianFields::rules());
             }
 
             if ($request->jenis_surat === 'suket') {
@@ -1549,6 +1615,7 @@ class SuratAdminController extends Controller
                         'kepada',
                         'no_surat',
                         'pengantar',
+                        'bukti_pendukung',
                         'tgl_surat',
                         'tahun',
                         'id_instansi',
@@ -1946,6 +2013,9 @@ class SuratAdminController extends Controller
 
                 // Jangan gunakan surat_alamat lama dari variable; utamakan residents.data.
                 $data['surat_alamat'] = $this->formatResidentAddress(array_merge($variableData, $residentData));
+                if ($surat->jenis_surat === 'skkematian') {
+                    $data = \App\Support\SkKematianFields::pdfData($data, $variableData);
+                }
 
                 return $data;
             }
@@ -2012,11 +2082,15 @@ class SuratAdminController extends Controller
 
             protected function getSignedPdfPathForTteFlow(\App\Models\SuratPengajuan $surat): ?string
             {
-                if (empty($surat->file) || !in_array((int) $surat->status, [4, 8, 9, 11], true)) {
+                $variable = $this->decodeFlexibleValue($surat->variable);
+                $signedReturn = strtolower((string) $surat->jenis_surat) === 'sktm'
+                    && in_array((int) $surat->status, [1, 2], true)
+                    && !empty($variable['revisi_bukti_sktm_kelurahan'])
+                    && !empty($variable['alur_admin_kecamatan']);
+                if (empty($surat->file) || (!in_array((int) $surat->status, [4, 8, 9, 11, 12], true) && !$signedReturn)) {
                     return null;
                 }
 
-                $variable = $this->decodeFlexibleValue($surat->variable);
                 if (!empty($variable['manual_signature']) || ($variable['signature_mode'] ?? '') === 'manual') {
                     return null;
                 }
@@ -2041,6 +2115,15 @@ class SuratAdminController extends Controller
             {
                 $surat = $this->findSuratForCurrentUserOrFail($id);
 
+                // Khusus TTD Basah yang selesai: PDF final berasal dari foto surat
+                // bertanda tangan. PDF TTE elektronik tidak disentuh.
+                if ($manualPdf = $this->resolveTtdBasahFinalPdf($surat)) {
+                    return response()->file($manualPdf, [
+                        'Content-Type' => 'application/pdf',
+                        'Cache-Control' => 'private, no-store',
+                    ]);
+                }
+
                 if ($signedPath = $this->getSignedPdfPathForTteFlow($surat)) {
                     return response()->file($signedPath, [
                         'Content-Type' => 'application/pdf',
@@ -2056,6 +2139,14 @@ class SuratAdminController extends Controller
             public function cetak($id)
             {
                 $surat = $this->findSuratForCurrentUserOrFail($id);
+                if ($manualPdf = $this->resolveTtdBasahFinalPdf($surat)) {
+                    $namaFile = strtoupper($surat->jenis_surat)
+                        . '_TTD_BASAH_'
+                        . preg_replace('/[^A-Za-z0-9\-]+/', '_', $this->getNoSrt($surat))
+                        . '.pdf';
+                    return response()->download($manualPdf, $namaFile);
+                }
+
                 $pdfPath = $this->getSignedPdfPathForTteFlow($surat);
 
                 if (!$pdfPath) {
@@ -2067,31 +2158,249 @@ class SuratAdminController extends Controller
                 return response()->download($pdfPath, $namaFile);
             }
 			
-			public function previewBasah($id)
-			{
-				$surat = $this->findSuratForCurrentUserOrFail($id);
-			
-				[$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, true);
-			
-				return response()->file($pdfPath, [
-					'Content-Type' => 'application/pdf',
-					'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-					'Pragma' => 'no-cache',
-				]);
-			}
-			
-			public function cetakBasah($id)
-			{
-				$surat = $this->findSuratForCurrentUserOrFail($id);
-				[$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, true);
-			
-				$namaFile = strtoupper($surat->jenis_surat)
-					. '_TTD_BASAH_'
-					. preg_replace('/[^A-Za-z0-9\-]+/', '_', $this->getNoSrt($surat))
-					. '.pdf';
-			
-				return response()->download($pdfPath, $namaFile);
-			}
+            /**
+             * PDF akhir TTD Basah selalu bersumber dari dokumen fisik yang diunggah,
+             * bukan PDF template yang belum dibubuhi tanda tangan basah.
+             * Mendukung unggahan JPG/PNG baru dan PDF/JPG/PNG/WEBP data lama.
+             * Cache PDF diletakkan di disk LOCAL agar hanya dapat diakses lewat route berizin.
+             */
+            protected function resolveTtdBasahFinalPdf(\App\Models\SuratPengajuan $surat): ?string
+            {
+                $variable = $this->decodeFlexibleValue($surat->variable);
+                $manual = !empty($variable['manual_signature'])
+                    || ($variable['signature_mode'] ?? null) === 'manual';
+                $proof = trim((string) ($variable['bukti_ttd_basah'] ?? ''));
+                if (!$manual || $proof === '') {
+                    return null;
+                }
+
+                // Path bukti berasal dari storage upload yang sudah digunakan E-SUKET.
+                // Jangan izinkan URL eksternal atau traversal dari JSON variable.
+                if (!preg_match('#^/?storage/(bukti_ttd_basah/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.(?:jpe?g|png|webp|pdf))$#i', $proof, $matches)) {
+                    abort(422, 'Lokasi bukti TTD Basah tidak valid.');
+                }
+                $relative = $matches[1];
+                $publicDisk = Storage::disk('public');
+                if (!$publicDisk->exists($relative)) {
+                    abort(404, 'Foto/dokumen TTD Basah tidak ditemukan di penyimpanan.');
+                }
+                $sourcePath = $publicDisk->path($relative);
+                if (!is_file($sourcePath) || filesize($sourcePath) === 0) {
+                    abort(404, 'Bukti TTD Basah kosong atau tidak tersedia.');
+                }
+
+                $mime = mime_content_type($sourcePath);
+                if ($mime === 'application/pdf') {
+                    // Kompatibilitas bukti PDF yang sudah diunggah sebelum patch.
+                    $fp = fopen($sourcePath, 'rb');
+                    $header = $fp ? fread($fp, 5) : '';
+                    if ($fp) fclose($fp);
+                    abort_unless($header === '%PDF-', 422, 'Bukti PDF lama tidak valid.');
+                    return $sourcePath;
+                }
+                if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+                    abort(422, 'Format bukti TTD Basah tidak didukung.');
+                }
+
+                return $this->buildTtdBasahPhotoPdf($surat, $sourcePath, $mime);
+            }
+
+            /**
+             * Menjadikan SATU foto surat menjadi SATU halaman PDF A4 tanpa mengubah
+             * PDF tanda tangan elektronik. Nama cache memakai hash isi foto agar
+             * perubahan foto tidak pernah menggunakan PDF lama.
+             */
+            protected function buildTtdBasahPhotoPdf(\App\Models\SuratPengajuan $surat, string $source, string $mime): string
+            {
+                $size = @getimagesize($source);
+                if (!$size || $size[0] < 1 || $size[1] < 1) {
+                    abort(422, 'Foto TTD Basah tidak dapat dibaca.');
+                }
+                // Cegah gambar yang luar biasa besar membebani proses render PDF.
+                if ($size[0] * $size[1] > 30000000) {
+                    abort(422, 'Resolusi foto terlalu besar. Gunakan foto hingga 30 megapiksel.');
+                }
+
+                $convertedWebp = null;
+                if ($mime === 'image/webp') {
+                    // Hanya untuk dokumen lama; upload baru tetap JPG/PNG.
+                    $convertedWebp = tempnam(sys_get_temp_dir(), 'esuket_basah_');
+                    if ($convertedWebp === false) abort(500, 'Gagal menyiapkan foto lama.');
+                    try {
+                        if (class_exists('\Imagick')) {
+                            $image = new \Imagick($source);
+                            $image->setImageFormat('png');
+                            $image->writeImage($convertedWebp);
+                            $image->clear();
+                        } elseif (function_exists('imagecreatefromwebp') && function_exists('imagepng')) {
+                            $image = @imagecreatefromwebp($source);
+                            if (!$image) abort(422, 'Bukti WEBP lama tidak dapat dibaca.');
+                            imagepng($image, $convertedWebp);
+                            imagedestroy($image);
+                        } else {
+                            abort(422, 'Bukti WEBP lama membutuhkan ekstensi Imagick atau GD agar bisa ditampilkan sebagai PDF.');
+                        }
+                        $sourceForPdf = $convertedWebp;
+                        $mimeForPdf = 'image/png';
+                        return $this->renderTtdBasahPhotoPdf($surat, $source, $sourceForPdf, $mimeForPdf, $size);
+                    } finally {
+                        @unlink($convertedWebp);
+                    }
+                }
+
+                return $this->renderTtdBasahPhotoPdf($surat, $source, $source, $mime, $size);
+            }
+
+            protected function renderTtdBasahPhotoPdf(
+                \App\Models\SuratPengajuan $surat,
+                string $originalSource,
+                string $imageSource,
+                string $mime,
+                array $size
+            ): string {
+                $hash = hash_file('sha256', $originalSource);
+                $jenis = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $surat->jenis_surat)) ?: 'surat';
+                $relative = 'ttd_basah_pdf/' . date('Y', filemtime($originalSource)) . '/'
+                    . $jenis . '/' . (int) $surat->id . '_' . substr($hash, 0, 24) . '.pdf';
+                $disk = Storage::disk('local');
+                if ($disk->exists($relative) && is_file($disk->path($relative)) && filesize($disk->path($relative)) > 0) {
+                    return $disk->path($relative);
+                }
+
+                $landscape = $size[0] > $size[1];
+                $pageWidth = $landscape ? 841.89 : 595.28;
+                $pageHeight = $landscape ? 595.28 : 841.89;
+                $margin = 18.0;
+                $scale = min(($pageWidth - 2 * $margin) / $size[0], ($pageHeight - 2 * $margin) / $size[1]);
+                $width = $size[0] * $scale;
+                $height = $size[1] * $scale;
+                $x = ($pageWidth - $width) / 2;
+                $y = ($pageHeight - $height) / 2;
+                $encoded = base64_encode(file_get_contents($imageSource));
+                $html = '<!doctype html><html><head><meta charset="utf-8"><style>'
+                    . '@page{margin:0}html,body{margin:0;padding:0}'
+                    . '</style></head><body><img alt="Surat TTD Basah" src="data:' . $mime . ';base64,' . $encoded . '"'
+                    . ' style="position:absolute;left:' . round($x, 2) . 'pt;top:' . round($y, 2)
+                    . 'pt;width:' . round($width, 2) . 'pt;height:' . round($height, 2)
+                    . 'pt;margin:0;padding:0;border:0"></body></html>';
+                $binary = Pdf::loadHTML($html)->setPaper('a4', $landscape ? 'landscape' : 'portrait')->output();
+                if (!is_string($binary) || substr($binary, 0, 5) !== '%PDF-') {
+                    abort(500, 'Gagal membentuk PDF dari foto TTD Basah.');
+                }
+                if (!$disk->put($relative, $binary)) {
+                    abort(500, 'Gagal menyimpan PDF hasil TTD Basah. Periksa hak akses storage.');
+                }
+                return $disk->path($relative);
+            }
+
+            /** Jangan pernah menimpa alur PDF yang sudah ditandatangani BSrE. */
+            protected function ensureTtdBasahTemplateAllowed(\App\Models\SuratPengajuan $surat): void
+            {
+                $variable = $this->decodeFlexibleValue($surat->variable);
+                $alreadyManual = !empty($variable['manual_signature'])
+                    || ($variable['signature_mode'] ?? '') === 'manual';
+                abort_if(!empty($surat->file), 409,
+                    'PDF yang sudah diproses TTE elektronik tidak boleh dialihkan menjadi TTD Basah.');
+                abort_if(!$alreadyManual && !in_array((int) $surat->status, [0, 1], true), 409,
+                    'Surat ini bukan dalam tahap pengajuan TTD Basah.');
+            }
+
+            public function previewBasah($id)
+            {
+                $surat = $this->findSuratForCurrentUserOrFail($id);
+
+                if ($pdfPath = $this->resolveTtdBasahFinalPdf($surat)) {
+                    return response()->file($pdfPath, [
+                        'Content-Type' => 'application/pdf',
+                        'Cache-Control' => 'private, no-store',
+                        'Pragma' => 'no-cache',
+                    ]);
+                }
+
+                // Sebelum upload: tetap tampilkan PDF template untuk dicetak dan
+                // ditandatangani fisik. Dilarang mengalihkan PDF TTE final ke mode manual.
+                $this->ensureTtdBasahTemplateAllowed($surat);
+                [$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, true);
+                return response()->file($pdfPath, [
+                    'Content-Type' => 'application/pdf',
+                    'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                    'Pragma' => 'no-cache',
+                ]);
+            }
+
+            public function cetakBasah($id)
+            {
+                $surat = $this->findSuratForCurrentUserOrFail($id);
+                $pdfPath = $this->resolveTtdBasahFinalPdf($surat);
+                if (!$pdfPath) {
+                    // Pending manual: unduh dokumen template untuk ditandatangani basah.
+                    $this->ensureTtdBasahTemplateAllowed($surat);
+                    [$pdfPath, $data] = $this->getCachedAdminPdfFile($surat, true);
+                }
+                $namaFile = strtoupper($surat->jenis_surat)
+                    . '_TTD_BASAH_'
+                    . preg_replace('/[^A-Za-z0-9\-]+/', '_', $this->getNoSrt($surat))
+                    . '.pdf';
+                return response()->download($pdfPath, $namaFile);
+            }
+
+            /**
+             * Nilai nomor registrasi SKTM tingkat kecamatan mengikuti pola Insert Surat:
+             * kode surat bisa disesuaikan, nomor urut otomatis dari registrasi tahun ini,
+             * kode instansi berasal dari skpds sesuai akun, dan tahun WIB otomatis.
+             * Bukan nomor Kelurahan; PDF hasil TTE Lurah tidak diubah.
+             */
+            protected function defaultRegistrasiKecamatan(User $user): array
+            {
+                $skpd = Skpd::find((int) $user->id_instansi);
+                $kodeInstansi = trim((string) ($skpd->instansi_kode ?? ''));
+                $tahun = now('Asia/Jakarta')->format('Y');
+                $nomorTerbesar = 0;
+                $kodeTerakhir = '';
+
+                if ($kodeInstansi !== '') {
+                    // Nomor urut Kecamatan adalah komponen KEDUA (kode/URUT/instansi/tahun).
+                    // Jangan membaca surat_pengajuans.no_register di sini: kolom itu juga
+                    // dipakai untuk registrasi Kelurahan dan dapat membuat usulan meloncat.
+                    // Dua kunci JSON di bawah mencakup data lama dan alur role 10 terbaru.
+                    $akhiran = '%/' . $kodeInstansi . '/' . $tahun;
+                    $query = $this->scopeSuratToCurrentUser(SuratPengajuan::query(), $user)
+                        ->where('jenis_surat', 'sktm')
+                        ->whereRaw(
+                            "(variable IS NOT NULL AND variable <> '' AND JSON_VALID(variable) AND "
+                            . "(JSON_UNQUOTE(JSON_EXTRACT(variable, '$.no_register_kecamatan')) LIKE ? "
+                            . "OR JSON_UNQUOTE(JSON_EXTRACT(variable, '$.register_kecamatan')) LIKE ?))",
+                            [$akhiran, $akhiran]
+                        );
+
+                    foreach ($query->get(['variable']) as $item) {
+                        $variable = $this->decodeFlexibleValue($item->variable);
+                        // Periksa keduanya, agar nomor manual yang benar-benar telah
+                        // disimpan tetap dihitung, termasuk data SKTM dari alur lama.
+                        foreach (['no_register_kecamatan', 'register_kecamatan'] as $key) {
+                            $registrasi = trim((string) ($variable[$key] ?? ''));
+                            if (!preg_match('~^([0-9A-Za-z.\-]+)/([0-9]+)/([^/]+)/([0-9]{4})$~', $registrasi, $match)) {
+                                continue;
+                            }
+                            if ($match[3] !== $kodeInstansi || $match[4] !== $tahun) {
+                                continue;
+                            }
+                            $nomor = (int) $match[2];
+                            if ($nomor > $nomorTerbesar) {
+                                $nomorTerbesar = $nomor;
+                                $kodeTerakhir = $match[1];
+                            }
+                        }
+                    }
+                }
+
+                return [
+                    'kode' => $kodeTerakhir,
+                    'nomor' => $nomorTerbesar + 1,
+                    'instansi' => $kodeInstansi,
+                    'tahun' => $tahun,
+                ];
+            }
 
             protected function normalizeRegistrasiKecamatan(Request $request): string
             {
@@ -2139,18 +2448,28 @@ class SuratAdminController extends Controller
                     // 0/1 -> 2 = Admin naik ke Sekkel
                     // 2   -> 3 = Sekkel naik ke Lurah
                     // Non-SKTM: status 3 menunggu TTE Lurah, setelah TTE langsung final status 4.
-                    // SKTM: status 3 TTE Lurah -> status 4, lalu Lurah klik Naikkan ke Kecamatan (11),
-                    //       Sekretaris/Adm Camat klik Naikkan ke Camat (8), Camat TTE -> final status 9.
+                    // SKTM baru: Lurah (4) -> Admin Kecamatan (12) -> Sekcam (11) -> Camat (8).
+                    // SKTM lama status 11 tetap didukung sampai selesai.
                     $isSktm = strtolower((string) $surat->jenis_surat) === 'sktm';
+                    $revision = $this->decodeFlexibleValue($surat->variable);
+                    $isReturnRevision = $isSktm && !empty($revision['revisi_bukti_sktm_kelurahan']) && filled($surat->file);
                     if (in_array($currentStatus, [0, 1], true)) {
+                        if ($isReturnRevision && $currentStatus === 1 && empty($revision['revisi_bukti_sktm_dilengkapi_at'])) {
+                            return response()->json(['status' => 'error', 'message' => 'Lengkapi Bukti Pendukung terlebih dahulu sebelum mengirim ulang ke Sekkel.'], 422);
+                        }
                         $nextStatus = 2;
                         $message = 'Pengajuan berhasil diajukan ke Sekkel.';
                     } elseif ($currentStatus === 2) {
-                        $nextStatus = 3;
-                        $message = 'Pengajuan berhasil diajukan ke Lurah.';
+                        $nextStatus = $isReturnRevision && !empty($revision['revisi_bukti_sktm_dilengkapi_at']) ? 4 : 3;
+                        $message = $nextStatus === 4
+                            ? 'Bukti tambahan telah diverifikasi Sekkel dan dikembalikan ke Lurah tanpa mengulang TTE.'
+                            : 'Pengajuan berhasil diajukan ke Lurah.';
                     } elseif ($currentStatus === 4 && $isSktm) {
+                        $nextStatus = 12;
+                        $message = 'SKTM berhasil diteruskan ke Admin Kecamatan.';
+                    } elseif ($currentStatus === 12 && $isSktm) {
                         $nextStatus = 11;
-                        $message = 'SKTM berhasil dinaikkan ke Kecamatan/Sekretaris Camat.';
+                        $message = 'SKTM berhasil diteruskan ke Sekcam untuk verifikasi.';
                     } elseif ($currentStatus === 11 && $isSktm) {
                         $nextStatus = 8;
                         $message = 'SKTM berhasil dinaikkan ke Camat untuk TTE.';
@@ -2161,6 +2480,17 @@ class SuratAdminController extends Controller
                             'status'  => 'error',
                             'message' => 'Status surat ini tidak bisa diajukan ke level berikutnya.'
                         ], 422);
+                    }
+
+                    if ($isSktm && $currentStatus === 4 && $nextStatus === 12
+                        && (($isReturnRevision && empty($revision['revisi_bukti_sktm_dilengkapi_at']))
+                            || ((int) data_get($revision, 'catatan_penurunan_terakhir.oleh_role_id') === 10
+                                && (int) data_get($revision, 'catatan_penurunan_terakhir.ke_status') === 4
+                                && empty($revision['revisi_bukti_sktm_dilengkapi_at'])))) {
+                        return response()->json(['status' => 'error', 'message' => 'SKTM masih menunggu kelengkapan bukti melalui Sekkel dan Admin Kelurahan.'], 422);
+                    }
+                    if ($isSktm && $currentStatus === 4 && $nextStatus === 12 && blank($surat->file)) {
+                        return response()->json(['status' => 'error', 'message' => 'SKTM belum memiliki dokumen hasil TTE Lurah.'], 422);
                     }
 
                     if ($error = $this->assertRoleCanTransition($surat, $nextStatus)) {
@@ -2177,8 +2507,16 @@ class SuratAdminController extends Controller
                         'status' => $nextStatus,
                     ];
 
-                    // Khusus Role Sekcam: sebelum SKTM naik ke Camat wajib mengisi nomor registrasi kecamatan.
-                    if ((int) auth()->user()->role_id === 6 && $currentStatus === 11 && $nextStatus === 8 && $isSktm) {
+                    if ($isSktm && $currentStatus === 4 && $nextStatus === 12) {
+                        $variable['alur_admin_kecamatan'] = 1;
+                        // Siklus revisi lampiran kelurahan selesai, histori catatan tetap utuh.
+                        unset($variable['revisi_bukti_sktm_kelurahan'], $variable['revisi_bukti_sktm_dilengkapi_at']);
+                    }
+
+                    // Registrasi SKTM baru oleh Admin Kecamatan, bukan Sekcam.
+                    // SKTM lama (status 11 tanpa flag) tetap memakai registrasi Sekcam.
+                    if ($isSktm && (($currentStatus === 12 && $nextStatus === 11 && (int) auth()->user()->role_id === 10)
+                        || ($currentStatus === 11 && $nextStatus === 8 && (int) auth()->user()->role_id === 6 && empty($variable['alur_admin_kecamatan'])))) {
                         $registrasiKecamatan = $this->normalizeRegistrasiKecamatan($request);
 
                         if ($registrasiKecamatan === '') {
@@ -2186,6 +2524,34 @@ class SuratAdminController extends Controller
                                 'status' => 'error',
                                 'message' => 'Silahkan isi Data Registrasi Kecamatan Anda terlebih dahulu.',
                             ], 422);
+                        }
+
+                        // SKTM alur baru: kode instansi & tahun wajib berasal dari server,
+                        // bukan dari HTML readonly yang bisa dimanipulasi pengguna.
+                        if ($currentStatus === 12 && (int) auth()->user()->role_id === 10) {
+                            $skpdKecamatan = Skpd::find((int) auth()->user()->id_instansi);
+                            $kodeInstansi = trim((string) ($skpdKecamatan->instansi_kode ?? ''));
+                            $tahunSaatIni = now('Asia/Jakarta')->format('Y');
+
+                            if ($kodeInstansi === '') {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'message' => 'Kode Instansi Kecamatan belum tersedia pada master SKPD. Periksa pengaturan instansi akun Admin Kecamatan.',
+                                ], 422);
+                            }
+
+                            $bagianNomor = explode('/', $registrasiKecamatan);
+                            if (count($bagianNomor) !== 4
+                                || !preg_match('/^[0-9A-Za-z.\-]+$/', $bagianNomor[0])
+                                || !preg_match('/^[0-9]+$/', $bagianNomor[1])
+                                || (int) $bagianNomor[1] < 1
+                                || $bagianNomor[2] !== $kodeInstansi
+                                || $bagianNomor[3] !== $tahunSaatIni) {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'message' => 'Format registrasi tidak sesuai dengan instansi dan tahun akun Kecamatan. Kode/nomor surat boleh disesuaikan, tetapi kode SKPD dan tahun mengikuti sistem.',
+                                ], 422);
+                            }
                         }
 
                         if (!preg_match('/^[0-9A-Za-z.\-\/]+$/', $registrasiKecamatan)) {
@@ -2222,6 +2588,12 @@ class SuratAdminController extends Controller
 
                         if (Schema::hasColumn('surat_pengajuans', 'no_register')) {
                             $updateData['no_register'] = $registrasiKecamatan;
+                        }
+                    }
+
+                    if ($isSktm && $currentStatus === 11 && $nextStatus === 8 && !empty($variable['alur_admin_kecamatan'])) {
+                        if (trim((string) ($variable['no_register_kecamatan'] ?? '')) === '') {
+                            return response()->json(['status' => 'error', 'message' => 'Registrasi Kecamatan belum diisi oleh Admin Kecamatan.'], 422);
                         }
                     }
 
@@ -2270,7 +2642,12 @@ class SuratAdminController extends Controller
                         ], 422);
                     }
 
-                    $nextStatus = 3;
+                    $variableCurrent = $this->decodeFlexibleValue($surat->variable);
+                    $isSignedReturn = strtolower((string) $surat->jenis_surat) === 'sktm'
+                        && !empty($variableCurrent['revisi_bukti_sktm_kelurahan'])
+                        && !empty($variableCurrent['revisi_bukti_sktm_dilengkapi_at'])
+                        && filled($surat->file);
+                    $nextStatus = $isSignedReturn ? 4 : 3;
 
                     if ($error = $this->assertRoleCanTransition($surat, $nextStatus)) {
                         return response()->json([
@@ -2298,7 +2675,9 @@ class SuratAdminController extends Controller
 
                     return response()->json([
                         'status'  => 'success',
-                        'message' => 'Pengajuan berhasil diajukan ke Lurah.',
+                        'message' => $isSignedReturn
+                            ? 'SKTM dikirim ulang ke Lurah tanpa mengubah TTE Lurah.'
+                            : 'Pengajuan berhasil diajukan ke Lurah.',
                         'data'    => [
                             'id' => $surat->id,
                             'status' => $nextStatus,
@@ -2370,26 +2749,65 @@ class SuratAdminController extends Controller
             ], 404);
         }
 
-        $request->validate([
-            'bukti_ttd_basah' => 'required|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
-        ], [
-            'bukti_ttd_basah.required' => 'File bukti TTD Basah wajib diupload.',
-            'bukti_ttd_basah.mimes' => 'Format bukti harus jpg, jpeg, png, pdf, atau webp.',
-            'bukti_ttd_basah.max' => 'Ukuran bukti maksimal 5 MB.',
-        ]);
-
         $variable = $this->decodeFlexibleValue($surat->variable);
-        $path = $request->file('bukti_ttd_basah')->store(
-            'public/bukti_ttd_basah/' . date('Y') . '/' . $surat->jenis_surat
-        );
+        $manual = !empty($variable['manual_signature']) || ($variable['signature_mode'] ?? '') === 'manual';
+        if (!$manual || !empty($surat->file)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Upload ini hanya untuk surat TTD Basah, bukan dokumen TTE elektronik.',
+            ], 409);
+        }
+        if (!empty($variable['bukti_ttd_basah'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Bukti TTD Basah sudah tersimpan dan tidak dapat ditimpa.',
+            ], 409);
+        }
 
-        $variable['bukti_ttd_basah'] = str_replace('public/', '/storage/', $path);
-        $variable['manual_signature'] = true;
-        $variable['signature_mode'] = 'manual';
-        $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
-        $variable['bukti_ttd_basah_uploaded_at'] = now()->toDateTimeString();
+        $request->validate([
+            'bukti_ttd_basah' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+        ], [
+            'bukti_ttd_basah.required' => 'Foto surat TTD Basah wajib diupload.',
+            'bukti_ttd_basah.mimes' => 'Format foto TTD Basah harus JPG, JPEG, atau PNG.',
+            'bukti_ttd_basah.max' => 'Ukuran foto maksimal 5 MB.',
+        ]);
+        $file = $request->file('bukti_ttd_basah');
+        $size = @getimagesize($file->getRealPath());
+        if (!$size || $size[0] < 1 || $size[1] < 1 || $size[0] * $size[1] > 30000000
+            || !in_array($size['mime'] ?? '', ['image/jpeg', 'image/png'], true)) {
+            throw ValidationException::withMessages([
+                'bukti_ttd_basah' => 'Foto harus JPG/PNG yang valid dan resolusinya maksimal 30 megapiksel.',
+            ]);
+        }
 
-        $surat->update(['variable' => $variable]);
+        $folder = 'bukti_ttd_basah/' . date('Y') . '/'
+            . (preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $surat->jenis_surat)) ?: 'surat');
+        $path = $file->store($folder, 'public');
+        if (!$path) {
+            return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan foto TTD Basah.'], 500);
+        }
+        try {
+            // Buat dan cache PDF final SEBELUM surat ditandai selesai.
+            // Bila gagal, surat tetap pending dan foto yang baru tidak jadi digunakan.
+            $this->buildTtdBasahPhotoPdf($surat, Storage::disk('public')->path($path), $size['mime']);
+            $variable['bukti_ttd_basah'] = '/storage/' . $path;
+            $variable['manual_signature'] = true;
+            $variable['signature_mode'] = 'manual';
+            $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+            $variable['bukti_ttd_basah_uploaded_at'] = now()->toDateTimeString();
+
+            $surat->update(['variable' => $variable]);
+        } catch (\Throwable $exception) {
+            Storage::disk('public')->delete($path);
+            \Illuminate\Support\Facades\Log::error('Gagal membuat PDF TTD Basah dari foto', [
+                'surat_id' => $surat->id,
+                'error' => $exception->getMessage(),
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Foto belum tersimpan sebagai dokumen final. Periksa format gambar atau akses penyimpanan PDF.',
+            ], 422);
+        }
 
         Log_surat::create([
             'nik'          => $surat->nik,
@@ -2401,12 +2819,10 @@ class SuratAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Bukti TTD Basah berhasil diupload.',
-            'url' => asset($variable['bukti_ttd_basah']),
+            'message' => 'Foto TTD Basah berhasil diupload. PDF final siap dipreview.',
+            'url' => route('admin.surat.previewBasah', $surat->id),
         ]);
     }
-
-
 
     protected function resolveCamatByDistrictName(?string $districtName): ?\App\Models\Pejabat
     {
@@ -2688,61 +3104,124 @@ class SuratAdminController extends Controller
         ], 404);
     }
 
-    public function turunkan($id)
+    /** Tambahan bukti SKTM yang sudah TTE Lurah, khusus Admin Kelurahan saat revisi berjenjang.
+     *  PDF elektronik tidak dibuka ulang / diubah. Penghapusan file lama tidak diperbolehkan. */
+    public function revisiBuktiSktm(Request $request, $id)
     {
-        $surat = $this->findSuratForCurrentUser($id);
+        $user = $request->user();
+        abort_unless($user && (int) $user->role_id === 1, 403);
+        $surat = $this->findSuratForCurrentUserOrFail($id);
+        $variable = $this->decodeFlexibleValue($surat->variable);
+        $last = $variable['catatan_penurunan_terakhir'] ?? [];
+        abort_unless(strtolower((string) $surat->jenis_surat) === 'sktm'
+            && (int) $surat->status === 1
+            && filled($surat->file)
+            && !empty($variable['alur_admin_kecamatan'])
+            && !empty($variable['revisi_bukti_sktm_kelurahan'])
+            && is_array($last) && (int) ($last['oleh_role_id'] ?? 0) === 4
+            && (int) ($last['ke_status'] ?? -1) === 1, 403,
+            'Bukti hanya dapat dilengkapi oleh Admin Kelurahan setelah surat diturunkan melalui Sekkel.');
 
-        if (!$surat) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data tidak ditemukan.'
-            ], 404);
-        }
-
-        $currentStatus = (int) $surat->status;
-        $variableNow = $this->decodeFlexibleValue($surat->variable);
-        $isFromWarga = $this->resolveSubmitterType($surat) === 'warga';
-
-        $nextStatus = match ($currentStatus) {
-            2 => ($isFromWarga ? 0 : 1),
-            3 => 2,
-            11 => 4,
-            8 => 11,
-            default => null,
-        };
-
-        if ($nextStatus === null) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Status surat ini tidak bisa diturunkan.'
-            ], 422);
-        }
-
-        $variable = $this->clearManualSignatureFlags($this->decodeFlexibleValue($surat->variable));
-                    $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
-
-
-        $surat->update([
-            'status' => $nextStatus,
-            'variable' => $variable,
+        $request->validate([
+            'bukti_pendukung' => ['required', 'array', 'min:1', 'max:20'],
+            'bukti_pendukung.*' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,bmp,pdf', 'max:5120'],
         ]);
+        abort_if($request->exists('bukti_pendukung_hapus') || $request->exists('bukti_pendukung_hapus_legacy'),
+            422, 'Bukti yang sudah tersimpan tidak boleh dihapus setelah TTE Lurah.');
 
-        Log_surat::create([
-            'nik'          => $surat->nik,
-            'tabel_surat'  => 'surat_pengajuans',
-            'nama_surat'   => strtoupper($surat->jenis_surat),
-            'id_surat'     => $surat->id,
-            'status_surat' => $nextStatus,
-        ]);
-
+        // Event saved() pada HasBuktiPendukung menyimpan seluruh lampiran baru.
+        // Jangan memakai route update surat yang dapat mengubah isi PDF.
+        $jumlahSebelum = $surat->buktiPendukung()->count();
+        $surat->touch();
+        if ($surat->buktiPendukung()->count() <= $jumlahSebelum) {
+            return response()->json(['status' => 'error', 'message' => 'Bukti baru belum tersimpan.'], 422);
+        }
+        $variable['revisi_bukti_sktm_dilengkapi_at'] = now('Asia/Jakarta')->toDateTimeString();
+        $surat->update(['variable' => $variable]);
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Surat berhasil diturunkan.',
-            'data'    => [
-                'id'     => $surat->id,
-                'status' => $nextStatus,
-            ]
+            'status' => 'success',
+            'message' => 'Bukti Pendukung telah dilengkapi. Silakan naikkan kembali SKTM ke Sekkel.',
         ]);
+    }
+
+    public function turunkan(Request $request, $id)
+    {
+        $request->validate([
+            'komentar' => ['required', 'string', 'min:5', 'max:1500'],
+        ], [
+            'komentar.required' => 'Catatan penurunan surat wajib diisi.',
+            'komentar.min' => 'Catatan penurunan minimal 5 karakter.',
+        ]);
+
+        return DB::transaction(function () use ($request, $id) {
+            // Kunci surat agar penurunan bersamaan tidak menghasilkan status salah.
+            $surat = $this->scopeSuratToCurrentUser(SuratPengajuan::query())
+                ->whereKey($id)->lockForUpdate()->first();
+            if (!$surat) {
+                return response()->json(['status' => 'error', 'message' => 'Data tidak ditemukan.'], 404);
+            }
+
+            $role = (int) $request->user()->role_id;
+            $current = (int) $surat->status;
+            $isSktm = strtolower((string) $surat->jenis_surat) === 'sktm';
+            $variable = $this->decodeFlexibleValue($surat->variable);
+            $isWarga = $this->resolveSubmitterType($surat) === 'warga';
+            $isNew = $isSktm && !empty($variable['alur_admin_kecamatan']);
+            $returningSignedSktm = $isNew && filled($surat->file)
+                && (!empty($variable['revisi_bukti_sktm_kelurahan'])
+                    || ((int) data_get($variable, 'catatan_penurunan_terakhir.oleh_role_id') === 10
+                        && (int) data_get($variable, 'catatan_penurunan_terakhir.ke_status') === 4));
+            $rules = [
+                4 => [2 => ($returningSignedSktm ? 1 : ($isWarga ? 0 : 1))], // Revisi SKTM wajib ke Admin Kelurahan
+                3 => [3 => 2, 4 => ($returningSignedSktm ? 2 : null)], // Lurah -> Sekkel (termasuk revisi bukti)
+                5 => [8 => 11],                 // Camat -> Sekcam
+                6 => [11 => ($isNew ? 12 : 4)],// Sekcam -> Admin Kec (atau Lurah untuk surat lama)
+                10 => [12 => 4],                // Admin Kec -> Lurah
+            ];
+            $next = $rules[$role][$current] ?? null;
+            if ($next === null || ($current >= 8 && !$isSktm)) {
+                return response()->json(['status' => 'error', 'message' => 'Role tidak berwenang menurunkan surat pada tahap ini.'], 403);
+            }
+            $note = trim((string) $request->input('komentar'));
+            $history = $variable['riwayat_penurunan'] ?? [];
+            if (!is_array($history)) { $history = []; }
+            $event = [
+                'oleh_user_id' => (int) $request->user()->id,
+                'oleh_role_id' => $role,
+                'dari_status' => $current,
+                'ke_status' => $next,
+                'catatan' => $note,
+                'waktu' => now('Asia/Jakarta')->toDateTimeString(),
+            ];
+            $history[] = $event;
+            // Ketika Admin Kecamatan mengembalikan SKTM bertanda tangan,
+            // jalur koreksi lampiran harus turun Lurah -> Sekkel -> Admin Kelurahan.
+            if (($role === 10 && $current === 12 && $next === 4 && $isNew && filled($surat->file))
+                || ($role === 3 && $current === 4 && $next === 2 && $returningSignedSktm)) {
+                // Termasuk surat yang sudah dikembalikan sebelum patch ini dipasang.
+                $variable['revisi_bukti_sktm_kelurahan'] = 1;
+                unset($variable['revisi_bukti_sktm_dilengkapi_at']);
+            }
+            if ($role === 4 && $current === 2 && $next === 1 && $returningSignedSktm) {
+                unset($variable['revisi_bukti_sktm_dilengkapi_at']);
+            }
+            $variable['riwayat_penurunan'] = $history;
+            $variable['catatan_penurunan_terakhir'] = $event;
+            $variable['submitter_type'] = $variable['submitter_type'] ?? $this->resolveSubmitterType($surat);
+            $surat->update(['status' => $next, 'variable' => $variable]);
+            Log_surat::create([
+                'nik' => $surat->nik,
+                'tabel_surat' => 'surat_pengajuans',
+                'nama_surat' => strtoupper($surat->jenis_surat),
+                'id_surat' => $surat->id,
+                'status_surat' => $next,
+            ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Surat berhasil diturunkan dengan catatan perbaikan.',
+                'data' => ['id' => $surat->id, 'status' => $next, 'catatan' => $note],
+            ]);
+        });
     }
 
     public function hapus($id)
@@ -2756,6 +3235,11 @@ class SuratAdminController extends Controller
             ], 404);
         }
 
+        $variableHapus = $this->decodeFlexibleValue($surat->variable);
+        if (strtolower((string) $surat->jenis_surat) === 'sktm'
+            && filled($surat->file) && !empty($variableHapus['revisi_bukti_sktm_kelurahan'])) {
+            return response()->json(['status' => 'error', 'message' => 'SKTM yang telah TTE Lurah tidak dapat dihapus saat revisi bukti.'], 409);
+        }
         if (!in_array((int) $surat->status, [0, 1], true)) {
             return response()->json([
                 'status'  => 'error',

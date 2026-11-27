@@ -28,7 +28,7 @@
                                                     <x-slot:instansi_kode>{{ $currentUser->skpd->instansi_kode }}</x-slot:instansi_kode>
                                                     <x-slot:tgl_surat>{{ $suratKeterangan->tgl_surat }}</x-slot:tgl_surat>
                                                 </x-nosrt>
-                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
+                                                <x-pengantar :surat="$suratKeterangan" :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                                 <div id="data-pelapor" name="data-pelapor">
                                                     <div class="card-header bg-transparent mb-3 text-center fw-bold">Data
                                                         Pelapor</div>

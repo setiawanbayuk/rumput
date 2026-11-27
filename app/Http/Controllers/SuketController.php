@@ -249,7 +249,7 @@ class SuketController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -342,7 +342,7 @@ class SuketController extends Controller
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         if ($request->file('pengantar')) {
@@ -515,7 +515,7 @@ class SuketController extends Controller
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         if ($request->file('pengantar')) {
@@ -757,7 +757,7 @@ class SuketController extends Controller
             'keterangan' => ['required', 'max:450'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+            'pengantar' => ['required', 'mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         try {

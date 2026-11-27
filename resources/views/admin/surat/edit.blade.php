@@ -251,6 +251,8 @@
                                             <input type="hidden" name="surat_tujuan" id="surat_tujuan" value="{{ old('surat_tujuan', data_get($variableData, 'surat_tujuan', '')) }}">
                                             <input type="hidden" name="surat_keperluan" id="surat_keperluan" value="{{ old('surat_keperluan', data_get($variableData, 'surat_keperluan', '')) }}">
                                             <input type="hidden" name="surat_jml_pengikut" id="surat_jml_pengikut" value="{{ old('surat_jml_pengikut', data_get($variableData, 'surat_jml_pengikut', $jumlahPengikutBoro)) }}">
+                                        @elseif ($jenis === 'skkematian')
+                                            @include('admin.surat.partials.skkematian-fields', ['variableData' => $variableData])
                                         @else
                                             @isset($var)
                                                 @foreach ($var as $item)
@@ -264,13 +266,13 @@
                                                 @endforeach
                                             @endisset
                                         @endif
-                                        @if (!in_array($jenis, ['sktm', 'skhsl', 'skboro', 'boro']))
+                                        @if (!in_array($jenis, ['sktm', 'skhsl', 'skboro', 'boro', 'skkematian']))
                                             <x-kepada>
                                                 <x-slot:kepada>{{ $kepadaValue }}</x-slot:kepada>
                                             </x-kepada>
                                         @endif
 
-                                        @if (!in_array($jenis, ['skhsl', 'skboro', 'boro']))
+                                        @if (!in_array($jenis, ['skhsl', 'skboro', 'boro', 'skkematian']))
                                             <x-peruntukan>
                                                 <x-slot:peruntukan>{{ $peruntukanValue }}</x-slot:peruntukan>
                                             </x-peruntukan>
@@ -298,16 +300,8 @@
                                             </div>
                                         </div>
 
-                                        <x-pengantar></x-pengantar>
+                                        <x-pengantar :surat="$surat"></x-pengantar>
 
-                                        @if (!empty($surat->pengantar))
-                                            <div class="row mb-3">
-                                                <label class="col-md-3 col-form-label text-md-start ms-2">File Lama</label>
-                                                <div class="col-md-8 d-flex align-items-center">
-                                                    <a href="{{ asset($surat->pengantar) }}" target="_blank" class="btn btn-sm btn-outline-primary">Lihat Pengantar Lama</a>
-                                                </div>
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
 

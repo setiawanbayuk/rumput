@@ -58,7 +58,7 @@
                                             @endisset
                                             <x-kepada><x-slot:kepada>{{ $suratKeterangan->kepada }}</x-slot:kepada></x-kepada>
                                             <x-peruntukan><x-slot:peruntukan>{{ $suratKeterangan->peruntukan }}</x-slot:peruntukan></x-peruntukan>
-                                            <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
+                                            <x-pengantar :surat="$suratKeterangan" :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-center mt-4">

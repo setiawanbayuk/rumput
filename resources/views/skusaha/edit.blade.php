@@ -110,7 +110,7 @@
                                             @endisset
                                             
                                             <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="false" />
-                                            <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
+                                            <x-pengantar :surat="$suratKeterangan" :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-center mt-4">

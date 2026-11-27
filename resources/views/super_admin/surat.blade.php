@@ -112,13 +112,25 @@
                                     </td>
                                     <td>{{ optional($row->updated_at ?? $row->created_at)->format('d-m-Y H:i') }}</td>
                                     <td class="action-row">
-                                        <a href="{{ route('admin.surat.preview', $row->id) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-3" title="Preview">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-3 js-esuket-preview"
+                                                data-url="{{ route('admin.surat.preview', $row->id) }}"
+                                                data-bukti-url="{{ route('bukti-pendukung.show', ['pengajuan', $row->id]) }}" title="Preview">
                                             <i class="ri-eye-line"></i>
-                                        </a>
+                                        </button>
                                         @if (!empty($row->file))
                                             <a href="{{ route('admin.surat.cetak', $row->id) }}" target="_blank" class="btn btn-sm btn-success rounded-3" title="Cetak/Download">
                                                 <i class="ri-download-2-line"></i>
                                             </a>
+                                            @php
+                                                $superVar = is_array($row->variable) ? $row->variable : (json_decode((string) ($row->variable ?? ''), true) ?: []);
+                                                $superFinal = (int) $row->status === 9 || ((int) $row->status === 4 && !$isSktm);
+                                                $superManual = !empty($superVar['manual_signature']) || ($superVar['signature_mode'] ?? null) === 'manual';
+                                            @endphp
+                                            @if($superFinal && !$superManual)
+                                                <button type="button" class="btn btn-sm btn-info rounded-3 js-esuket-bukti-only"
+                                                    data-bukti-url="{{ route('bukti-pendukung.show', ['pengajuan', $row->id]) }}"
+                                                    title="Bukti Pendukung" aria-label="Bukti Pendukung"><i class="ri-attachment-2"></i></button>
+                                            @endif
                                         @endif
                                         <a href="{{ route('admin.surat.edit', $row->id) }}" class="btn btn-sm btn-warning rounded-3" title="Edit Detail Surat">
                                             <i class="ri-edit-2-line"></i>
@@ -263,6 +275,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('assets/js/actions.js') }}?v=20261127-bukti-preview"></script>
 <script>
     document.querySelectorAll('.btn-tte').forEach((btn) => {
         btn.addEventListener('click', function () {

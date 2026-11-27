@@ -10,10 +10,10 @@
     $isFinalCetak = ($statusValue === 9) || ($statusValue === 4 && !$isSktm);
     $routeNaik = route(str_replace('.edit', '.naik', $route), $id);
 @endphp
-<div class="d-flex gap-1 flex-wrap">
+<div class="d-flex gap-1 flex-wrap align-items-center justify-content-center">
+    {!! $catatanHtml ?? '' !!}
     @if ($isManual && $hasProof)
-        <button class="js-surat-action btn btn-secondary btn-sm" data-url="{{ route(str_replace('.edit', '.previewBasah', $route), $id) }}" data-action="preview" data-method="GET" title="Preview TTD Basah"><i class="ri-file-paper-2-line"></i></button>
-        <a href="{{ asset($bukti_ttd_basah) }}" target="_blank" class="btn btn-success btn-sm" title="Preview Bukti Upload"><i class="ri-attachment-2"></i></a>
+        <button class="js-surat-action btn btn-secondary btn-sm" data-url="{{ route(str_replace('.edit', '.previewBasah', $route), $id) }}" data-bukti-url="{{ route('bukti-pendukung.show', [($route ?? '') === 'admin.surat.edit' ? 'pengajuan' : explode('.', (string) $route)[0], $id]) }}" data-action="preview" data-method="GET" title="Preview TTD Basah"><i class="ri-file-paper-2-line"></i></button>
     @else
         {{-- Sekkel: proses lama tetap. --}}
         @if ($roleValue === 4 && $statusValue === 2)
@@ -23,12 +23,12 @@
 
         {{-- Sekretaris Camat: SKTM dari Lurah status 11 wajib tampil tombol Naikkan ke Camat. --}}
         @if ($roleValue === 6 && $isSktm && $statusValue === 11)
-            <button class="js-surat-action btn btn-danger btn-sm" data-url="{{ route(str_replace('.edit', '.turunkan', $route), $id) }}" data-action="turunkan" data-method="POST" data-confirm="Turunkan SKTM ini kembali ke Lurah?" data-success="SKTM berhasil diturunkan ke Lurah." title="Turunkan ke Lurah"><i class="ri-arrow-down-double-line"></i></button>
+            <button class="js-surat-action btn btn-danger btn-sm" data-url="{{ route(str_replace('.edit', '.turunkan', $route), $id) }}" data-action="turunkan" data-method="POST" data-confirm="Turunkan SKTM ke Admin Kecamatan (alur baru), atau ke Lurah (surat lama)?" data-success="SKTM berhasil dikembalikan dengan catatan." title="Turunkan SKTM"><i class="ri-arrow-down-double-line"></i></button>
             <button type="button"
                 class="btn btn-primary btn-sm btn-naik-surat"
                 data-url="{{ $routeNaik }}"
                 data-title="Naikkan SKTM ini ke Camat untuk TTE?"
-                data-register-kecamatan="1"
+                data-register-kecamatan="{{ empty($alur_admin_kecamatan) ? '1' : '0' }}"
                 title="Naikkan ke Camat">
                 <i class="ri-arrow-up-double-line"></i>
             </button>

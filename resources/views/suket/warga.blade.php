@@ -180,6 +180,7 @@
                                 </div>
 
                                 <div class="d-flex gap-2">
+
                                     {{-- STEP 1 & 2: Tombol PREVIEW --}}
                                     @if ($step == 1 || $step == 2)
                                         <a href="{{ route($alias.'.show', ['id' => $id]) }}"
@@ -265,6 +266,7 @@
                                 </div>
 
                                 <div class="d-flex gap-2">
+
                                     {{-- Tombol Cetak Surat - Tampil jika STEP 3 (SELESAI) atau STEP 4 (DINILAI) --}}
                                     <a href="{{-- route('pengajuan.cetak', [$jenis, $id]) --}}"
                                     class="btn btn-success btn-chip">

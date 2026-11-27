@@ -226,7 +226,7 @@
                                                     </div>
                                                 </div>
 
-                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
+                                                <x-pengantar :surat="$suratKeterangan" :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                             </div>
                                         </div>
                                     </div>

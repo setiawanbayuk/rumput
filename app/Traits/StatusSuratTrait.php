@@ -84,6 +84,7 @@ trait StatusSuratTrait
             8 => ['name' => $isWarga ? 'Warga - Camat' : 'Admin - Camat', 'color' => '#B2784A'],
             9 => ['name' => $isWarga ? 'Disetujui Camat Warga' : 'Disetujui Camat Admin', 'color' => '#A78BFA'],
             11 => ['name' => 'SKTM - Sudah Naik Sekcam', 'color' => '#B2784A'],
+            12 => ['name' => 'SKTM - Admin Kecamatan', 'color' => '#0D9488'],
             default => ['name' => 'Pengajuan', 'color' => 'black'],
         };
     }

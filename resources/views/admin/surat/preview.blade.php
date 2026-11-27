@@ -86,10 +86,10 @@
                                             <td>{{ $surat->status ?? '-' }}</td>
                                         </tr>
                                         <tr>
-                                            <th>Pengantar</th>
+                                            <th>Bukti Pendukung</th>
                                             <td>
                                                 @if(!empty($surat->pengantar))
-                                                    <a href="{{ asset($surat->pengantar) }}" target="_blank">Lihat File Pengantar</a>
+                                                    <a href="{{ asset($surat->pengantar) }}" target="_blank">Lihat Bukti Pendukung</a>
                                                 @else
                                                     -
                                                 @endif

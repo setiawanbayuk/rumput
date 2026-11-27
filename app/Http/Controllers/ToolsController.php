@@ -363,7 +363,7 @@ class ToolsController extends Controller
         $idRegion = trim((string) ($skpd->id_region ?? ''));
         $idKec = trim((string) ($skpd->id_kec ?? ''));
 
-        $isKecamatan = in_array($roleId, [5, 6], true) || (strlen($idRegion) === 8 && $idRegion !== '');
+        $isKecamatan = in_array($roleId, [5, 6, 10], true) || (strlen($idRegion) === 8 && $idRegion !== '');
 
         if ($isKecamatan) {
             $kelurahansQuery = Skpd::query()->whereRaw('CHAR_LENGTH(id_region) = 13');
@@ -430,7 +430,7 @@ class ToolsController extends Controller
     {
         $roleId = (int) auth()->user()->role_id;
 
-        if (in_array($roleId, [5, 6], true)) {
+        if (in_array($roleId, [5, 6, 10], true)) {
             return [
                 'sktm' => ['label' => 'SKTM - Surat Keterangan Tidak Mampu'],
             ];

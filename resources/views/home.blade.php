@@ -174,7 +174,7 @@
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.js"></script>
         <script src="https://code.highcharts.com/highcharts.js"></script>
         <script src="https://code.highcharts.com/modules/drilldown.js"></script>
-        <script src="{{ asset('assets/js/actions.js') }}"></script>
+        <script src="{{ asset('assets/js/actions.js') }}?v=20261127-bukti-preview"></script>
         <script type="text/javascript">
             const dashboardWilayahLabel = @json($dashboardWilayahLabel ?? 'Kota Kediri');
 

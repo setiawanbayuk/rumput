@@ -100,7 +100,7 @@
                                             Lampiran
                                         </div>
 
-                                        <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
+                                        <x-pengantar :surat="$suratKeterangan" :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                     </div>
                                 </div>
                             </div>

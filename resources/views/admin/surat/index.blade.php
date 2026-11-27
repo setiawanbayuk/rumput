@@ -1391,6 +1391,11 @@
                 display: none !important;
             }
 
+            /* Banner notifikasi benar-benar tersembunyi saat jumlah sudah 0. */
+            #suratDikembalikanAlert.d-none {
+                display: none !important;
+            }
+
             #tableSurat th.text-center,
             #tableSurat td.text-center {
                 text-align: center !important;
@@ -1428,6 +1433,7 @@
                                 <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skdom') }}">SK Domisili</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skusaha') }}">SK Usaha</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skhsl') }}">SK Penghasilan</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.surat.create', 'skkematian') }}">SK Kematian</a></li>
                             </ul>
                         </div>
                     @endif
@@ -1511,6 +1517,14 @@
             <div class="notif-toolbar"><b></b></div>
         @endif
 
+        <div id="suratDikembalikanAlert"
+             class="alert alert-warning d-flex gap-2 align-items-center rounded-3 {{ ($suratDikembalikanCount ?? 0) > 0 ? '' : 'd-none' }}"
+             role="status" aria-live="polite">
+            <i class="ri-notification-3-line fs-5"></i>
+            <div>Ada <strong id="suratDikembalikanCount">{{ (int) ($suratDikembalikanCount ?? 0) }}</strong> surat yang dikembalikan untuk diperbaiki.
+                Buka ikon <i class="ri-chat-1-line"></i> pada kolom Action untuk membaca catatan wajib dari petugas sebelumnya.</div>
+        </div>
+
         <div class="row">
             <div class="col-md-12">
                 <div class="card shadow-sm rounded-4" style="border-color: #AEA07A">
@@ -1577,7 +1591,7 @@
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.js"></script>
         <script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.js"></script>
-        <script src="{{ asset('assets/js/actions.js') }}"></script>
+        <script src="{{ asset('assets/js/actions.js') }}?v=20261127-bukti-preview"></script>
 
         <script type="text/javascript">
             $(function() {
@@ -1643,6 +1657,36 @@
                         processing: '<div class="spinner-border text-primary" role="status"></div>'
                     }
                 });
+
+                // Catatan penurunan tidak boleh menunggu refresh halaman.
+                // Ambil jumlah terbaru langsung dari server setelah data selesai diproses.
+                let requestCatatan = null;
+                function refreshSuratDikembalikanNotif() {
+                    if (requestCatatan) requestCatatan.abort();
+                    requestCatatan = $.ajax({
+                        url: "{{ route('admin.surat.index') }}",
+                        method: 'GET',
+                        cache: false,
+                        dataType: 'json',
+                        data: { notif_counts: 1, _ts: Date.now() },
+                        success: function (res) {
+                            const jumlah = Math.max(0, parseInt(res.suratDikembalikanCount || 0, 10) || 0);
+                            $('#suratDikembalikanCount').text(jumlah);
+                            $('#suratDikembalikanAlert').toggleClass('d-none', jumlah === 0);
+                        },
+                        complete: function () { requestCatatan = null; }
+                    });
+                }
+                window.refreshSuratDikembalikanNotif = refreshSuratDikembalikanNotif;
+                table.on('draw', refreshSuratDikembalikanNotif);
+                $(document).ajaxSuccess(function (event, xhr, settings) {
+                    if ((settings.type || settings.method || 'GET').toUpperCase() !== 'POST') return;
+                    const url = String(settings.url || '');
+                    if (/\/admin\/surat\/(?:naik|naik-lurah|turunkan|revisi-bukti-sktm)\//.test(url)) {
+                        refreshSuratDikembalikanNotif();
+                    }
+                });
+                refreshSuratDikembalikanNotif();
 
                 // Reload tabel saat filter dropdown berubah
                 $('#filterJenis, #filterStatus').on('change', function() {
@@ -2056,7 +2100,7 @@
                     }
                 };
 
-                const promptRegisterKecamatan = function (defaultRegister = '') {
+                const promptRegisterKecamatanLegacy = function (defaultRegister = '') {
                     const normalized = String(defaultRegister || '').trim();
                     const parts = normalized ? normalized.split(/[\/.]/) : [];
                     const defaults = {
@@ -2085,7 +2129,7 @@
                                         <span class="fw-bold">/</span>
                                         <input id="reg-kec-5" class="swal2-input m-0" style="width:92px" placeholder="2026" autocomplete="off" value="${defaults[5]}">
                                     </div>
-                                    <div class="small text-muted mt-2">Format hasil: 145/14/419.407/2026. Kolom sengaja kosong agar diisi manual oleh Sekcam.</div>
+                                    <div class="small text-muted mt-2">Format hasil: 145/14/419.407/2026. Isi registrasi sesuai kewenangan Admin Kecamatan (SKTM baru).</div>
                                 </div>
                             `,
                             showCancelButton: true,
@@ -2120,6 +2164,85 @@
                         const registerKecamatan = prompt('Silahkan isi Data Registrasi Kecamatan Anda\nContoh: 145/14/419.407/2026', normalized);
                         if (registerKecamatan && registerKecamatan.trim() !== '') {
                             confirmNaik(registerKecamatan.trim());
+                        }
+                    }
+                };
+
+
+                const promptRegisterKecamatan = function (defaultRegister = '') {
+                    // Kode SKPD dan tahun diambil dari backend menurut instansi Admin Kecamatan.
+                    // Nomor urut otomatis disarankan dari registrasi terakhir kecamatan pada tahun ini,
+                    // namun operator boleh memperbaiki kode surat / nomor urut sebelum menyimpan.
+                    // Formulir Sekcam alur lama tetap menggunakan mekanisme sebelumnya.
+                    if (!btn.attr('data-reg-instansi')) {
+                        promptRegisterKecamatanLegacy(defaultRegister);
+                        return;
+                    }
+                    const kodeInstansi = String(btn.attr('data-reg-instansi') || '').trim();
+                    const tahun = String(btn.attr('data-reg-tahun') || '').trim();
+                    const suggestedKode = String(btn.attr('data-reg-kode') || 'SKTM').trim();
+                    const suggestedNomor = String(btn.attr('data-reg-nomor') || '1').trim();
+                    const parts = String(defaultRegister || btn.attr('data-reg-existing') || '').trim().split('/');
+                    const kode = parts.length === 4 ? parts[0] : suggestedKode;
+                    const nomor = parts.length === 4 ? parts[1] : suggestedNomor;
+
+                    if (!kodeInstansi || !tahun) {
+                        if (window.Swal) {
+                            Swal.fire('Kode Instansi Belum Tersedia', 'Periksa data SKPD pada akun Admin Kecamatan.', 'error');
+                        }
+                        return;
+                    }
+
+                    const safeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
+                        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                    })[char]);
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: 'Registrasi SKTM Kecamatan',
+                            icon: 'info',
+                            html: `
+                                <div class="text-start">
+                                    <label class="form-label fw-semibold mb-2">No Registrasi Kecamatan</label>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <input id="reg-kec-kode" class="swal2-input m-0" style="width:98px" aria-label="Kode surat" placeholder="Kode surat" autocomplete="off" value="${safeHtml(kode)}">
+                                        <span class="fw-bold">/</span>
+                                        <input id="reg-kec-nomor" class="swal2-input m-0" style="width:88px" aria-label="Nomor urut" inputmode="numeric" placeholder="Nomor" autocomplete="off" value="${safeHtml(nomor)}">
+                                        <span class="fw-bold">/</span>
+                                        <input class="swal2-input m-0 bg-light" style="width:135px" aria-label="Kode instansi kecamatan" value="${safeHtml(kodeInstansi)}" readonly tabindex="-1">
+                                        <span class="fw-bold">/</span>
+                                        <input class="swal2-input m-0 bg-light" style="width:90px" aria-label="Tahun" value="${safeHtml(tahun)}" readonly tabindex="-1">
+                                    </div>
+                                    <div class="small text-muted mt-2">Kode instansi mengikuti SKPD Kecamatan dan tahun otomatis. Kode surat serta nomor urut bisa disesuaikan secara manual jika diperlukan.</div>
+                                </div>
+                            `,
+                            showCancelButton: true,
+                            confirmButtonText: 'Lanjut Naikkan',
+                            cancelButtonText: 'Batal',
+                            focusConfirm: false,
+                            didOpen: () => {
+                                const nomorInput = document.getElementById('reg-kec-nomor');
+                                if (nomorInput) nomorInput.focus();
+                            },
+                            preConfirm: () => {
+                                const kodeValue = (document.getElementById('reg-kec-kode')?.value || '').trim();
+                                const nomorValue = (document.getElementById('reg-kec-nomor')?.value || '').trim();
+                                if (!/^[0-9A-Za-z.\-]+$/.test(kodeValue) || !/^[0-9]+$/.test(nomorValue) || Number(nomorValue) < 1) {
+                                    Swal.showValidationMessage('Kode surat wajib diisi dan nomor urut harus berupa angka lebih dari 0.');
+                                    return false;
+                                }
+                                return `${kodeValue}/${nomorValue}/${kodeInstansi}/${tahun}`;
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed && result.value) {
+                                confirmNaik(result.value);
+                            }
+                        });
+                    } else {
+                        // Fallback lama bila SweetAlert2 tidak dimuat.
+                        const nilai = `${kode}/${nomor}/${kodeInstansi}/${tahun}`;
+                        const registrasi = prompt('No Registrasi Kecamatan', nilai);
+                        if (registrasi && registrasi.trim()) {
+                            confirmNaik(registrasi.trim());
                         }
                     }
                 };

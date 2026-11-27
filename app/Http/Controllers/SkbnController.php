@@ -200,7 +200,7 @@ class SkbnController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -291,7 +291,7 @@ class SkbnController extends Controller
             'alamat' => ['required', 'max:100'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         if ($request->file('pengantar')) {
@@ -434,7 +434,7 @@ class SkbnController extends Controller
             'alamat' => ['required', 'max:100'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
         $suratKeterangan = SuratSkbn::findOrFail($id);
         $fileLocation = $suratKeterangan->pengantar;
@@ -644,7 +644,7 @@ class SkbnController extends Controller
             'nik' => ['required', 'min:16'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+            'pengantar' => ['required', 'mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
         try {
             //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skbn', 0755);

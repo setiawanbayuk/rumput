@@ -134,6 +134,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/surat/{id}/rating', [SuratApiController::class, 'rating']);
     Route::match(['post', 'put'], '/surat/{id}/rating', [SuratApiController::class, 'simpanRating']);
     Route::get('/surat/{id}/tracking', [SuratApiController::class, 'tracking']);
+    Route::get('/surat/{id}/bukti-pendukung', [\App\Http\Controllers\BuktiPendukungController::class, 'apiIndex'])->name('api.bukti-pendukung.index');
+    Route::get('/surat/{id}/bukti-pendukung/{file}', [\App\Http\Controllers\BuktiPendukungController::class, 'apiFile'])->name('api.bukti-pendukung.file');
+    Route::get('/surat/{id}/bukti-pendukung-legacy-file', [\App\Http\Controllers\BuktiPendukungController::class, 'apiLegacyFile'])->name('api.bukti-pendukung.legacy-file');
     Route::get('/surat/{id}/pdf-url', [SuratApiController::class, 'pdfUrl']);
     Route::get('/surat/{id}/download-pdf', [SuratApiController::class, 'downloadPdf']);
 

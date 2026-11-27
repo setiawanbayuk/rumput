@@ -258,7 +258,7 @@ class SkkelahiranController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -409,7 +409,7 @@ class SkkelahiranController extends Controller
             'penolong_klhr_anak' => ['required', 'string'],
             'bb_anak' => ['required', 'string'],
             'tb_anak' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         if ($request->file('pengantar')) {
@@ -553,7 +553,7 @@ class SkkelahiranController extends Controller
             'penolong_klhr_anak' => ['required', 'string'],
             'bb_anak' => ['required', 'string'],
             'tb_anak' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         if ($request->file('pengantar')) {
@@ -791,7 +791,7 @@ class SkkelahiranController extends Controller
             'penolong_klhr_anak' => ['required', 'string'],
             'bb_anak' => ['required', 'string'],
             'tb_anak' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         try {

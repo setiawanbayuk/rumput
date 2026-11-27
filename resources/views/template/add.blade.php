@@ -34,6 +34,7 @@
                                 <option value="skboro">Surat Keterangan Boro</option>
                                 <option value="skdom">Surat Keterangan Domisili</option>
                                 <option value="skhsl">Surat Keterangan Penghasilan</option>
+                                <option value="skkematian" @selected(old('jenis') === 'skkematian')>Surat Keterangan Kematian</option>
                                 <option value="sktm_perorangan">Surat Keterangan Tidak Mampu Perorangan</option>
                                 <option value="sktm_sekolah">Surat Keterangan Tidak Mampu Sekolah</option>
                                 <option value="skusaha">Surat Keterangan Usaha</option>

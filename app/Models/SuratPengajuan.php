@@ -6,8 +6,12 @@ use App\Traits\StatusSuratTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\HasBuktiPendukung;
+
 class SuratPengajuan extends Model
 {
+    use HasBuktiPendukung;
+
     use HasFactory, StatusSuratTrait;
 
     protected $guarded = [];

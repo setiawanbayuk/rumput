@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\SuratAdminController;
 use App\Http\Controllers\Admin\ManajemenWargaController;
+use App\Http\Controllers\Admin\ManajemenKecamatanController;
 use App\Http\Controllers\Admin\EsuketPushMonitorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
@@ -62,6 +63,13 @@ Route::prefix('dokumentasi-api/surat')->name('docs.surat.')->group(function () {
 Route::get('/chart/surat', [HomeController::class, 'chartDrilldown']);
 Route::get('/activity', [HomeController::class, 'activity'])->name('activity');
 Route::get('/activity/last', [HomeController::class, 'last_activity'])->name('activity.last');
+
+// Galeri bukti pendukung terproteksi untuk semua role layanan surat.
+Route::middleware(['auth'])->group(function () {
+    Route::get('/bukti-pendukung/{sumber}/{id}', [\App\Http\Controllers\BuktiPendukungController::class, 'show'])->name('bukti-pendukung.show');
+    Route::get('/bukti-pendukung/{sumber}/{id}/file/{file}', [\App\Http\Controllers\BuktiPendukungController::class, 'file'])->name('bukti-pendukung.file');
+    Route::get('/bukti-pendukung/{sumber}/{id}/legacy-file', [\App\Http\Controllers\BuktiPendukungController::class, 'legacyFile'])->name('bukti-pendukung.legacy-file');
+});
 
 // PUBLIC: Halaman verifikasi surat dari scan QR/Barcode TTE
 // Diletakkan di luar middleware auth agar bisa dibuka masyarakat tanpa login.
@@ -315,6 +323,17 @@ Route::middleware(['auth', 'role:1'])->prefix('admin/manajemen-warga')->name('ad
     Route::get('/options/rt-rw', [ManajemenWargaController::class, 'rtRwOptions'])->name('options.rtrw');
 });
 
+// Role 10 hanya mengakses Manajemen Kecamatan milik kecamatannya.
+Route::middleware(['auth', 'role:10'])->prefix('admin/manajemen-kecamatan')->name('admin.manajemen-kecamatan.')->group(function () {
+    Route::get('/', [ManajemenKecamatanController::class, 'index'])->name('index');
+    Route::get('/create', [ManajemenKecamatanController::class, 'create'])->name('create');
+    Route::post('/store', [ManajemenKecamatanController::class, 'store'])->name('store');
+    Route::get('/edit/{id}', [ManajemenKecamatanController::class, 'edit'])->name('edit');
+    Route::put('/update/{id}', [ManajemenKecamatanController::class, 'update'])->name('update');
+    Route::delete('/destroy/{id}', [ManajemenKecamatanController::class, 'destroy'])->name('destroy');
+    Route::get('/options/rt-rw', [ManajemenKecamatanController::class, 'rtRwOptions'])->name('options.rtrw');
+});
+
 Route::middleware(['auth', 'role:1'])->prefix('admin/esuket-push')->name('admin.esuket-push.')->group(function () {
     Route::get('/', [EsuketPushMonitorController::class, 'index'])->name('index');
 });
@@ -365,7 +384,7 @@ Route::get('phpmyinfo', function () {
 
 Route::post('/admin/esign/sign', [TteEsignController::class, 'sign'])->middleware(['auth'])->name('admin.esign.sign');
 
-Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' => ['auth', \App\Http\Middleware\RestrictAdminKecamatanSurat::class]], function () {
     // Tampilan Utama & DataTables
     Route::get('/', [SuratAdminController::class, 'index'])->name('index');
 
@@ -383,6 +402,7 @@ Route::group(['prefix' => 'admin/surat', 'as' => 'admin.surat.', 'middleware' =>
     Route::post('/naik-lurah/{id}', [SuratAdminController::class, 'naikLurah'])->name('naikLurah');
     Route::post('/tolak/{id}', [SuratAdminController::class, 'tolak'])->name('tolak');
     Route::post('/turunkan/{id}', [SuratAdminController::class, 'turunkan'])->name('turunkan');
+    Route::post('/revisi-bukti-sktm/{id}', [SuratAdminController::class, 'revisiBuktiSktm'])->name('revisiBuktiSktm');
     Route::delete('/hapus/{id}', [SuratAdminController::class, 'hapus'])->name('hapus');
 
     // Preview & Dokumen Akhir (TTE)

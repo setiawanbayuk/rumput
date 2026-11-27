@@ -250,7 +250,7 @@ class SkhslController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -364,7 +364,7 @@ class SkhslController extends Controller
             'penghasilan' => ['required', 'string'],
             'terbilang' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -558,7 +558,7 @@ class SkhslController extends Controller
             'penghasilan' => ['required', 'string'],
             'terbilang' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -818,7 +818,7 @@ class SkhslController extends Controller
             'kepada_alamat_sekolah' => ['required', 'string'],
             'penghasilan' => ['required', 'string'],
             'terbilang' => ['required', 'string'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+            'pengantar' => ['required', 'mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
         try {
             //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skhsl', 0755);

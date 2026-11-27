@@ -250,7 +250,7 @@ class SkkematianController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -384,7 +384,7 @@ class SkkematianController extends Controller
             'sebab_kematian' => ['required', 'string'],
             'tempat_kematian' => ['required', 'string'],
             'yang_menerangkan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         if ($request->file('pengantar')) {
@@ -508,7 +508,7 @@ class SkkematianController extends Controller
             'sebab_kematian' => ['required', 'string'],
             'tempat_kematian' => ['required', 'string'],
             'yang_menerangkan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         if ($request->file('pengantar')) {
@@ -724,7 +724,7 @@ class SkkematianController extends Controller
             'sebab_kematian' => ['required', 'string'],
             'tempat_kematian' => ['required', 'string'],
             'yang_menerangkan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png']
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
         try {
             //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skkematian', 0755);

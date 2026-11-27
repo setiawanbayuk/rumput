@@ -11,8 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
+use App\Traits\HasBuktiPendukung;
+
 class SuratKeterangan extends Model
 {
+    use HasBuktiPendukung;
+
     use HasFactory, LogsActivity, Compoships, GetNoSurat, HasUiStatus;
 
     protected $fillable = [

@@ -252,7 +252,7 @@ class SktmController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -381,7 +381,7 @@ class SktmController extends Controller
             'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
             'peruntukan' => ['required', 'string'],
             'kategori' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -561,7 +561,7 @@ class SktmController extends Controller
             'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
             'peruntukan' => ['required', 'string'],
             'kategori' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
 
@@ -883,7 +883,7 @@ class SktmController extends Controller
             'kepada_kelas' => ['nullable', 'required_if:register_as,sekolah', 'string'],
             'kepada_alamat_sekolah' => ['nullable', 'required_if:register_as,sekolah', 'string'],
             'kategori' => ['required', 'string'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+            'pengantar' => ['required', 'mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         try {

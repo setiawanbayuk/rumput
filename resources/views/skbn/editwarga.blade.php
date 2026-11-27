@@ -43,7 +43,7 @@
                                         <div class="card h-100 border-1 shadow-sm bg-white">
                                             <div class="card-body">
                                                 <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="false" />
-                                                <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="false" />
+                                                <x-pengantar :surat="$suratKeterangan" :pengantar="$suratKeterangan->pengantar" :readonly="false" />
                                             </div>
                                         </div>
                                     </div>

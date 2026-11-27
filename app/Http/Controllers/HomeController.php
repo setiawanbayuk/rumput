@@ -88,7 +88,7 @@ class HomeController extends Controller
             // Grafik tetap ALL status; filter ini hanya untuk tabel di bawah grafik.
             $data = $service->getAllForUser($user)
                 // Role Camat (5) dan Sekretaris Camat/Sekcam (6) di Beranda hanya boleh melihat SKTM.
-                ->filter(fn($row) => !in_array((int) $user->role_id, [5, 6], true) || strtolower((string) $row->jenis) === 'sktm')
+                ->filter(fn($row) => !in_array((int) $user->role_id, [5, 6, 10], true) || strtolower((string) $row->jenis) === 'sktm')
                 ->filter(fn($row) => $this->isFinalForHomeTable($row))
                 ->values();
 
@@ -170,9 +170,26 @@ class HomeController extends Controller
                      */
                     $url = $this->homeCetakUrl($id);
 
-                    return '<a href="' . e($url) . '" class="btn btn-sm btn-success d-inline-flex align-items-center justify-content-center" style="width:32px;height:30px;border-radius:7px;" target="_blank" rel="noopener" title="Download" aria-label="Download">'
+                    $tahap = (int) ($row->status ?? data_get($row, 'raw.status', -1));
+                    $jenis = strtolower((string) ($row->jenis ?? data_get($row, 'raw.jenis_surat', '')));
+                    $finalTte = $tahap === 9 || ($tahap === 4 && $jenis !== 'sktm');
+                    $manual = !empty($variable['manual_signature']) || ($variable['signature_mode'] ?? null) === 'manual';
+                    $punyaPdfTte = $finalTte && !$manual && filled(data_get($row, 'raw.file'));
+                    $sumber = ($row->route_edit ?? '') === 'admin.surat.edit' ? 'pengajuan' : $jenis;
+
+                    $aksi = '<div class="d-flex gap-1 justify-content-center">'
+                        . '<a href="' . e($url) . '" class="btn btn-sm btn-success d-inline-flex align-items-center justify-content-center" style="width:32px;height:30px;border-radius:7px;" target="_blank" rel="noopener" title="Download" aria-label="Download">'
                         . '<i class="ri-download-2-line"></i>'
                         . '</a>';
+
+                    if ($punyaPdfTte) {
+                        $buktiUrl = route('bukti-pendukung.show', [$sumber, $id]);
+                        $aksi .= '<button type="button" class="btn btn-sm btn-info js-esuket-bukti-only d-inline-flex align-items-center justify-content-center" '
+                            . 'style="width:32px;height:30px;border-radius:7px;" data-bukti-url="' . e($buktiUrl) . '" '
+                            . 'title="Bukti Pendukung" aria-label="Bukti Pendukung"><i class="ri-attachment-2"></i></button>';
+                    }
+
+                    return $aksi . '</div>';
                 })
                 ->rawColumns(['action', 'no_surat'])
                 ->make(true);
@@ -199,16 +216,17 @@ class HomeController extends Controller
             8 => 'Menunggu TTE Camat',
             9 => 'Final SKTM',
             11 => 'Naik Sekcam',
+            12 => 'Admin Kecamatan',
         ];
 
         $totalSurat = SuratPengajuan::count();
         $totalAkun = DB::table('users')->count();
         $totalWarga = DB::table('users')->where('role_id', 2)->count();
-        $totalPejabat = DB::table('users')->whereIn('role_id', [1, 3, 4, 5, 6, 8, 9])->count();
+        $totalPejabat = DB::table('users')->whereIn('role_id', [1, 3, 4, 5, 6, 8, 9, 10])->count();
         $totalSkpd = Skpd::count();
         $kelurahanRegionIds = Skpd::query()->whereRaw('CHAR_LENGTH(id_region) = 13')->pluck('id_region');
 
-        $menungguProses = SuratPengajuan::whereIn('status', [0, 1, 2, 3, 8, 11])->count();
+        $menungguProses = SuratPengajuan::whereIn('status', [0, 1, 2, 3, 8, 11, 12])->count();
         $tteLurah = SuratPengajuan::where('status', 3)->count();
         $tteCamat = SuratPengajuan::where('jenis_surat', 'sktm')->where('status', 8)->count();
         $selesai = SuratPengajuan::where(function ($q) {
@@ -372,7 +390,7 @@ class HomeController extends Controller
 
         if (request()->ajax()) {
             $data = $service->getAllForUser($user)
-                ->filter(fn($row) => !in_array((int) $user->role_id, [5, 6], true) || strtolower((string) $row->jenis) === 'sktm')
+                ->filter(fn($row) => !in_array((int) $user->role_id, [5, 6, 10], true) || strtolower((string) $row->jenis) === 'sktm')
                 ->values();
 
             return DataTables::of($data)
@@ -598,7 +616,7 @@ class HomeController extends Controller
             ->toString();
 
         $roleId = (int) ($user->role_id ?? 0);
-        $isKecamatan = in_array($roleId, [5, 6], true)
+        $isKecamatan = in_array($roleId, [5, 6, 10], true)
             || in_array(strtoupper((string) $skpd->nama), ['MOJOROTO', 'KOTA', 'PESANTREN'], true)
             || in_array((int) $skpd->id, [64, 65, 66], true);
 
@@ -772,6 +790,7 @@ class HomeController extends Controller
             8 => 'Dinaikkan ke Camat (SKTM)',
             9 => 'Selesai (SKTM)',
             11 => 'Dinaikkan ke Sekcam (SKTM)',
+            12 => 'Proses Admin Kecamatan (SKTM)',
         ];
 
         // ============================

@@ -49,9 +49,12 @@ class SuratCollection
             return [];
         }
 
-        if (in_array($roleId, [5, 6], true)) {
+        if (in_array($roleId, [5, 6, 10], true)) {
             $skpdKecamatan = Skpd::find($idInstansi);
             $idKec = trim((string) optional($skpdKecamatan)->id_kec);
+            if ($idKec === '' && substr_count(trim((string) optional($skpdKecamatan)->id_region), '.') === 2) {
+                $idKec = trim((string) $skpdKecamatan->id_region);
+            }
 
             if ($idKec === '') {
                 return [];
@@ -97,7 +100,7 @@ class SuratCollection
         $items = collect();
 
         foreach ($this->config as $jenis => $cfg) {
-            if (in_array($user->role_id, [5, 6]) && $jenis !== 'sktm') {
+            if (in_array($user->role_id, [5, 6, 10]) && $jenis !== 'sktm') {
                 continue;
             }
 
@@ -146,7 +149,7 @@ class SuratCollection
 
             // Role Camat (5) dan Sekretaris Camat/Sekcam (6) hanya boleh melihat SKTM.
             // Ini juga berlaku untuk data universal dari tabel surat_pengajuans, termasuk Beranda.
-            if (in_array((int) $user->role_id, [5, 6], true)) {
+            if (in_array((int) $user->role_id, [5, 6, 10], true)) {
                 $universal->where('jenis_surat', 'sktm');
             }
 

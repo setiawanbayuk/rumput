@@ -246,6 +246,8 @@
                                                 <input type="hidden" name="surat_tujuan" id="surat_tujuan" value="{{ old('surat_tujuan') }}">
                                                 <input type="hidden" name="surat_keperluan" id="surat_keperluan" value="{{ old('surat_keperluan') }}">
                                                 <input type="hidden" name="surat_jml_pengikut" id="surat_jml_pengikut" value="{{ old('surat_jml_pengikut', 0) }}">
+                                            @elseif ($jenis === 'skkematian')
+                                                @include('admin.surat.partials.skkematian-fields', ['variableData' => []])
                                             @else
                                                 @isset($var)
                                                     @foreach ($var as $item)
@@ -270,10 +272,10 @@
                                             @endif
                                         @endif
 
-                                        @if (!in_array($jenis, ['sktm', 'skhsl', 'skboro', 'boro']))
+                                        @if (!in_array($jenis, ['sktm', 'skhsl', 'skboro', 'boro', 'skkematian']))
                                             <x-kepada><x-slot:kepada></x-slot:kepada></x-kepada>
                                         @endif
-                                        @if (!in_array($jenis, ['skhsl', 'skboro', 'boro']))
+                                        @if (!in_array($jenis, ['skhsl', 'skboro', 'boro', 'skkematian']))
                                             <x-peruntukan><x-slot:peruntukan></x-slot:peruntukan></x-peruntukan>
                                         @endif
 

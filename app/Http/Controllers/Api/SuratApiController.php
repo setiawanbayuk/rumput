@@ -149,7 +149,7 @@ class SuratApiController extends Controller
                     ['name' => 'peruntukan', 'label' => 'Peruntukan', 'type' => 'text', 'required' => true],
                     ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'required' => true],
                     ['name' => 'kepada', 'label' => 'Kepada', 'type' => 'text', 'required' => true],
-                    ['name' => 'pengantar', 'label' => 'Surat Pengantar', 'type' => 'file', 'required' => true],
+                    ['name' => 'bukti_pendukung', 'label' => 'Bukti Pendukung', 'type' => 'file', 'required' => true, 'multiple' => true, 'multipart_name' => 'bukti_pendukung[]', 'accept' => 'image/jpeg,image/png,image/webp,image/bmp,application/pdf'],
                 ],
             ],
             'skbn' => [
@@ -159,7 +159,7 @@ class SuratApiController extends Controller
                     ['name' => 'nik', 'label' => 'NIK', 'type' => 'text', 'required' => true],
                     ['name' => 'peruntukan', 'label' => 'Peruntukan', 'type' => 'text', 'required' => true],
                     ['name' => 'kepada', 'label' => 'Kepada', 'type' => 'text', 'required' => true],
-                    ['name' => 'pengantar', 'label' => 'Surat Pengantar', 'type' => 'file', 'required' => true],
+                    ['name' => 'bukti_pendukung', 'label' => 'Bukti Pendukung', 'type' => 'file', 'required' => true, 'multiple' => true, 'multipart_name' => 'bukti_pendukung[]', 'accept' => 'image/jpeg,image/png,image/webp,image/bmp,application/pdf'],
                 ],
             ],
             'sktm' => [
@@ -186,7 +186,7 @@ class SuratApiController extends Controller
                     ['name' => 'kepada_sekolah', 'label' => 'Sekolah', 'type' => 'text', 'required' => false, 'show_if' => ['register_as' => 'sekolah']],
                     ['name' => 'kepada_kelas', 'label' => 'Kelas', 'type' => 'text', 'required' => false, 'show_if' => ['register_as' => 'sekolah']],
                     ['name' => 'kepada_alamat_sekolah', 'label' => 'Alamat Sekolah', 'type' => 'text', 'required' => false, 'show_if' => ['register_as' => 'sekolah']],
-                    ['name' => 'pengantar', 'label' => 'Surat Pengantar', 'type' => 'file', 'required' => true],
+                    ['name' => 'bukti_pendukung', 'label' => 'Bukti Pendukung', 'type' => 'file', 'required' => true, 'multiple' => true, 'multipart_name' => 'bukti_pendukung[]', 'accept' => 'image/jpeg,image/png,image/webp,image/bmp,application/pdf'],
                 ],
             ],
             'skdom' => [
@@ -201,7 +201,7 @@ class SuratApiController extends Controller
                     ['name' => 'kepada', 'label' => 'Kepada', 'type' => 'text', 'required' => true],
                     ['name' => 'alamat_domisili', 'label' => 'Alamat Domisili', 'type' => 'text', 'required' => true],
                     ['name' => 'peruntukan', 'label' => 'Peruntukan', 'type' => 'text', 'required' => true],
-                    ['name' => 'pengantar', 'label' => 'Surat Pengantar', 'type' => 'file', 'required' => true],
+                    ['name' => 'bukti_pendukung', 'label' => 'Bukti Pendukung', 'type' => 'file', 'required' => true, 'multiple' => true, 'multipart_name' => 'bukti_pendukung[]', 'accept' => 'image/jpeg,image/png,image/webp,image/bmp,application/pdf'],
                     ['name' => 'nama_perusahaan', 'label' => 'Nama Perusahaan', 'type' => 'text', 'required' => false, 'show_if' => ['register_as' => 'perusahaan']],
                     ['name' => 'status_bangunan', 'label' => 'Status Bangunan', 'type' => 'text', 'required' => false, 'show_if' => ['register_as' => 'perusahaan']],
                     ['name' => 'jumlah_karyawan', 'label' => 'Jumlah Karyawan', 'type' => 'number', 'required' => false, 'show_if' => ['register_as' => 'perusahaan']],
@@ -223,7 +223,7 @@ class SuratApiController extends Controller
                     ['name' => 'kepada_alamat_sekolah', 'label' => 'Alamat Sekolah', 'type' => 'text', 'required' => true],
                     ['name' => 'penghasilan', 'label' => 'Penghasilan', 'type' => 'number', 'required' => true],
                     ['name' => 'terbilang', 'label' => 'Terbilang', 'type' => 'text', 'required' => true],
-                    ['name' => 'pengantar', 'label' => 'Surat Pengantar', 'type' => 'file', 'required' => true],
+                    ['name' => 'bukti_pendukung', 'label' => 'Bukti Pendukung', 'type' => 'file', 'required' => true, 'multiple' => true, 'multipart_name' => 'bukti_pendukung[]', 'accept' => 'image/jpeg,image/png,image/webp,image/bmp,application/pdf'],
                 ],
             ],
             'skusaha' => [
@@ -239,7 +239,7 @@ class SuratApiController extends Controller
                     ['name' => 'alamat_usaha', 'label' => 'Alamat Usaha', 'type' => 'text', 'required' => true],
                     ['name' => 'kepada', 'label' => 'Kepada', 'type' => 'text', 'required' => true],
                     ['name' => 'peruntukan', 'label' => 'Peruntukan', 'type' => 'text', 'required' => true],
-                    ['name' => 'pengantar', 'label' => 'Surat Pengantar', 'type' => 'file', 'required' => true],
+                    ['name' => 'bukti_pendukung', 'label' => 'Bukti Pendukung', 'type' => 'file', 'required' => true, 'multiple' => true, 'multipart_name' => 'bukti_pendukung[]', 'accept' => 'image/jpeg,image/png,image/webp,image/bmp,application/pdf'],
                 ],
             ],
             'skboro' => [
@@ -255,7 +255,7 @@ class SuratApiController extends Controller
                     ['name' => 'tgl_awal', 'label' => 'Tanggal Awal', 'type' => 'date', 'required' => true],
                     ['name' => 'tgl_akhir', 'label' => 'Tanggal Akhir', 'type' => 'date', 'required' => true],
                     ['name' => 'peruntukan', 'label' => 'Peruntukan', 'type' => 'text', 'required' => true],
-                    ['name' => 'pengantar', 'label' => 'Surat Pengantar', 'type' => 'file', 'required' => true],
+                    ['name' => 'bukti_pendukung', 'label' => 'Bukti Pendukung', 'type' => 'file', 'required' => true, 'multiple' => true, 'multipart_name' => 'bukti_pendukung[]', 'accept' => 'image/jpeg,image/png,image/webp,image/bmp,application/pdf'],
                 ],
             ],
         ];
@@ -461,6 +461,7 @@ class SuratApiController extends Controller
             'tahun',
             'tgl_surat',
             'pengantar',
+            'bukti_pendukung',
             'token',
             '_method',
             'status',
@@ -512,7 +513,7 @@ class SuratApiController extends Controller
         }
 
         $reserved = [
-            'jenis_surat', 'jenis_surat_id', 'nik', 'peruntukan', 'pengantar',
+            'jenis_surat', 'jenis_surat_id', 'nik', 'peruntukan', 'pengantar', 'bukti_pendukung',
             'pengajuan_id', 'id_pengajuan', 'surat_pengajuan_id', 'id_surat', 'surat_id',
             'id_kel', 'id_rw', 'id_rt', 'tahun', 'status', 'kd_jenis_surat',
             'no_urut_surat', 'variable', 'token', '_method', 'submitter_type',
@@ -704,6 +705,7 @@ class SuratApiController extends Controller
 			'pdf_url' => $pdfInfo['url'] ?? null,
 			'download_pdf_url' => $pdfInfo ? url('/api/surat/' . $surat->id . '/download-pdf') : null,
 			'pengantar' => $surat->pengantar,
+			'bukti_pendukung_url' => route('api.bukti-pendukung.index', ['id' => $surat->id]),
 			'variable' => $this->getExistingVariableData($surat),
 			'rating' => $ratingInfo['rating'],
 			'bintang' => $ratingInfo['bintang'],
@@ -755,7 +757,7 @@ class SuratApiController extends Controller
             'jenis_surat' => ['required', 'string', Rule::in($allowedJenis)],
             'nik' => ['required', 'digits:16'],
             'peruntukan' => ['required', 'string', 'max:255'],
-            'pengantar' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'pengantar' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,bmp,pdf', 'max:5120'],
         ]);
 
         $fileUrl = null;
@@ -861,7 +863,7 @@ class SuratApiController extends Controller
 
             'nik' => ['required', 'digits:16'],
             'peruntukan' => ['required', 'string', 'max:255'],
-            'pengantar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'pengantar' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,bmp,pdf', 'max:5120'],
         ]);
 
         if ((string) $surat->nik !== (string) $request->nik) {
@@ -1346,7 +1348,9 @@ class SuratApiController extends Controller
         // Tahapan tetap lengkap. Tidak menggabungkan Admin, Sekkel, Lurah,
         // ataupun Sekcam/Camat untuk SKTM.
         $steps = $isSktm
-            ? ['Pengajuan', 'Operator/Admin Kelurahan', 'Sekkel', 'Lurah', 'Sekcam', 'Camat', 'Selesai']
+            ? (!empty($variable['alur_admin_kecamatan'])
+                ? ['Pengajuan', 'Operator/Admin Kelurahan', 'Sekkel', 'Lurah', 'Admin Kecamatan', 'Sekcam', 'Camat', 'Selesai']
+                : ['Pengajuan', 'Operator/Admin Kelurahan', 'Sekkel', 'Lurah', 'Sekcam', 'Camat', 'Selesai'])
             : ['Pengajuan', 'Operator/Admin Kelurahan', 'Sekkel', 'Lurah', 'Selesai'];
 
         $currentTracking = $this->detailedTrackingStageForStatus($currentStatus, $isSktm, $isManual)
@@ -1390,6 +1394,7 @@ class SuratApiController extends Controller
             7 => $isManual ? 'Lurah' : 'Dihapus',
             8 => $isSktm ? 'Camat' : ($isManual ? 'Selesai' : null),
             11 => $isSktm ? 'Sekcam' : null,
+            12 => $isSktm ? 'Admin Kecamatan' : null,
             default => null,
         };
     }
@@ -1793,6 +1798,7 @@ class SuratApiController extends Controller
                 $status === 2 => 1,
                 in_array($status, [3, 4], true) => 2,
                 $status === 11 => 3,
+                $status === 12 => 3,
                 $status === 8 => 4,
                 in_array($status, [5, 9], true) => 5,
                 default => 0,
@@ -1899,6 +1905,7 @@ class SuratApiController extends Controller
             if ($status === 9 || $status === 5) {
                 return 'Selesai';
             }
+            if ($status === 12) return 'Admin Kecamatan';
             if (in_array($status, [11, 8], true)) {
                 return 'Sekcam';
             }

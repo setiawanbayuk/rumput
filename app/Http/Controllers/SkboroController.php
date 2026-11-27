@@ -334,7 +334,7 @@ class SkboroController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -468,7 +468,7 @@ class SkboroController extends Controller
             'peruntukan' => ['required', 'string'],
             'tgl_awal' => ['required', 'date'],
             'tgl_akhir' => ['required', 'date'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -664,7 +664,7 @@ class SkboroController extends Controller
             'peruntukan' => ['required', 'string'],
             'tgl_awal' => ['required', 'date'],
             'tgl_akhir' => ['required', 'date'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         // dd($request->all());
@@ -937,7 +937,7 @@ class SkboroController extends Controller
         $request->validate([
             'nik' => ['required', 'min:16'],
             'peruntukan' => ['required', 'max:100'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png'],
+            'pengantar' => ['required', 'mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
         try {
             //Storage::makeDirectory('/public/pengantar/' . date('Y') . '/skboro', 0755);

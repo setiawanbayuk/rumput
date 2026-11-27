@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class
         ]);
+        // Hanya bereaksi pada submit/revisi surat; request lain tidak berubah.
+        $middleware->appendToGroup('web', \App\Http\Middleware\HandleBuktiPendukungUpload::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\HandleBuktiPendukungUpload::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

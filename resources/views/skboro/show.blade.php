@@ -87,7 +87,7 @@
                                             {{-- Peruntukan --}}
                                             <x-peruntukan :peruntukan="$suratKeterangan->peruntukan" :readonly="true" />
                                             {{-- Pengantar --}}
-                                            <x-pengantar :pengantar="$suratKeterangan->pengantar" :readonly="true" />
+                                            <x-pengantar :surat="$suratKeterangan" :pengantar="$suratKeterangan->pengantar" :readonly="true" />
                                         </div>
                                     </div>
                                 </div>

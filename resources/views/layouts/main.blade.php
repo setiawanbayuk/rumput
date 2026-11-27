@@ -374,6 +374,14 @@
                                             <span class="sidebar-text">Profil Instansi</span>
                                         </a>
                                     </li>
+                                    @if ((int) auth()->user()->role_id === 10)
+                                        <li class="sidebar-item">
+                                            <a href="{{ route('admin.manajemen-kecamatan.index') }}" class="sidebar-link">
+                                                <i class="ri-user-settings-line"></i>
+                                                <span class="sidebar-text">Manajemen Kecamatan</span>
+                                            </a>
+                                        </li>
+                                    @endif
                                     @if (auth()->user()->role_id == 1)
                                         <li class="sidebar-item">
                                             <a href="{{ route('admin.manajemen-warga.index') }}" class="sidebar-link">

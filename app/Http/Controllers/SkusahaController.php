@@ -244,7 +244,7 @@ class SkusahaController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -341,7 +341,7 @@ class SkusahaController extends Controller
             'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -515,7 +515,7 @@ class SkusahaController extends Controller
             'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
             'peruntukan' => ['required', 'string'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -759,7 +759,7 @@ class SkusahaController extends Controller
             'alamat_usaha' => ['required', 'string'],
             'kepada' => ['required', 'string'],
             'peruntukan' => ['required', 'max:100'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png']
+            'pengantar' => ['required', 'mimes:jpg,jpeg,png,webp,bmp,pdf']
         ]);
 
         try {

@@ -646,6 +646,7 @@ class VerifySuratController extends Controller
             5 => 'Terverifikasi dan Telah Dinilai',
             9 => 'Terverifikasi TTE Camat',
             11 => 'Menunggu Verifikasi Sekcam',
+            12 => 'Menunggu Administrasi Kecamatan',
             8 => 'Menunggu TTE Camat',
             default => 'Belum Final',
         };

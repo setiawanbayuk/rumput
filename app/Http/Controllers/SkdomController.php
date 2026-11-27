@@ -246,7 +246,7 @@ class SkdomController extends Controller
         ];
 
         if ($request->hasFile('pengantar')) {
-            $rules['pengantar'] = 'mimes:jpg,jpeg,png';
+            $rules['pengantar'] = 'mimes:jpg,jpeg,png,webp,bmp,pdf';
         }
 
         $request->validate($rules);
@@ -353,7 +353,7 @@ class SkdomController extends Controller
             'jumlah_karyawan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
             'alamat_domisili' => ['required', 'string'],
             'tgl_berlaku' => ['nullable', 'required_if:register_as,perusahaan', 'date'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
         if ($request->file('pengantar')) {
@@ -534,7 +534,7 @@ class SkdomController extends Controller
             'jumlah_karyawan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
             'alamat_domisili' => ['required', 'string'],
             'tgl_berlaku' => ['nullable', 'required_if:register_as,perusahaan', 'date'],
-            'pengantar' => ['mimes:jpg,jpeg,bmp,png'],
+            'pengantar' => ['mimes:jpg,jpeg,png,webp,bmp,pdf'],
         ]);
 
 
@@ -775,7 +775,7 @@ class SkdomController extends Controller
             'nik' => ['required', 'min:16'],
             'peruntukan' => ['required', 'max:100'],
             'kepada' => ['required'],
-            'pengantar' => ['required', 'mimes:jpg,bmp,png'],
+            'pengantar' => ['required', 'mimes:jpg,jpeg,png,webp,bmp,pdf'],
             'register_as' => ['required', 'string'],
             'nama_perusahaan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],
             'status_bangunan' => ['nullable', 'required_if:register_as,perusahaan', 'string'],

@@ -717,6 +717,7 @@ class EsignController extends Controller
             'skusaha' => 'templates/SKUSAHA.docx',
             'skhsl'   => 'templates/SKHSL.docx',
             'skboro'  => 'templates/SKBORO.docx',
+            'skkematian' => 'templates/SKKEMATIAN.docx',
             'suket'   => 'templates/SUKET.docx',
         ];
 
@@ -838,9 +839,12 @@ class EsignController extends Controller
             return [];
         }
 
-        if (in_array($roleId, [5, 6], true)) {
+        if (in_array($roleId, [5, 6, 10], true)) {
             $skpdKecamatan = Skpd::find($idInstansi);
             $idKec = trim((string) optional($skpdKecamatan)->id_kec);
+            if ($idKec === '' && substr_count(trim((string) optional($skpdKecamatan)->id_region), '.') === 2) {
+                $idKec = trim((string) $skpdKecamatan->id_region);
+            }
 
             if ($idKec === '') {
                 return [];
@@ -1200,6 +1204,10 @@ class EsignController extends Controller
 
         // Variable template dapat berisi surat_alamat lama; sumber utama tetap residents.data.
         $data['surat_alamat'] = $this->formatResidentAddress(array_merge($variableData, $residentData));
+
+        if (strtolower((string) $surat->jenis_surat) === 'skkematian') {
+            $data = \App\Support\SkKematianFields::pdfData($data, $variableData);
+        }
 
         return $data;
     }
